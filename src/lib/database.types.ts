@@ -28,6 +28,7 @@ export interface Database {
           avatar_url: string | null;
           bio: string | null;
           stripe_account_id: string | null;
+          stripe_onboarded: boolean;
           rating_avg: number | null;
           rating_count: number;
           created_at: string;
@@ -39,6 +40,7 @@ export interface Database {
           avatar_url?: string | null;
           bio?: string | null;
           stripe_account_id?: string | null;
+          stripe_onboarded?: boolean;
           rating_avg?: number | null;
           rating_count?: number;
           created_at?: string;
@@ -131,6 +133,12 @@ export interface Database {
           shipped_at: string | null;
           delivered_at: string | null;
           created_at: string;
+          stripe_session_id: string | null;
+          payment_intent: string | null;
+          shipping_amount: number;
+          transfer_id: string | null;
+          released_at: string | null;
+          received_at: string | null;
         };
         Insert: {
           id?: string;
@@ -146,6 +154,12 @@ export interface Database {
           shipped_at?: string | null;
           delivered_at?: string | null;
           created_at?: string;
+          stripe_session_id?: string | null;
+          payment_intent?: string | null;
+          shipping_amount?: number;
+          transfer_id?: string | null;
+          released_at?: string | null;
+          received_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["orders"]["Insert"]>;
         Relationships: [];
@@ -252,6 +266,10 @@ export interface Database {
       is_muted: {
         Args: { target_shop: string; target_user: string };
         Returns: boolean;
+      };
+      decrement_stock: {
+        Args: { p_product: string; p_qty: number };
+        Returns: undefined;
       };
     };
     Enums: {
