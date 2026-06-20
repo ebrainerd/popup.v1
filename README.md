@@ -65,6 +65,12 @@ Open [http://localhost:3000](http://localhost:3000).
 | `npm run start`    | Run the production build               |
 | `npm run lint`     | ESLint                                 |
 | `npm run typecheck`| `tsc --noEmit`                         |
+| `npm run test`     | Unit tests (Vitest)                    |
+| `npm run test:e2e` | Playwright smoke tests (build first)   |
+
+CI (GitHub Actions) runs typecheck, lint, unit tests, build, and Playwright
+smoke tests on every PR. See `docs/TESTING.md` for the full testing guide,
+including the gated RLS integration suite.
 
 ## What's in this milestone
 
