@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
 import { ShopCard } from "@/components/shop-card";
 import { FollowButton } from "@/components/follow-button";
+import { NotifyButton } from "@/components/notify-button";
 import type { ShopWithSeller } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
@@ -91,7 +92,10 @@ export default async function ProfilePage({
           {profile.bio && <p className="mt-2 max-w-xl text-pretty">{profile.bio}</p>}
         </div>
         {!isOwner && (
-          <FollowButton sellerId={profile.id} initialFollowing={isFollowing} isAuthed={Boolean(user)} />
+          <div className="flex items-center gap-2">
+            <FollowButton sellerId={profile.id} initialFollowing={isFollowing} isAuthed={Boolean(user)} />
+            {user && <NotifyButton />}
+          </div>
         )}
       </div>
 
