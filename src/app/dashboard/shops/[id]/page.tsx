@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
-import { createClient } from "@/lib/supabase/server";
+import { getSellerOrders } from "@/lib/orders";
+import { SellerOrdersTable } from "@/components/seller-orders-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +14,7 @@ import { ShopForm } from "@/components/shop-form";
 import { ProductManager } from "@/components/product-manager";
 import { ShopQuickActions } from "@/components/shop-quick-actions";
 import { CopyLink } from "@/components/copy-link";
-import { deriveShopStatus, formatCurrency } from "@/lib/utils";
+import { deriveShopStatus } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Manage shop" };
 export const dynamic = "force-dynamic";
@@ -31,12 +32,7 @@ export default async function ManageShopPage({
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const isOpen = status === "open";
 
-  const supabase = await createClient();
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("id, amount_paid, status, created_at, product_id")
-    .eq("shop_id", shop.id)
-    .order("created_at", { ascending: false });
+  const orders = await getSellerOrders(shop.id);
 
   return (
     <div className="space-y-8">
@@ -100,27 +96,7 @@ export default async function ManageShopPage({
             <CardTitle>Orders</CardTitle>
           </CardHeader>
           <CardContent>
-            {!orders || orders.length === 0 ? (
-              <div className="flex flex-col items-center gap-2 py-8 text-center text-muted-foreground">
-                <ShoppingBag className="size-6" />
-                <p className="text-sm">No orders yet. Sales appear here once checkout is live.</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {orders.map((o) => (
-                  <div
-                    key={o.id}
-                    className="flex items-center justify-between rounded-md border border-border p-3 text-sm"
-                  >
-                    <span className="font-mono text-xs text-muted-foreground">
-                      #{o.id.slice(0, 8)}
-                    </span>
-                    <span>{formatCurrency(o.amount_paid)}</span>
-                    <Badge variant="muted">{o.status}</Badge>
-                  </div>
-                ))}
-              </div>
-            )}
+            <SellerOrdersTable orders={orders} />
           </CardContent>
         </Card>
       </div>

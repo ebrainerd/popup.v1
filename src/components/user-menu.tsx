@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-import { LayoutDashboard, LogOut, Store, User as UserIcon } from "lucide-react";
+import { LayoutDashboard, LogOut, Store, User as UserIcon, ShoppingBag } from "lucide-react";
 import type { Profile } from "@/lib/database.types";
 import { signOut } from "@/app/(auth)/actions";
 
@@ -55,6 +55,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
             <p className="truncate text-xs text-muted-foreground">@{profile.username}</p>
           </div>
           <MenuLink href="/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
+          <MenuLink href="/orders" icon={<ShoppingBag />} label="My orders" />
           <MenuLink href="/dashboard/shops/new" icon={<Store />} label="Create a shop" />
           <MenuLink href={`/u/${profile.username}`} icon={<UserIcon />} label="My profile" />
           <form action={signOut}>
