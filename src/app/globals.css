@@ -1,0 +1,100 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   PopUp design tokens
+   Energetic + trustworthy: bold magenta/violet accent, warm neutrals,
+   urgency cues for countdowns and live state.
+--------------------------------------------------------------------------- */
+
+:root {
+  --background: #ffffff;
+  --foreground: #0b0b12;
+
+  --muted: #f4f4f7;
+  --muted-foreground: #6b6b7b;
+
+  --card: #ffffff;
+  --card-foreground: #0b0b12;
+
+  --border: #e7e7ee;
+  --input: #e7e7ee;
+  --ring: #e6007a;
+
+  /* Brand */
+  --primary: #e6007a;          /* PopUp magenta */
+  --primary-foreground: #ffffff;
+  --accent: #7c3aed;           /* violet */
+  --accent-foreground: #ffffff;
+
+  --live: #ef4444;             /* live / urgent red */
+  --success: #16a34a;
+
+  --radius: 0.85rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0f;
+    --foreground: #f5f5fa;
+
+    --muted: #16161f;
+    --muted-foreground: #a1a1b3;
+
+    --card: #11111a;
+    --card-foreground: #f5f5fa;
+
+    --border: #23232f;
+    --input: #23232f;
+    --ring: #ff2e9a;
+
+    --primary: #ff2e9a;
+    --primary-foreground: #0a0a0f;
+    --accent: #a78bfa;
+    --accent-foreground: #0a0a0f;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-live: var(--live);
+  --color-success: var(--success);
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 0.25rem);
+  --radius-sm: calc(var(--radius) - 0.4rem);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Subtle pulse for live indicators */
+@keyframes popup-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.animate-live-pulse {
+  animation: popup-pulse 1.4s ease-in-out infinite;
+}
