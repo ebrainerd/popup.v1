@@ -61,6 +61,7 @@ export interface Database {
           is_live: boolean;
           live_url: string | null;
           status: ShopStatusColumn;
+          peak_viewers: number;
           created_at: string;
           updated_at: string;
         };
@@ -78,6 +79,7 @@ export interface Database {
           is_live?: boolean;
           live_url?: string | null;
           status?: ShopStatusColumn;
+          peak_viewers?: number;
           created_at?: string;
           updated_at?: string;
         };
@@ -204,9 +206,34 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["chat_messages"]["Insert"]>;
         Relationships: [];
       };
+      shop_mutes: {
+        Row: {
+          shop_id: string;
+          user_id: string;
+          muted_by: string;
+          created_at: string;
+        };
+        Insert: {
+          shop_id: string;
+          user_id: string;
+          muted_by: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["shop_mutes"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      bump_peak_viewers: {
+        Args: { p_shop: string; p_count: number };
+        Returns: undefined;
+      };
+      is_muted: {
+        Args: { target_shop: string; target_user: string };
+        Returns: boolean;
+      };
+    };
     Enums: {
       shop_visibility: ShopVisibility;
       shop_status: ShopStatusColumn;

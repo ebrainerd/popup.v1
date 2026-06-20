@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { Product, Profile, Shop } from "@/lib/database.types";
+import type { ChatBroadcast } from "@/lib/realtime";
 
 export type ShopWithSeller = Shop & {
   seller: Pick<Profile, "id" | "username" | "display_name" | "avatar_url" | "rating_avg" | "rating_count"> | null;
@@ -74,6 +75,27 @@ export async function getShopWithDetails(shopId: string): Promise<ShopWithDetail
     ...(shop as unknown as ShopWithSeller),
     products: (products ?? []) as Product[],
   };
+}
+
+/** Most recent visible chat messages for a shop (oldest first), capped. */
+export async function getChatMessages(shopId: string, limit = 200): Promise<ChatBroadcast[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("chat_messages")
+    .select(
+      "id, message, created_at, user:profiles!chat_messages_user_id_fkey(id, username, display_name, avatar_url)",
+    )
+    .eq("shop_id", shopId)
+    .eq("is_hidden", false)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error || !data) {
+    if (error) console.error("getChatMessages error", error.message);
+    return [];
+  }
+
+  return (data as unknown as ChatBroadcast[]).slice().reverse();
 }
 
 /** All shops owned by a seller (dashboard). */
