@@ -48,6 +48,22 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
+      {process.env.STRIPE_SECRET_KEY && !profile.stripe_onboarded && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div>
+              <p className="font-medium">Set up payouts to get paid</p>
+              <p className="text-sm text-muted-foreground">
+                Connect a Stripe payout account before your shops start selling.
+              </p>
+            </div>
+            <Button asChild>
+              <Link href="/dashboard/payouts">Set up payouts</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard icon={<DollarSign />} label="Gross sales" value={formatCurrency(grossSales)} />
