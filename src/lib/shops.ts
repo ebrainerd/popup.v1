@@ -26,7 +26,9 @@ export async function getExploreShops(tab: ExploreTab = "all"): Promise<ShopWith
     .neq("status", "draft");
 
   if (tab === "live") {
-    query = query.eq("is_live", true).gt("end_at", nowIso);
+    // "Live now" = currently open shops (within their start/end window).
+    // The pulsing LIVE badge separately indicates shops actively streaming.
+    query = query.lte("start_at", nowIso).gt("end_at", nowIso);
   } else if (tab === "soon") {
     query = query.gt("start_at", nowIso);
   } else {
