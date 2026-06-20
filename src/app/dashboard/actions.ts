@@ -186,6 +186,13 @@ export async function toggleLive(shopId: string, isLive: boolean): Promise<Actio
     .eq("id", shopId)
     .eq("seller_id", user.id);
   if (error) return { error: error.message };
+
+  // Notify followers when going live (no-op if notifications aren't configured).
+  if (isLive) {
+    const { notifyFollowersOfLive } = await import("@/lib/notifications");
+    await notifyFollowersOfLive(shopId);
+  }
+
   revalidatePath(`/dashboard/shops/${shopId}`);
   revalidatePath(`/shop/${shopId}`);
   return { ...initialOk };

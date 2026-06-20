@@ -17,15 +17,29 @@ defaults agreed at kickoff.
 - Public shop page (countdown, live embed, products, follow)
 - Public seller profiles
 
-## 🔜 Milestone 2 — Realtime & live
+## ✅ Milestone 2 — Realtime & live (current)
 
-- Supabase Realtime channels per shop
-- Live viewer **presence** + peak viewer tracking
-- Real-time **chat** (text + emoji), seller mute (public notice), keyword
-  profanity filter (Edge Function), per-user rate limit
-- **Flash drops**: temporary discount on existing product + flash-only items,
-  broadcast to all connected viewers instantly
-- Web push + email notifications when a followed seller opens / goes live
+- **Bug fix:** "Live now" Explore tab now shows currently-open shops (not only
+  shops that are actively streaming)
+- One **Supabase Realtime channel per shop** (`shop:{id}`) shared by presence +
+  broadcast (`src/components/shop-room.tsx`)
+- Live viewer **presence** count + **peak viewers** recorded via the
+  `bump_peak_viewers` RPC
+- Real-time **chat** (text + quick emoji), server-side **profanity filter** and
+  per-user **rate limit**, seller **mute** with a public "muted by seller"
+  notice and `shop_mutes` + RLS enforcement
+- **Flash drops**: temporary discount on an existing product + flash-only items,
+  broadcast to all connected viewers instantly (seller controls on the shop page)
+- **Notifications**: web push (VAPID) + email (Resend) to followers when a
+  seller **goes live**; graceful no-op when keys aren't configured
+
+### Notes / limitations
+
+- "Opening" (time-based) notifications need a scheduler (Supabase cron / Edge
+  Function) since there's no server event at open time — deferred. Go-live
+  notifications fire on the seller's "Go live" action.
+- Live video embed appears on page load; toggling live does not yet hot-swap the
+  embed for already-connected viewers (chat/presence/flash drops do update live).
 
 ## 🔜 Milestone 3 — Payments, orders & ratings
 
