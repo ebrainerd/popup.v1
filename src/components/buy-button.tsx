@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { createCheckoutSession } from "@/app/shop/checkout-actions";
 
 /**
  * Buy Now entry point.
  * - Guests are routed to login (purchase requires an account).
- * - Authed buyers will be sent to Stripe Checkout once payments land
- *   (Milestone 3). For now it surfaces a clear "coming soon" notice.
+ * - Authed buyers start a Stripe Checkout session and are redirected to it.
  */
 export function BuyButton({
   shopId,
@@ -25,7 +25,8 @@ export function BuyButton({
   isAuthed: boolean;
 }) {
   const router = useRouter();
-  const [notice, setNotice] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
 
   if (soldOut) {
     return (
@@ -43,26 +44,28 @@ export function BuyButton({
   }
 
   function onClick() {
+    setError(null);
     if (!isAuthed) {
-      router.push(
-        `/login?redirectTo=${encodeURIComponent(`/shop/${shopId}`)}#product-${productId}`,
-      );
+      router.push(`/login?redirectTo=${encodeURIComponent(`/shop/${shopId}`)}`);
       return;
     }
-    setNotice(true);
+    startTransition(async () => {
+      const res = await createCheckoutSession(productId);
+      if (res.ok) {
+        window.location.href = res.url;
+      } else {
+        setError(res.error);
+      }
+    });
   }
 
   return (
     <div className="flex flex-col items-end gap-1">
-      <Button size="sm" onClick={onClick}>
+      <Button size="sm" onClick={onClick} disabled={pending}>
         <ShoppingBag className="size-4" />
-        Buy now
+        {pending ? "Starting…" : "Buy now"}
       </Button>
-      {notice && (
-        <span className="text-right text-[11px] text-muted-foreground">
-          Checkout opens with payments (Milestone 3)
-        </span>
-      )}
+      {error && <span className="text-right text-[11px] text-live">{error}</span>}
     </div>
   );
 }
