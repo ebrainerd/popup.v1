@@ -1,0 +1,25 @@
+{
+  "name": "PopUp — Time-boxed pop-up shops",
+  "short_name": "PopUp",
+  "description": "Open a shop for minutes, not forever. Live drops, social discovery, and instant checkout.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a0f",
+  "theme_color": "#e6007a",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
