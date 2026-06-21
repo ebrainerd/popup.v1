@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ShopCard } from "@/components/shop-card";
 import { FollowButton } from "@/components/follow-button";
 import { NotifyButton } from "@/components/notify-button";
+import { deriveShopStatus } from "@/lib/utils";
 import type { ShopWithSeller } from "@/lib/shops";
 
 export const dynamic = "force-dynamic";
@@ -99,18 +100,45 @@ export default async function ProfilePage({
         )}
       </div>
 
-      <h2 className="mb-4 text-xl font-bold">Shops</h2>
-      {!shops || shops.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">
-          No public shops yet.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {(shops as unknown as ShopWithSeller[]).map((shop) => (
-            <ShopCard key={shop.id} shop={shop} />
-          ))}
-        </div>
-      )}
+      <ShopSections shops={(shops ?? []) as unknown as ShopWithSeller[]} />
     </div>
+  );
+}
+
+function ShopSections({ shops }: { shops: ShopWithSeller[] }) {
+  if (shops.length === 0) {
+    return (
+      <p className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">
+        No public shops yet.
+      </p>
+    );
+  }
+
+  const live = shops.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "open");
+  const upcoming = shops
+    .filter((s) => deriveShopStatus(s.start_at, s.end_at) === "scheduled")
+    .sort((a, b) => +new Date(a.start_at) - +new Date(b.start_at));
+  const past = shops.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "ended");
+
+  return (
+    <div className="space-y-8">
+      <ShopGroup title="Happening now" shops={live} />
+      <ShopGroup title="Opening soon" shops={upcoming} />
+      <ShopGroup title="Past drops" shops={past} />
+    </div>
+  );
+}
+
+function ShopGroup({ title, shops }: { title: string; shops: ShopWithSeller[] }) {
+  if (shops.length === 0) return null;
+  return (
+    <section>
+      <h2 className="mb-4 text-xl font-bold">{title}</h2>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {shops.map((shop) => (
+          <ShopCard key={shop.id} shop={shop} />
+        ))}
+      </div>
+    </section>
   );
 }
