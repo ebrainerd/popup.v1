@@ -7,7 +7,9 @@ import { setFlashDiscount, clearFlashDiscount, createFlashItem } from "@/app/sho
 import { ROOM_EVENTS } from "@/lib/realtime";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { ImageUpload } from "@/components/image-upload";
 import type { Product } from "@/lib/database.types";
 import { formatCurrency } from "@/lib/utils";
 
@@ -21,7 +23,13 @@ export function FlashControls({ products }: { products: Product[] }) {
   const [discount, setDiscount] = useState("");
 
   const [showItem, setShowItem] = useState(false);
-  const [item, setItem] = useState({ title: "", price: "", quantity: "1" });
+  const [item, setItem] = useState({
+    title: "",
+    description: "",
+    price: "",
+    quantity: "1",
+    photo_url: "",
+  });
 
   function applyDiscount() {
     setError(null);
@@ -53,15 +61,17 @@ export function FlashControls({ products }: { products: Product[] }) {
     startTransition(async () => {
       const res = await createFlashItem(shopId, {
         title: item.title,
+        description: item.description,
         price: parseFloat(item.price) || 0,
         quantity: parseInt(item.quantity) || 0,
+        photo_url: item.photo_url,
       });
       if (!res.ok) {
         setError(res.error);
         return;
       }
       broadcast(ROOM_EVENTS.flashItem, res.product);
-      setItem({ title: "", price: "", quantity: "1" });
+      setItem({ title: "", description: "", price: "", quantity: "1", photo_url: "" });
       setShowItem(false);
     });
   }
@@ -133,8 +143,18 @@ export function FlashControls({ products }: { products: Product[] }) {
             <Plus className="size-4" /> New flash item
           </Button>
         ) : (
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-40 flex-1 space-y-1">
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Photo</Label>
+              <ImageUpload
+                name="flash_photo"
+                bucket="products"
+                aspect="square"
+                label="Upload or drag a photo"
+                onChange={(u) => setItem((it) => ({ ...it, photo_url: u }))}
+              />
+            </div>
+            <div className="space-y-1">
               <Label className="text-xs">Title</Label>
               <Input
                 value={item.title}
@@ -142,32 +162,45 @@ export function FlashControls({ products }: { products: Product[] }) {
                 placeholder="Surprise mystery box"
               />
             </div>
-            <div className="w-24 space-y-1">
-              <Label className="text-xs">Price</Label>
-              <Input
-                type="number"
-                min={0}
-                step="0.01"
-                value={item.price}
-                onChange={(e) => setItem({ ...item, price: e.target.value })}
+            <div className="space-y-1">
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                rows={2}
+                value={item.description}
+                onChange={(e) => setItem({ ...item, description: e.target.value })}
+                placeholder="What makes this flash item special?"
               />
             </div>
-            <div className="w-20 space-y-1">
-              <Label className="text-xs">Qty</Label>
-              <Input
-                type="number"
-                min={0}
-                step={1}
-                value={item.quantity}
-                onChange={(e) => setItem({ ...item, quantity: e.target.value })}
-              />
+            <div className="flex items-end gap-2">
+              <div className="w-28 space-y-1">
+                <Label className="text-xs">Price</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={item.price}
+                  onChange={(e) => setItem({ ...item, price: e.target.value })}
+                />
+              </div>
+              <div className="w-24 space-y-1">
+                <Label className="text-xs">Qty</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  step={1}
+                  value={item.quantity}
+                  onChange={(e) => setItem({ ...item, quantity: e.target.value })}
+                />
+              </div>
             </div>
-            <Button onClick={addFlashItem} disabled={pending || !item.title}>
-              Drop it
-            </Button>
-            <Button variant="ghost" onClick={() => setShowItem(false)}>
-              Cancel
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={addFlashItem} disabled={pending || !item.title}>
+                Drop it
+              </Button>
+              <Button variant="ghost" onClick={() => setShowItem(false)}>
+                Cancel
+              </Button>
+            </div>
           </div>
         )}
       </div>

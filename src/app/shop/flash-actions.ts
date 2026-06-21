@@ -65,6 +65,7 @@ export async function clearFlashDiscount(productId: string): Promise<FlashClearR
 
 const flashItemSchema = z.object({
   title: z.string().trim().min(1, "Title is required.").max(140),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
   price: z.coerce.number().min(0).max(1_000_000),
   quantity: z.coerce.number().int().min(0).max(1_000_000),
   photo_url: z.string().url().optional().or(z.literal("")),
@@ -77,7 +78,13 @@ export type FlashItemResult =
 /** Create a flash-only item that exists only while the shop is open. */
 export async function createFlashItem(
   shopId: string,
-  input: { title: string; price: number; quantity: number; photo_url?: string },
+  input: {
+    title: string;
+    description?: string;
+    price: number;
+    quantity: number;
+    photo_url?: string;
+  },
 ): Promise<FlashItemResult> {
   const { supabase, user } = await ownerClient();
   if (!user) return { ok: false, error: "Not authenticated." };
@@ -100,6 +107,7 @@ export async function createFlashItem(
     .insert({
       shop_id: shopId,
       title: parsed.data.title,
+      description: parsed.data.description || null,
       price: toCents(parsed.data.price),
       quantity: parsed.data.quantity,
       photo_url: parsed.data.photo_url || null,
