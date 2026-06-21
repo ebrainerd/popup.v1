@@ -23,6 +23,20 @@ describe("parseLiveEmbed", () => {
     expect(e).toMatchObject({ kind: "youtube", src: "https://www.youtube.com/embed/live123" });
   });
 
+  it("embeds a YouTube channel live URL", () => {
+    const e = parseLiveEmbed("https://www.youtube.com/channel/UC123abc/live");
+    expect(e).toMatchObject({
+      embeddable: true,
+      kind: "youtube",
+      src: "https://www.youtube.com/embed/live_stream?channel=UC123abc",
+    });
+  });
+
+  it("falls back to an external watch link for @handle/live URLs", () => {
+    const e = parseLiveEmbed("https://www.youtube.com/@somecreator/live");
+    expect(e).toMatchObject({ embeddable: false, kind: "external" });
+  });
+
   it("parses Twitch channel URLs with parent", () => {
     const e = parseLiveEmbed("https://twitch.tv/somechannel", "popup.app");
     expect(e).toEqual({
