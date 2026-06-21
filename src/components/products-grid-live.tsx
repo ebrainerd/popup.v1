@@ -6,6 +6,7 @@ import { Package } from "lucide-react";
 import { useShopEvent } from "@/components/shop-room";
 import { BuyButton } from "@/components/buy-button";
 import { Badge } from "@/components/ui/badge";
+import { celebrate } from "@/lib/confetti";
 import {
   ROOM_EVENTS,
   type FlashPriceBroadcast,
@@ -13,7 +14,7 @@ import {
   type FlashItemBroadcast,
 } from "@/lib/realtime";
 import type { Product } from "@/lib/database.types";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 
 export function ProductsGridLive({
   shopId,
@@ -33,6 +34,7 @@ export function ProductsGridLive({
     setProducts((prev) =>
       prev.map((p) => (p.id === productId ? { ...p, discount_price: discountPrice } : p)),
     );
+    celebrate();
   });
 
   useShopEvent(ROOM_EVENTS.flashClear, (payload) => {
@@ -45,6 +47,7 @@ export function ProductsGridLive({
   useShopEvent(ROOM_EVENTS.flashItem, (payload) => {
     const item = payload as FlashItemBroadcast;
     setProducts((prev) => (prev.some((p) => p.id === item.id) ? prev : [...prev, item as Product]));
+    celebrate();
   });
 
   if (products.length === 0) {
@@ -64,7 +67,10 @@ export function ProductsGridLive({
         return (
           <div
             key={product.id}
-            className="flex flex-col overflow-hidden rounded-lg border border-border bg-card"
+            className={cn(
+              "flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow",
+              discounted ? "border-primary/60 glow-primary" : "border-border",
+            )}
           >
             <div className="relative aspect-square w-full bg-muted">
               {product.photo_url ? (
@@ -87,7 +93,7 @@ export function ProductsGridLive({
               )}
               {discounted && (
                 <Badge variant="live" className="absolute right-2 top-2 animate-live-pulse">
-                  Flash deal
+                  ⚡ Flash Drop
                 </Badge>
               )}
               {soldOut && (
@@ -105,7 +111,10 @@ export function ProductsGridLive({
                 <div>
                   {discounted ? (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-lg font-bold text-live">
+                      <span
+                        key={product.discount_price}
+                        className="animate-price-pop text-lg font-bold text-live"
+                      >
                         {formatCurrency(product.discount_price!)}
                       </span>
                       <span className="text-sm text-muted-foreground line-through">
