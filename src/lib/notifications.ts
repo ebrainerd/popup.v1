@@ -1,5 +1,6 @@
 import "server-only";
 import webpush from "web-push";
+import * as Sentry from "@sentry/nextjs";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/env";
 
@@ -128,5 +129,6 @@ export async function notifyFollowersOfLive(shopId: string): Promise<void> {
     ]);
   } catch (err) {
     console.error("notifyFollowersOfLive failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { shopId } });
   }
 }
