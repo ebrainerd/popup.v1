@@ -13,6 +13,7 @@ import { Countdown } from "@/components/countdown";
 import { ShopForm } from "@/components/shop-form";
 import { ProductManager } from "@/components/product-manager";
 import { ShopQuickActions } from "@/components/shop-quick-actions";
+import { PublishControls } from "@/components/publish-controls";
 import { CopyLink } from "@/components/copy-link";
 import { deriveShopStatus } from "@/lib/utils";
 
@@ -46,7 +47,9 @@ export default async function ManageShopPage({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold">{shop.name}</h1>
-            {isOpen ? (
+            {shop.status === "draft" ? (
+              <Badge variant="muted">Draft</Badge>
+            ) : isOpen ? (
               <Badge variant="success">Open</Badge>
             ) : status === "scheduled" ? (
               <Badge variant="accent">Scheduled</Badge>
@@ -66,6 +69,12 @@ export default async function ManageShopPage({
           </div>
         </div>
       </div>
+
+      <PublishControls
+        shopId={shop.id}
+        isDraft={shop.status === "draft"}
+        productCount={shop.products.length}
+      />
 
       <Card>
         <CardHeader>

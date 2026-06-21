@@ -83,6 +83,10 @@ export function ShopForm({ shop }: { shop?: Shop }) {
             defaultValue={shop?.cover_url}
             label="Upload or drag a cover photo here"
           />
+          <p className="text-xs text-muted-foreground">
+            Shown on your shop and in Explore when you&apos;re not live. While you&apos;re
+            streaming, the live video takes its place.
+          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -224,7 +228,8 @@ export function ShopForm({ shop }: { shop?: Shop }) {
             <Row label="Shipping" value={`$${shippingRate || "0.00"}`} />
           </dl>
           <p className="text-xs text-muted-foreground">
-            After publishing you&apos;ll go to your shop dashboard to add products.
+            We&apos;ll save this as a draft. Next, add at least one product — then
+            publish to make your drop findable.
           </p>
         </div>
       )}
@@ -255,7 +260,7 @@ export function ShopForm({ shop }: { shop?: Shop }) {
               Next <ArrowRight className="size-4" />
             </Button>
           ) : (
-            <SubmitButton label="Publish shop" />
+            <SubmitButton label="Create drop" />
           )}
         </div>
       )}

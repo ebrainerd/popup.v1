@@ -89,7 +89,9 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
       visibility: d.visibility,
       shipping_rate: toCents(d.shipping_rate),
       live_url: d.live_url || null,
-      status: computeStatus(startIso, endIso),
+      // New shops start as drafts: hidden from Explore/search until the seller
+      // adds at least one product and explicitly publishes.
+      status: "draft",
     })
     .select("id")
     .single();
@@ -129,6 +131,16 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
   const startIso = new Date(d.start_at).toISOString();
   const endIso = new Date(d.end_at).toISOString();
 
+  // Editing must not auto-publish a draft; only refresh the schedule-derived
+  // status for already-published shops.
+  const { data: current } = await supabase
+    .from("shops")
+    .select("status")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  const nextStatus = current?.status === "draft" ? "draft" : computeStatus(startIso, endIso);
+
   const { error } = await supabase
     .from("shops")
     .update({
@@ -141,7 +153,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
       visibility: d.visibility,
       shipping_rate: toCents(d.shipping_rate),
       live_url: d.live_url || null,
-      status: computeStatus(startIso, endIso),
+      status: nextStatus,
     })
     .eq("id", shopId)
     .eq("seller_id", user.id);
@@ -172,6 +184,55 @@ export async function extendShop(shopId: string, minutes: number): Promise<Actio
     .eq("seller_id", user.id);
   if (error) return { error: error.message };
 
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
+}
+
+/** Publish a draft shop (requires at least one product). Makes it findable. */
+export async function publishShop(shopId: string): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id, start_at, end_at, status")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+
+  const { count } = await supabase
+    .from("products")
+    .select("*", { count: "exact", head: true })
+    .eq("shop_id", shopId);
+  if ((count ?? 0) < 1) {
+    return { error: "Add at least one product before publishing." };
+  }
+
+  const { error } = await supabase
+    .from("shops")
+    .update({ status: computeStatus(shop.start_at, shop.end_at) })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
+}
+
+/** Move a published shop back to draft (hides it again). */
+export async function unpublishShop(shopId: string): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from("shops")
+    .update({ status: "draft" })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
   revalidatePath(`/dashboard/shops/${shopId}`);
   revalidatePath(`/shop/${shopId}`);
   return { ...initialOk };

@@ -72,28 +72,29 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
-      {/* Cover */}
-      <div className="relative mb-6 aspect-[16/6] w-full overflow-hidden rounded-2xl bg-muted">
-        {shop.cover_url ? (
-          <Image src={shop.cover_url} alt={shop.name} fill className="object-cover" priority />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20" />
-        )}
-        <div className="absolute left-4 top-4 flex gap-2">
-          {shop.is_live && isOpen ? (
-            <Badge variant="live">
-              <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-white animate-live-pulse" />
-              LIVE
-            </Badge>
-          ) : isOpen ? (
-            <Badge variant="success">Open now</Badge>
-          ) : status === "scheduled" ? (
-            <Badge variant="accent">Opening soon</Badge>
-          ) : (
-            <Badge variant="muted">Ended</Badge>
-          )}
+      {/* Hero: the live stream takes over when streaming; otherwise the cover. */}
+      {embed?.embeddable ? (
+        <div className="mb-6">
+          <LiveEmbed embed={embed} />
         </div>
-      </div>
+      ) : (
+        <div className="relative mb-6 aspect-[16/6] w-full overflow-hidden rounded-2xl bg-muted">
+          {shop.cover_url ? (
+            <Image src={shop.cover_url} alt={shop.name} fill className="object-cover" priority />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20" />
+          )}
+          <div className="absolute left-4 top-4 flex gap-2">
+            {isOpen ? (
+              <Badge variant="success">Open now</Badge>
+            ) : status === "scheduled" ? (
+              <Badge variant="accent">Opening soon</Badge>
+            ) : (
+              <Badge variant="muted">Ended</Badge>
+            )}
+          </div>
+        </div>
+      )}
 
       <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={Boolean(isOwner)}>
         {/* Header */}
@@ -155,8 +156,8 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* Live embed */}
-        {embed && (
+        {/* External live (Instagram, etc.) shows a "watch externally" card here. */}
+        {embed && !embed.embeddable && (
           <div className="mb-8">
             <LiveEmbed embed={embed} />
           </div>
