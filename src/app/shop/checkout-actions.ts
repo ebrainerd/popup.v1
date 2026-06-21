@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { getStripe, platformFee } from "@/lib/stripe";
 import { getSiteUrl } from "@/lib/env";
 import { deriveShopStatus } from "@/lib/utils";
@@ -61,7 +62,9 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
 
   // Atomically hold a unit for the duration of checkout. If we can't, the item
   // is sold out / fully reserved right now — fail clearly before payment.
-  const HOLD_MINUTES = 60;
+  // 30 min = Stripe Checkout's minimum session lifetime; canceling releases
+  // the hold immediately (see releaseMyHolds).
+  const HOLD_MINUTES = 30;
   const { data: reservationId, error: reserveError } = await supabase.rpc("reserve_product", {
     p_product: product.id,
     p_buyer: user.id,
@@ -147,4 +150,50 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
     await releaseReservation();
     return { ok: false, error: err instanceof Error ? err.message : "Checkout failed." };
   }
+}
+
+/**
+ * Release the current buyer's active holds for a shop — called when they cancel
+ * checkout and return to the shop, so the item frees up immediately instead of
+ * waiting for the Stripe session to expire. Also expires the Stripe session so
+ * it can't be completed later.
+ */
+export async function releaseMyHolds(shopId: string): Promise<void> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const admin = createServiceRoleClient();
+  const { data: products } = await admin.from("products").select("id").eq("shop_id", shopId);
+  const ids = (products ?? []).map((p) => p.id);
+  if (ids.length === 0) return;
+
+  const { data: holds } = await admin
+    .from("product_reservations")
+    .select("id, session_id")
+    .eq("buyer_id", user.id)
+    .eq("status", "held")
+    .in("product_id", ids);
+  if (!holds || holds.length === 0) return;
+
+  const stripe = getStripe();
+  if (stripe) {
+    await Promise.allSettled(
+      holds
+        .filter((h) => h.session_id)
+        .map((h) => stripe.checkout.sessions.expire(h.session_id as string)),
+    );
+  }
+
+  await admin
+    .from("product_reservations")
+    .update({ status: "released" })
+    .in(
+      "id",
+      holds.map((h) => h.id),
+    );
+
+  revalidatePath(`/shop/${shopId}`);
 }

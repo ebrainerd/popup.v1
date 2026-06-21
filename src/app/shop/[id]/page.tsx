@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
 import { FollowButton } from "@/components/follow-button";
 import { LiveEmbed } from "@/components/live-embed";
+import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
 import { ShopRoom } from "@/components/shop-room";
 import { ViewerCount } from "@/components/viewer-count";
 import { ShopChat } from "@/components/shop-chat";
@@ -35,8 +36,15 @@ export async function generateMetadata({
   };
 }
 
-export default async function ShopPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ShopPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ checkout?: string }>;
+}) {
   const { id } = await params;
+  const { checkout } = await searchParams;
   const shop = await getShopWithDetails(id);
   if (!shop) notFound();
 
@@ -75,6 +83,7 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
+      {checkout === "canceled" && <ReleaseHoldOnCancel shopId={shop.id} />}
       {/* Hero: the live stream takes over when streaming; otherwise the cover. */}
       {embed?.embeddable ? (
         <div className="mb-6">
