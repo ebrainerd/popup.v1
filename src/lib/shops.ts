@@ -17,16 +17,29 @@ export type ShopWithDetails = ShopWithSeller & {
 const SELLER_FIELDS =
   "id, username, display_name, avatar_url, rating_avg, rating_count, follower_count";
 
-export type ExploreTab = "all" | "streaming" | "soon";
+export type ExploreTab = "all" | "streaming" | "soon" | "following";
 export type ExploreSort = "soonest" | "popular";
 
 /** Public shops for the Explore feed, filtered by tab and sorted. */
 export async function getExploreShops(
   tab: ExploreTab = "all",
   sort: ExploreSort = "soonest",
+  followerId?: string,
 ): Promise<ShopWithSeller[]> {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
+
+  // "Following" = currently-open shops from sellers the viewer follows.
+  let followedSellerIds: string[] | null = null;
+  if (tab === "following") {
+    if (!followerId) return [];
+    const { data: follows } = await supabase
+      .from("shop_follows")
+      .select("seller_id")
+      .eq("follower_id", followerId);
+    followedSellerIds = (follows ?? []).map((f) => f.seller_id);
+    if (followedSellerIds.length === 0) return [];
+  }
 
   let query = supabase
     .from("shops")
@@ -39,6 +52,12 @@ export async function getExploreShops(
     query = query.eq("is_live", true).lte("start_at", nowIso).gt("end_at", nowIso);
   } else if (tab === "soon") {
     query = query.gt("start_at", nowIso);
+  } else if (tab === "following" && followedSellerIds) {
+    // Open ("live") shops from followed sellers.
+    query = query
+      .in("seller_id", followedSellerIds)
+      .lte("start_at", nowIso)
+      .gt("end_at", nowIso);
   } else {
     // Everything that hasn't ended yet (open + opening soon).
     query = query.gt("end_at", nowIso);
