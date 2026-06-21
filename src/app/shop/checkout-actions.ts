@@ -59,10 +59,34 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
 
   const site = getSiteUrl();
 
+  // Atomically hold a unit for the duration of checkout. If we can't, the item
+  // is sold out / fully reserved right now — fail clearly before payment.
+  const HOLD_MINUTES = 60;
+  const { data: reservationId, error: reserveError } = await supabase.rpc("reserve_product", {
+    p_product: product.id,
+    p_buyer: user.id,
+    p_session: null,
+    p_ttl_minutes: HOLD_MINUTES,
+  });
+  if (reserveError) {
+    return { ok: false, error: "Could not start checkout. Please try again." };
+  }
+  if (!reservationId) {
+    return { ok: false, error: "Sorry — this item just sold out." };
+  }
+
+  async function releaseReservation() {
+    await supabase
+      .from("product_reservations")
+      .update({ status: "released" })
+      .eq("id", reservationId as string);
+  }
+
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       client_reference_id: user.id,
+      expires_at: Math.floor(Date.now() / 1000) + HOLD_MINUTES * 60,
       line_items: [
         {
           quantity: 1,
@@ -101,14 +125,26 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
         seller_account: seller.stripe_account_id,
         platform_fee: String(fee),
         shipping_amount: String(shipping),
+        reservation_id: reservationId as string,
       },
       success_url: `${site}/orders?checkout=success`,
       cancel_url: `${site}/shop/${shop.id}?checkout=canceled`,
     });
 
-    if (!session.url) return { ok: false, error: "Could not start checkout." };
+    if (!session.url) {
+      await releaseReservation();
+      return { ok: false, error: "Could not start checkout." };
+    }
+
+    // Link the hold to the Stripe session so the webhook can complete/release it.
+    await supabase
+      .from("product_reservations")
+      .update({ session_id: session.id })
+      .eq("id", reservationId as string);
+
     return { ok: true, url: session.url };
   } catch (err) {
+    await releaseReservation();
     return { ok: false, error: err instanceof Error ? err.message : "Checkout failed." };
   }
 }

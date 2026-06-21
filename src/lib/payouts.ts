@@ -84,6 +84,19 @@ export async function releaseOrderFunds(
   }
 }
 
+/** Mark expired checkout holds as released (housekeeping; availability already
+ * ignores expired holds). Returns the number cleaned up. */
+export async function releaseExpiredHolds(): Promise<number> {
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase
+    .from("product_reservations")
+    .update({ status: "released" })
+    .eq("status", "held")
+    .lt("expires_at", new Date().toISOString())
+    .select("id");
+  return (data ?? []).length;
+}
+
 /** Release all orders whose hold window has elapsed. Returns count released. */
 export async function releaseEligibleOrders(): Promise<number> {
   const supabase = createServiceRoleClient();

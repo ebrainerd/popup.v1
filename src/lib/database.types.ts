@@ -258,6 +258,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["push_subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      product_reservations: {
+        Row: {
+          id: string;
+          product_id: string;
+          buyer_id: string;
+          session_id: string | null;
+          status: "held" | "completed" | "released";
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          product_id: string;
+          buyer_id: string;
+          session_id?: string | null;
+          status?: "held" | "completed" | "released";
+          expires_at: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["product_reservations"]["Insert"]>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -272,6 +294,14 @@ export interface Database {
       decrement_stock: {
         Args: { p_product: string; p_qty: number };
         Returns: undefined;
+      };
+      reserve_product: {
+        Args: { p_product: string; p_buyer: string; p_session: string | null; p_ttl_minutes: number };
+        Returns: string | null;
+      };
+      held_quantity: {
+        Args: { p_product: string };
+        Returns: number;
       };
     };
     Enums: {
