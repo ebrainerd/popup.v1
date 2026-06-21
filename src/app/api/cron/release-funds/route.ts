@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { releaseEligibleOrders } from "@/lib/payouts";
+import { releaseEligibleOrders, releaseExpiredHolds } from "@/lib/payouts";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +21,6 @@ export async function GET(request: NextRequest) {
   }
 
   const released = await releaseEligibleOrders();
-  return NextResponse.json({ released });
+  const holdsReleased = await releaseExpiredHolds();
+  return NextResponse.json({ released, holdsReleased });
 }
