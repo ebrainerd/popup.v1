@@ -35,8 +35,8 @@ export default function AboutPage() {
         <h2 className="pt-2 text-xl font-bold">Get in touch</h2>
         <p>
           Questions or feedback? Reach us at{" "}
-          <a href="mailto:hello@your-domain.example" className="text-primary hover:underline">
-            hello@your-domain.example
+          <a href="mailto:popup.shop.live@gmail.com" className="text-primary hover:underline">
+            popup.shop.live@gmail.com
           </a>
           . See our{" "}
           <Link href="/legal/terms" className="text-primary hover:underline">
