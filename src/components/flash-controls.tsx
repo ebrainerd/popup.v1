@@ -14,7 +14,7 @@ import type { Product } from "@/lib/database.types";
 import { formatCurrency } from "@/lib/utils";
 
 export function FlashControls({ products }: { products: Product[] }) {
-  const { shopId, broadcast } = useShopRoom();
+  const { shopId, emit } = useShopRoom();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +44,7 @@ export function FlashControls({ products }: { products: Product[] }) {
         setError(res.error);
         return;
       }
-      broadcast(ROOM_EVENTS.flashPrice, { productId: res.productId, discountPrice: res.discountPrice });
+      emit(ROOM_EVENTS.flashPrice, { productId: res.productId, discountPrice: res.discountPrice });
       setDiscount("");
     });
   }
@@ -52,7 +52,7 @@ export function FlashControls({ products }: { products: Product[] }) {
   function clearDiscount(id: string) {
     startTransition(async () => {
       const res = await clearFlashDiscount(id);
-      if (res.ok) broadcast(ROOM_EVENTS.flashClear, { productId: id });
+      if (res.ok) emit(ROOM_EVENTS.flashClear, { productId: id });
     });
   }
 
@@ -70,7 +70,7 @@ export function FlashControls({ products }: { products: Product[] }) {
         setError(res.error);
         return;
       }
-      broadcast(ROOM_EVENTS.flashItem, res.product);
+      emit(ROOM_EVENTS.flashItem, res.product);
       setItem({ title: "", description: "", price: "", quantity: "1", photo_url: "" });
       setShowItem(false);
     });
