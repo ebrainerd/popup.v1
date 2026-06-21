@@ -28,6 +28,8 @@ type ShopRoomContextValue = {
   viewerCount: number;
   ready: boolean;
   broadcast: (event: RoomEvent, payload: unknown) => void;
+  /** Broadcast to others AND apply locally (Realtime doesn't echo to sender). */
+  emit: (event: RoomEvent, payload: unknown) => void;
   on: (event: RoomEvent, cb: Listener) => () => void;
 };
 
@@ -93,6 +95,13 @@ export function ShopRoom({
     channelRef.current?.send({ type: "broadcast", event, payload });
   }, []);
 
+  // Like broadcast, but also runs local listeners so the sender's own UI
+  // updates immediately (Supabase Realtime doesn't echo broadcasts to sender).
+  const emit = useCallback((event: RoomEvent, payload: unknown) => {
+    listenersRef.current.get(event)?.forEach((cb) => cb(payload));
+    channelRef.current?.send({ type: "broadcast", event, payload });
+  }, []);
+
   useEffect(() => {
     let supabase;
     try {
@@ -151,8 +160,8 @@ export function ShopRoom({
   }, [shopId]);
 
   const value = useMemo<ShopRoomContextValue>(
-    () => ({ shopId, currentUser, isOwner, viewerCount, ready, broadcast, on }),
-    [shopId, currentUser, isOwner, viewerCount, ready, broadcast, on],
+    () => ({ shopId, currentUser, isOwner, viewerCount, ready, broadcast, emit, on }),
+    [shopId, currentUser, isOwner, viewerCount, ready, broadcast, emit, on],
   );
 
   return <ShopRoomContext.Provider value={value}>{children}</ShopRoomContext.Provider>;
