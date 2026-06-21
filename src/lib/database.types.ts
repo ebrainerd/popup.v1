@@ -31,6 +31,7 @@ export interface Database {
           stripe_onboarded: boolean;
           rating_avg: number | null;
           rating_count: number;
+          follower_count: number;
           created_at: string;
         };
         Insert: {
@@ -43,6 +44,7 @@ export interface Database {
           stripe_onboarded?: boolean;
           rating_avg?: number | null;
           rating_count?: number;
+          follower_count?: number;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

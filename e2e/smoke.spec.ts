@@ -14,10 +14,11 @@ test("home renders the hero and Happening Now feed", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Happening Now" })).toBeVisible();
 });
 
-test("explore filters are present", async ({ page }) => {
-  await page.goto("/");
-  await expect(page.getByRole("link", { name: /dropping live/i }).first()).toBeVisible();
+test("explore page has filters and sort", async ({ page }) => {
+  await page.goto("/explore");
+  await expect(page.getByRole("link", { name: /live stream/i }).first()).toBeVisible();
   await expect(page.getByRole("link", { name: /opening soon/i }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /popular/i }).first()).toBeVisible();
 });
 
 test("login page renders", async ({ page }) => {

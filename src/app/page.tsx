@@ -1,17 +1,10 @@
 import Link from "next/link";
-import { Sparkles, Radio, Clock, Store, Bell, Zap } from "lucide-react";
-import { getExploreShops, type ExploreTab } from "@/lib/shops";
+import { Store, Bell, Zap, ArrowRight } from "lucide-react";
+import { getExploreShops } from "@/lib/shops";
 import { ShopCard } from "@/components/shop-card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
-
-const TABS: { key: ExploreTab; label: string; icon: React.ReactNode }[] = [
-  { key: "all", label: "All", icon: <Sparkles className="size-4" /> },
-  { key: "live", label: "Dropping Live", icon: <Radio className="size-4" /> },
-  { key: "soon", label: "Opening Soon", icon: <Clock className="size-4" /> },
-];
 
 const STEPS = [
   {
@@ -31,14 +24,8 @@ const STEPS = [
   },
 ];
 
-export default async function HomePage({
-  searchParams,
-}: {
-  searchParams: Promise<{ tab?: string }>;
-}) {
-  const { tab: rawTab } = await searchParams;
-  const tab: ExploreTab = rawTab === "live" || rawTab === "soon" ? rawTab : "all";
-  const shops = await getExploreShops(tab);
+export default async function HomePage() {
+  const preview = (await getExploreShops("all", "popular")).slice(0, 6);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -49,8 +36,6 @@ export default async function HomePage({
           aria-hidden
           className="animate-drift absolute -z-10 left-1/2 top-1/2 h-[120%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/25 blur-3xl"
         />
-        {/* Each phrase stays intact (no mid-clause breaks); lines wrap only
-            between phrases and balance across the available width. */}
         <h1 className="mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
           <span className="inline-block">Shops that open —</span>{" "}
           <span className="inline-block">and close —</span>{" "}
@@ -68,7 +53,7 @@ export default async function HomePage({
           >
             <Link href="/signup">Start your drop</Link>
           </Button>
-          <Link href="#explore" className="text-sm text-white/90 underline-offset-4 hover:underline">
+          <Link href="/explore" className="text-sm text-white/90 underline-offset-4 hover:underline">
             Browse what&apos;s happening now ↓
           </Link>
         </div>
@@ -89,57 +74,33 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* Happening Now */}
-      <section id="explore" className="scroll-mt-20">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      {/* Happening Now preview */}
+      <section>
+        <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-2xl font-bold">Happening Now</h2>
-          <div className="flex gap-1 rounded-full border border-border bg-muted p-1">
-            {TABS.map((t) => (
-              <Link
-                key={t.key}
-                href={t.key === "all" ? "/" : `/?tab=${t.key}`}
-                scroll={false}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-                  tab === t.key
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {t.icon}
-                <span className="hidden sm:inline">{t.label}</span>
-              </Link>
-            ))}
-          </div>
+          <Link
+            href="/explore"
+            className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          >
+            Explore all <ArrowRight className="size-4" />
+          </Link>
         </div>
 
-        {shops.length === 0 ? (
-          <EmptyState tab={tab} />
+        {preview.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border p-12 text-center">
+            <p className="text-muted-foreground">No open shops yet. The next drop could be yours.</p>
+            <Button asChild className="mt-4 rounded-full">
+              <Link href="/signup">Start a drop</Link>
+            </Button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {shops.map((shop) => (
+            {preview.map((shop) => (
               <ShopCard key={shop.id} shop={shop} />
             ))}
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function EmptyState({ tab }: { tab: ExploreTab }) {
-  const copy =
-    tab === "live"
-      ? "Nothing dropping live right now. Check back soon!"
-      : tab === "soon"
-        ? "Nothing opening soon yet. Be the first to start a drop."
-        : "No open shops yet. The next drop could be yours.";
-  return (
-    <div className="rounded-lg border border-dashed border-border p-12 text-center">
-      <p className="text-muted-foreground">{copy}</p>
-      <Button asChild className="mt-4 rounded-full">
-        <Link href="/signup">Start a drop</Link>
-      </Button>
     </div>
   );
 }
