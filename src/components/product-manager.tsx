@@ -1,10 +1,16 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Package, Plus, Trash2 } from "lucide-react";
-import { createProduct, deleteProduct, type ActionState } from "@/app/dashboard/actions";
+import { Package, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  createProduct,
+  updateProduct,
+  deleteProduct,
+  type ActionState,
+} from "@/app/dashboard/actions";
 import type { Product } from "@/lib/database.types";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -114,7 +120,92 @@ export function ProductManager({
 }
 
 function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
-  const [deleting, setDeleting] = useState(false);
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState({
+    title: product.title,
+    description: product.description ?? "",
+    price: (product.price / 100).toFixed(2),
+    quantity: String(product.quantity),
+    photo_url: product.photo_url ?? "",
+  });
+
+  function save() {
+    setError(null);
+    startTransition(async () => {
+      const res = await updateProduct({
+        product_id: product.id,
+        shop_id: shopId,
+        title: fields.title,
+        description: fields.description,
+        photo_url: fields.photo_url,
+        price: parseFloat(fields.price) || 0,
+        quantity: parseInt(fields.quantity) || 0,
+      });
+      if (res.ok) {
+        setEditing(false);
+        router.refresh();
+      } else {
+        setError(res.error ?? "Could not save.");
+      }
+    });
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-3 rounded-lg border border-primary/40 p-3">
+        <ImageUpload
+          name={`edit_photo_${product.id}`}
+          bucket="products"
+          aspect="square"
+          defaultValue={fields.photo_url || null}
+          label="Upload product photo"
+          onChange={(u) => setFields((f) => ({ ...f, photo_url: u }))}
+        />
+        <Input
+          value={fields.title}
+          onChange={(e) => setFields({ ...fields, title: e.target.value })}
+          placeholder="Title"
+        />
+        <Textarea
+          rows={2}
+          value={fields.description}
+          onChange={(e) => setFields({ ...fields, description: e.target.value })}
+          placeholder="Description"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            type="number"
+            min={0}
+            step="0.01"
+            value={fields.price}
+            onChange={(e) => setFields({ ...fields, price: e.target.value })}
+            placeholder="Price"
+          />
+          <Input
+            type="number"
+            min={0}
+            step={1}
+            value={fields.quantity}
+            onChange={(e) => setFields({ ...fields, quantity: e.target.value })}
+            placeholder="Qty"
+          />
+        </div>
+        {error && <p className="text-xs text-live">{error}</p>}
+        <div className="flex gap-2">
+          <Button size="sm" onClick={save} disabled={pending || !fields.title.trim()}>
+            {pending ? "Saving…" : "Save"}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border p-3">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
@@ -132,14 +223,19 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
           {formatCurrency(product.price)} · {product.quantity} in stock
         </p>
       </div>
+      <Button variant="ghost" size="icon" onClick={() => setEditing(true)} aria-label="Edit product">
+        <Pencil className="size-4" />
+      </Button>
       <Button
         variant="ghost"
         size="icon"
-        disabled={deleting}
+        disabled={pending}
         onClick={() => {
           if (confirm(`Delete "${product.title}"?`)) {
-            setDeleting(true);
-            void deleteProduct(product.id, shopId);
+            startTransition(async () => {
+              await deleteProduct(product.id, shopId);
+              router.refresh();
+            });
           }
         }}
         aria-label="Delete product"
