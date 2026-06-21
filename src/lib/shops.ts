@@ -71,9 +71,32 @@ export async function getShopWithDetails(shopId: string): Promise<ShopWithDetail
     .or(`is_flash_only.eq.false,flash_expires_at.gt.${nowIso}`)
     .order("created_at", { ascending: true });
 
+  const list = (products ?? []) as Product[];
+
+  // Subtract active checkout holds so shoppers see true availability and can't
+  // start checkout on a unit someone else is mid-purchasing.
+  const ids = list.map((p) => p.id);
+  const held = new Map<string, number>();
+  if (ids.length > 0) {
+    const { data: holds } = await supabase
+      .from("product_reservations")
+      .select("product_id")
+      .in("product_id", ids)
+      .eq("status", "held")
+      .gt("expires_at", nowIso);
+    for (const h of holds ?? []) {
+      held.set(h.product_id, (held.get(h.product_id) ?? 0) + 1);
+    }
+  }
+
+  const available = list.map((p) => ({
+    ...p,
+    quantity: Math.max(0, p.quantity - (held.get(p.id) ?? 0)),
+  }));
+
   return {
     ...(shop as unknown as ShopWithSeller),
-    products: (products ?? []) as Product[],
+    products: available,
   };
 }
 

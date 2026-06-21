@@ -34,6 +34,16 @@ export async function POST(request: NextRequest) {
         await handleCheckoutCompleted(supabase, session);
         break;
       }
+      case "checkout.session.expired": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        // Buyer abandoned checkout — free the held unit.
+        await supabase
+          .from("product_reservations")
+          .update({ status: "released" })
+          .eq("session_id", session.id)
+          .eq("status", "held");
+        break;
+      }
       case "account.updated": {
         const account = event.data.object as Stripe.Account;
         const onboarded = Boolean(account.charges_enabled && account.details_submitted);
@@ -105,6 +115,10 @@ async function handleCheckoutCompleted(
     return;
   }
 
-  // Reduce available stock.
+  // Reduce available stock and mark the hold as completed.
   await supabase.rpc("decrement_stock", { p_product: productId, p_qty: 1 });
+  await supabase
+    .from("product_reservations")
+    .update({ status: "completed" })
+    .eq("session_id", session.id);
 }
