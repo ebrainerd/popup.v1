@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Sparkles, Radio, Clock, Flame, CalendarClock } from "lucide-react";
+import { Sparkles, Radio, Clock, Flame, CalendarClock, Heart } from "lucide-react";
 import { getExploreShops, type ExploreTab, type ExploreSort } from "@/lib/shops";
+import { getCurrentUser } from "@/lib/auth";
 import { ShopCard } from "@/components/shop-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -13,6 +14,7 @@ const TABS: { key: ExploreTab; label: string; icon: React.ReactNode }[] = [
   { key: "all", label: "All", icon: <Sparkles className="size-4" /> },
   { key: "streaming", label: "Live stream", icon: <Radio className="size-4" /> },
   { key: "soon", label: "Opening Soon", icon: <Clock className="size-4" /> },
+  { key: "following", label: "Following", icon: <Heart className="size-4" /> },
 ];
 
 const SORTS: { key: ExploreSort; label: string; icon: React.ReactNode }[] = [
@@ -35,9 +37,11 @@ export default async function ExplorePage({
 }) {
   const { tab: rawTab, sort: rawSort } = await searchParams;
   const tab: ExploreTab =
-    rawTab === "streaming" || rawTab === "soon" ? rawTab : "all";
+    rawTab === "streaming" || rawTab === "soon" || rawTab === "following" ? rawTab : "all";
   const sort: ExploreSort = rawSort === "popular" ? "popular" : "soonest";
-  const shops = await getExploreShops(tab, sort);
+  const user = tab === "following" ? await getCurrentUser() : null;
+  const shops =
+    tab === "following" && !user ? [] : await getExploreShops(tab, sort, user?.id);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -92,14 +96,20 @@ export default async function ExplorePage({
       {shops.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <p className="text-muted-foreground">
-            {tab === "streaming"
-              ? "No one is streaming live right now."
-              : tab === "soon"
-                ? "Nothing opening soon yet."
-                : "No open shops yet. The next drop could be yours."}
+            {tab === "following"
+              ? user
+                ? "None of the creators you follow are live right now."
+                : "Log in to see live drops from creators you follow."
+              : tab === "streaming"
+                ? "No one is streaming live right now."
+                : tab === "soon"
+                  ? "Nothing opening soon yet."
+                  : "No open shops yet. The next drop could be yours."}
           </p>
           <Button asChild className="mt-4 rounded-full">
-            <Link href="/signup">Start a drop</Link>
+            <Link href={tab === "following" && !user ? "/login?redirectTo=/explore?tab=following" : "/signup"}>
+              {tab === "following" && !user ? "Log in" : "Start a drop"}
+            </Link>
           </Button>
         </div>
       ) : (
