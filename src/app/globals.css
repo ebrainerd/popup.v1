@@ -1,57 +1,40 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   PopUp design tokens
-   Energetic + trustworthy: bold magenta/violet accent, warm neutrals,
-   urgency cues for countdowns and live state.
+   PopUp design system v3 — "Fun • Excitement • In-the-Moment"
+   Dark-mode default. A vibrant temporary night market: deep charcoal with
+   electric coral, vibrant teal, and sunshine yellow accents.
 --------------------------------------------------------------------------- */
 
 :root {
-  --background: #ffffff;
-  --foreground: #0b0b12;
+  color-scheme: dark;
 
-  --muted: #f4f4f7;
-  --muted-foreground: #6b6b7b;
+  --background: #0f0f14;
+  --foreground: #f5f5f7;
 
-  --card: #ffffff;
-  --card-foreground: #0b0b12;
+  --muted: #1f1f29;
+  --muted-foreground: #a1a1aa;
 
-  --border: #e7e7ee;
-  --input: #e7e7ee;
-  --ring: #e6007a;
+  --card: #1a1a22;
+  --card-foreground: #f5f5f7;
+
+  --border: #2a2a36;
+  --input: #2a2a36;
+  --ring: #ff3b8b;
 
   /* Brand */
-  --primary: #e6007a;          /* PopUp magenta */
+  --primary: #ff3b8b;           /* Electric coral — urgency / live / flash */
   --primary-foreground: #ffffff;
-  --accent: #7c3aed;           /* violet */
-  --accent-foreground: #ffffff;
+  --accent: #00e6c8;            /* Vibrant teal — success / new activity */
+  --accent-foreground: #06231f;
+  --highlight: #ffd60a;         /* Sunshine yellow — countdowns / attention */
+  --highlight-foreground: #2a2206;
 
-  --live: #ef4444;             /* live / urgent red */
-  --success: #16a34a;
+  --live: #ff3b8b;
+  --success: #00e6c8;
 
-  --radius: 0.85rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0f;
-    --foreground: #f5f5fa;
-
-    --muted: #16161f;
-    --muted-foreground: #a1a1b3;
-
-    --card: #11111a;
-    --card-foreground: #f5f5fa;
-
-    --border: #23232f;
-    --input: #23232f;
-    --ring: #ff2e9a;
-
-    --primary: #ff2e9a;
-    --primary-foreground: #0a0a0f;
-    --accent: #a78bfa;
-    --accent-foreground: #0a0a0f;
-  }
+  /* Rounded, friendly (16–24px) */
+  --radius: 1.25rem;
 }
 
 @theme inline {
@@ -68,12 +51,14 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
   --color-live: var(--live);
   --color-success: var(--success);
 
   --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 0.25rem);
-  --radius-sm: calc(var(--radius) - 0.4rem);
+  --radius-md: calc(var(--radius) - 0.45rem);
+  --radius-sm: calc(var(--radius) - 0.75rem);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -90,11 +75,46 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle pulse for live indicators */
+/* Breathing pulse for live / urgent elements */
 @keyframes popup-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
 }
 .animate-live-pulse {
   animation: popup-pulse 1.4s ease-in-out infinite;
+}
+
+/* Drifting light for the hero gradient */
+@keyframes popup-drift {
+  0%   { transform: translate3d(-8%, -6%, 0) scale(1); }
+  50%  { transform: translate3d(8%, 6%, 0) scale(1.15); }
+  100% { transform: translate3d(-8%, -6%, 0) scale(1); }
+}
+.animate-drift {
+  animation: popup-drift 14s ease-in-out infinite;
+}
+
+/* Bouncy price reveal for flash drops */
+@keyframes popup-price-pop {
+  0%   { transform: scale(0.8); }
+  40%  { transform: scale(1.18); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+.animate-price-pop {
+  animation: popup-price-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Soft glow used on live video + flash cards */
+.glow-primary {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 60%, transparent),
+    0 0 28px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-live-pulse,
+  .animate-drift,
+  .animate-price-pop {
+    animation: none;
+  }
 }
