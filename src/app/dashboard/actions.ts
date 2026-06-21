@@ -254,6 +254,61 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
   return { ...initialOk };
 }
 
+const updateProductSchema = z.object({
+  product_id: z.string().uuid(),
+  shop_id: z.string().uuid(),
+  title: z.string().trim().min(1, "Title is required.").max(140),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
+  photo_url: z.string().url().optional().or(z.literal("")),
+  price: z.coerce.number().min(0, "Price must be positive.").max(1_000_000),
+  quantity: z.coerce.number().int().min(0).max(1_000_000),
+});
+
+export type UpdateProductResult = { ok: boolean; error?: string };
+
+export async function updateProduct(input: {
+  product_id: string;
+  shop_id: string;
+  title: string;
+  description?: string;
+  photo_url?: string;
+  price: number;
+  quantity: number;
+}): Promise<UpdateProductResult> {
+  const { supabase, user } = await requireUser();
+
+  const parsed = updateProductSchema.safeParse(input);
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+  const d = parsed.data;
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id")
+    .eq("id", d.shop_id)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { ok: false, error: "Shop not found." };
+
+  const { error } = await supabase
+    .from("products")
+    .update({
+      title: d.title,
+      description: d.description || null,
+      photo_url: d.photo_url || null,
+      price: toCents(d.price),
+      quantity: d.quantity,
+    })
+    .eq("id", d.product_id)
+    .eq("shop_id", d.shop_id);
+  if (error) return { ok: false, error: error.message };
+
+  revalidatePath(`/dashboard/shops/${d.shop_id}`);
+  revalidatePath(`/shop/${d.shop_id}`);
+  return { ok: true };
+}
+
 export async function deleteProduct(productId: string, shopId: string): Promise<void> {
   const { supabase, user } = await requireUser();
   // RLS guards ownership via owns_shop(); verify shop belongs to the user too.

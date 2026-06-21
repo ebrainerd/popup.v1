@@ -32,13 +32,18 @@ export default async function HomePage({
           Discover live drops, follow your favorite sellers, and buy before the countdown
           hits zero.
         </p>
-        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-          <Button asChild size="lg" variant="outline" className="border-white/40 bg-white text-primary hover:bg-white/90">
-            <Link href="/signup">Start a shop</Link>
+        <div className="mt-6 flex flex-col items-center gap-3">
+          <Button
+            asChild
+            size="lg"
+            variant="outline"
+            className="border-white/40 bg-white text-primary hover:bg-white/90"
+          >
+            <Link href="/signup">Start your shop</Link>
           </Button>
-          <Button asChild size="lg" variant="ghost" className="text-white hover:bg-white/10">
-            <Link href="#explore">Browse shops</Link>
-          </Button>
+          <Link href="#explore" className="text-sm text-white/90 underline-offset-4 hover:underline">
+            or browse open shops ↓
+          </Link>
         </div>
       </section>
 

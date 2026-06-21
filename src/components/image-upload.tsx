@@ -18,16 +18,23 @@ export function ImageUpload({
   defaultValue,
   aspect = "video",
   label = "Upload image",
+  onChange,
 }: {
   name: string;
   bucket: "covers" | "products" | "avatars";
   defaultValue?: string | null;
   aspect?: "video" | "square";
   label?: string;
+  onChange?: (url: string) => void;
 }) {
-  const [url, setUrl] = useState<string>(defaultValue ?? "");
+  const [url, setUrlState] = useState<string>(defaultValue ?? "");
+  const setUrl = (next: string) => {
+    setUrlState(next);
+    onChange?.(next);
+  };
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   async function onFile(file: File) {
@@ -75,8 +82,20 @@ export function ImageUpload({
     <div className="space-y-2">
       <input type="hidden" name={name} value={url} />
       <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) void onFile(file);
+        }}
         className={cn(
-          "relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted",
+          "relative flex w-full items-center justify-center overflow-hidden rounded-lg border border-dashed bg-muted transition-colors",
+          dragging ? "border-primary bg-primary/5" : "border-border",
           aspect === "video" ? "aspect-[16/6]" : "aspect-square max-w-xs",
         )}
       >

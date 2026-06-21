@@ -16,8 +16,7 @@ export default function NewShopPage() {
       </Link>
       <h1 className="mb-1 text-2xl font-bold">Create a shop</h1>
       <p className="mb-6 text-muted-foreground">
-        Set a start and end time — your shop opens and closes automatically. You can add
-        products after publishing.
+        Three quick steps. Your shop opens and closes automatically on the schedule you set.
       </p>
       <ShopForm />
     </div>

@@ -53,7 +53,9 @@ const nextConfig: NextConfig = {
   },
   images: {
     remotePatterns: [
-      // Supabase Storage public objects
+      // Supabase Storage public objects — match the configured project host and,
+      // as a robust fallback (e.g. if the build-time env is absent), any
+      // *.supabase.co storage path.
       ...(supabaseHost
         ? [
             {
@@ -63,9 +65,15 @@ const nextConfig: NextConfig = {
             },
           ]
         : []),
-      // Allow common image hosts during development / placeholder content
-      { protocol: "https" as const, hostname: "images.unsplash.com" },
+      {
+        protocol: "https" as const,
+        hostname: "*.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+      // OAuth provider avatars (Google, GitHub) + placeholder content.
+      { protocol: "https" as const, hostname: "lh3.googleusercontent.com" },
       { protocol: "https" as const, hostname: "avatars.githubusercontent.com" },
+      { protocol: "https" as const, hostname: "images.unsplash.com" },
     ],
   },
 };
