@@ -69,6 +69,51 @@ To run the RLS integration suite against staging in CI, add:
 `TEST_SUPABASE_URL`, `TEST_SUPABASE_ANON_KEY`, `TEST_SUPABASE_SERVICE_ROLE_KEY`
 (point them at the **staging** project). Until then the suite auto-skips.
 
+## Production hardening (beyond basic wiring)
+
+These take the app from "deployed" to "ready for real users and real money."
+
+### Stripe (live)
+- [ ] **Enable Connect** on the platform account (marketplace / "you collect and pay
+      recipients" model — matches the separate charges & transfers code). Required or
+      "Set up payouts" fails (handled gracefully, but onboarding won't complete).
+- [ ] After live-account approval: switch Vercel to **live** keys (`sk_live_…`,
+      `pk_live_…`), create a **live-mode** webhook, set its `STRIPE_WEBHOOK_SECRET`,
+      set `RELEASE_DELAY_HOURS=72`.
+
+### Auth (Supabase)
+- [ ] Turn **Email → Confirm email = ON** for production (the signup flow already
+      handles the "check your email" state).
+- [ ] Configure a **custom SMTP** (e.g. Resend) under Auth → SMTP — the built-in
+      email is heavily rate-limited and not for production.
+- [ ] Enable **leaked-password protection** (Auth → Passwords) and consider a
+      **CAPTCHA** (hCaptcha/Turnstile) on signup to deter bots.
+- [ ] **Google OAuth:** publish the consent screen to **Production** (External), and
+      add the production `…/auth/callback` redirect.
+
+### Secrets / config
+- [ ] Set **`CRON_SECRET`** in Vercel so `/api/cron/release-funds` isn't publicly
+      callable.
+- [ ] Set **Sentry** DSNs (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`) so errors are
+      actually captured (no-ops until set).
+- [ ] Set **VAPID** + **Resend** keys if you want web-push / email notifications.
+
+### Domain & infra
+- [ ] Add a **custom domain** in Vercel; update `NEXT_PUBLIC_SITE_URL`, the Supabase
+      Site URL + redirect URLs, the Stripe webhook URL, and Stripe Connect branding
+      to the new domain. Redeploy.
+- [ ] Confirm **CI is green** (Actions runners require a verified GitHub account).
+- [ ] Add **uptime monitoring** against `/api/health`.
+- [ ] Review **Supabase backups** / plan (PITR on Pro) for the production project.
+
+### App
+- [ ] Security headers are set in `next.config.ts`. A strict **CSP** is intentionally
+      deferred (must allow Supabase REST+realtime, Stripe, YouTube/Twitch, Sentry) —
+      add and test separately.
+- [ ] **Review the legal templates** at `/legal/terms` and `/legal/privacy` with
+      counsel and replace the placeholder contact addresses.
+- [ ] Run the RLS integration suite against staging (add `TEST_SUPABASE_*` CI secrets).
+
 ## Pre-launch checklist
 
 - [ ] Production Supabase migrated; RLS verified (run the integration suite against staging)
