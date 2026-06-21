@@ -33,7 +33,11 @@ export async function signInWithPassword(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword(parsed.data);
+  const captchaToken = (formData.get("cf-turnstile-response") as string) || undefined;
+  const { error } = await supabase.auth.signInWithPassword({
+    ...parsed.data,
+    options: { captchaToken },
+  });
   if (error) return { error: error.message };
 
   revalidatePath("/", "layout");
@@ -52,11 +56,12 @@ export async function signUpWithPassword(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
+  const captchaToken = (formData.get("cf-turnstile-response") as string) || undefined;
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
+    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback`, captchaToken },
   });
   if (error) return { error: error.message };
 
