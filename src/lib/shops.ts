@@ -4,19 +4,27 @@ import type { Product, Profile, Shop } from "@/lib/database.types";
 import type { ChatBroadcast } from "@/lib/realtime";
 
 export type ShopWithSeller = Shop & {
-  seller: Pick<Profile, "id" | "username" | "display_name" | "avatar_url" | "rating_avg" | "rating_count"> | null;
+  seller: Pick<
+    Profile,
+    "id" | "username" | "display_name" | "avatar_url" | "rating_avg" | "rating_count" | "follower_count"
+  > | null;
 };
 
 export type ShopWithDetails = ShopWithSeller & {
   products: Product[];
 };
 
-const SELLER_FIELDS = "id, username, display_name, avatar_url, rating_avg, rating_count";
+const SELLER_FIELDS =
+  "id, username, display_name, avatar_url, rating_avg, rating_count, follower_count";
 
-export type ExploreTab = "all" | "live" | "soon";
+export type ExploreTab = "all" | "streaming" | "soon";
+export type ExploreSort = "soonest" | "popular";
 
-/** Public shops for the Explore feed, filtered by tab. */
-export async function getExploreShops(tab: ExploreTab = "all"): Promise<ShopWithSeller[]> {
+/** Public shops for the Explore feed, filtered by tab and sorted. */
+export async function getExploreShops(
+  tab: ExploreTab = "all",
+  sort: ExploreSort = "soonest",
+): Promise<ShopWithSeller[]> {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
@@ -26,22 +34,60 @@ export async function getExploreShops(tab: ExploreTab = "all"): Promise<ShopWith
     .eq("visibility", "public")
     .neq("status", "draft");
 
-  if (tab === "live") {
-    // "Live now" = currently open shops (within their start/end window).
-    // The pulsing LIVE badge separately indicates shops actively streaming.
-    query = query.lte("start_at", nowIso).gt("end_at", nowIso);
+  if (tab === "streaming") {
+    // Shops with an active live stream running right now.
+    query = query.eq("is_live", true).lte("start_at", nowIso).gt("end_at", nowIso);
   } else if (tab === "soon") {
     query = query.gt("start_at", nowIso);
   } else {
-    // All public shops that haven't ended yet, soonest-closing first feels urgent
+    // Everything that hasn't ended yet (open + opening soon).
     query = query.gt("end_at", nowIso);
   }
 
-  query = query.order("start_at", { ascending: true }).limit(48);
+  // Fetch soonest-first; for "popular" we re-rank in app by seller reach
+  // (a wider window so popular shops aren't truncated by the time sort).
+  query = query.order("start_at", { ascending: true }).limit(sort === "popular" ? 120 : 48);
 
   const { data, error } = await query;
   if (error) {
     console.error("getExploreShops error", error.message);
+    return [];
+  }
+
+  if (sort === "popular") {
+    const ranked = (data ?? []) as unknown as ShopWithSeller[];
+    return ranked
+      .slice()
+      .sort((a, b) => {
+        const fa = a.seller?.follower_count ?? 0;
+        const fb = b.seller?.follower_count ?? 0;
+        if (fb !== fa) return fb - fa;
+        return (b.seller?.rating_avg ?? 0) - (a.seller?.rating_avg ?? 0);
+      })
+      .slice(0, 48);
+  }
+  return (data ?? []) as unknown as ShopWithSeller[];
+}
+
+/** Search public, published shops by name. */
+export async function searchShops(query: string): Promise<ShopWithSeller[]> {
+  const term = query.replace(/[%,()*\\]/g, "").trim();
+  if (!term) return [];
+
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("shops")
+    .select(`*, seller:profiles!shops_seller_id_fkey(${SELLER_FIELDS})`)
+    .eq("visibility", "public")
+    .neq("status", "draft")
+    .gt("end_at", nowIso)
+    .ilike("name", `%${term}%`)
+    .order("start_at", { ascending: true })
+    .limit(24);
+
+  if (error) {
+    console.error("searchShops error", error.message);
     return [];
   }
   return (data ?? []) as unknown as ShopWithSeller[];
