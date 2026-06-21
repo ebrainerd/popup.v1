@@ -25,5 +25,10 @@ export function getSupabaseAnonKey(): string {
 }
 
 export function getSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ?? "http://localhost:3000";
+  const raw = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!raw) return "http://localhost:3000";
+  // Tolerate values missing a scheme (e.g. "popup.vercel.app") so a misconfigured
+  // env var can't crash `new URL(...)` at build time.
+  const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  return withScheme.replace(/\/$/, "");
 }

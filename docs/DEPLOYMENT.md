@@ -37,10 +37,16 @@ Never point staging/CI at the production database.
 
 ## 3. Scheduled payouts (cron)
 
-`vercel.json` registers an hourly cron hitting `/api/cron/release-funds`, which
-releases funds for orders past their hold window. Set `CRON_SECRET`; Vercel
-automatically sends it as a bearer token, and the route rejects unauthorized
-calls. To run it elsewhere, `GET /api/cron/release-funds?secret=<CRON_SECRET>`.
+`vercel.json` registers a **daily** cron hitting `/api/cron/release-funds`,
+which releases funds for orders past their hold window. Set `CRON_SECRET`;
+Vercel automatically sends it as a bearer token, and the route rejects
+unauthorized calls. To run it elsewhere, `GET /api/cron/release-funds?secret=<CRON_SECRET>`.
+
+> **Plan note:** Vercel's **Hobby** plan only allows **once-per-day** cron
+> schedules and will fail the deployment if the schedule is more frequent. The
+> default `0 5 * * *` (daily 05:00 UTC) works on Hobby. On **Pro** you can
+> increase the frequency (e.g. hourly `0 * * * *`) for faster payouts — with a
+> 72h hold, a daily run releases funds within ~72–96h, which is fine for MVP.
 
 ## 4. Error monitoring (Sentry)
 
