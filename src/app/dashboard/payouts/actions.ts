@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { getSiteUrl } from "@/lib/env";
@@ -23,30 +24,41 @@ export async function startStripeOnboarding() {
     .eq("id", user.id)
     .single();
 
-  let accountId = profile?.stripe_account_id ?? null;
+  // Stripe API failures (e.g. Connect not enabled on the platform account, or a
+  // transient outage) must not surface as an unhandled 500 — fail gracefully
+  // back to the payouts page with an error the UI can explain.
+  let onboardingUrl: string;
+  try {
+    let accountId = profile?.stripe_account_id ?? null;
 
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      type: "express",
-      email: user.email ?? undefined,
-      capabilities: {
-        transfers: { requested: true },
-        card_payments: { requested: true },
-      },
-      business_profile: { product_description: "Time-boxed pop-up shop on PopUp" },
+    if (!accountId) {
+      const account = await stripe.accounts.create({
+        type: "express",
+        email: user.email ?? undefined,
+        capabilities: {
+          transfers: { requested: true },
+          card_payments: { requested: true },
+        },
+        business_profile: { product_description: "Time-boxed pop-up shop on PopUp" },
+      });
+      accountId = account.id;
+      await supabase.from("profiles").update({ stripe_account_id: accountId }).eq("id", user.id);
+    }
+
+    const link = await stripe.accountLinks.create({
+      account: accountId,
+      refresh_url: `${getSiteUrl()}/dashboard/payouts?status=refresh`,
+      return_url: `${getSiteUrl()}/dashboard/payouts?status=return`,
+      type: "account_onboarding",
     });
-    accountId = account.id;
-    await supabase.from("profiles").update({ stripe_account_id: accountId }).eq("id", user.id);
+    onboardingUrl = link.url;
+  } catch (err) {
+    console.error("startStripeOnboarding failed", err);
+    Sentry.captureException(err, { tags: { area: "stripe_onboarding" } });
+    redirect("/dashboard/payouts?error=onboarding_failed");
   }
 
-  const link = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${getSiteUrl()}/dashboard/payouts?status=refresh`,
-    return_url: `${getSiteUrl()}/dashboard/payouts?status=return`,
-    type: "account_onboarding",
-  });
-
-  redirect(link.url);
+  redirect(onboardingUrl);
 }
 
 /** Sync the local onboarding flag from Stripe (called on the payouts page). */
