@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Turnstile } from "@/components/turnstile";
 
 const initialState: AuthState = { error: null };
 
@@ -69,6 +70,8 @@ export function AuthForm({
             minLength={8}
           />
         </div>
+
+        <Turnstile />
 
         {state.error && (
           <p className="flex items-center gap-2 rounded-md bg-live/10 px-3 py-2 text-sm text-live">
