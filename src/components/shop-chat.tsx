@@ -103,7 +103,7 @@ export function ShopChat({
     <div className="flex h-[28rem] flex-col rounded-xl border border-border bg-card lg:h-[32rem]">
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
         <MessageCircle className="size-4 text-primary" />
-        <span className="text-sm font-semibold">Live chat</span>
+        <span className="text-sm font-semibold">The Room</span>
       </div>
 
       <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-3 py-3">

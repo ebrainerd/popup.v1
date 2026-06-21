@@ -100,8 +100,18 @@ export function Countdown({
   }
 
   const { days, hours, minutes, seconds } = diffParts(target - now);
-  const urgent = phase === "open" && target - now < 5 * 60 * 1000;
+  const remaining = target - now;
+  const urgent = phase === "open" && remaining < 5 * 60 * 1000;
+  const low = phase === "open" && remaining < 15 * 60 * 1000;
   const label = phase === "scheduled" ? "Opens in" : "Closes in";
+
+  // Open shops shift from teal (plenty of time) → coral (running low).
+  const colorClass =
+    phase !== "open"
+      ? "text-muted-foreground"
+      : low
+        ? "text-live"
+        : "text-success";
 
   const time =
     days > 0
@@ -111,12 +121,7 @@ export function Countdown({
   if (compact) {
     return (
       <span
-        className={cn(
-          "font-mono text-sm font-semibold tabular-nums",
-          phase === "open" ? "text-foreground" : "text-muted-foreground",
-          urgent && "text-live",
-          className,
-        )}
+        className={cn("font-mono text-sm font-semibold tabular-nums", colorClass, className)}
       >
         {time}
       </span>
@@ -131,7 +136,8 @@ export function Countdown({
       <span
         className={cn(
           "font-mono text-lg font-bold tabular-nums",
-          urgent && "text-live animate-live-pulse",
+          colorClass,
+          urgent && "animate-live-pulse",
         )}
       >
         {time}
