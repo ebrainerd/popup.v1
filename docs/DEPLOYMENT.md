@@ -11,6 +11,90 @@ with its **own** Supabase project and Stripe account/mode.
 
 Never point staging/CI at the production database.
 
+## Environment variables reference
+
+Set these in **Vercel → Settings → Environment Variables** (scope **Production**,
+and **Preview** for staging). `NEXT_PUBLIC_*` values are exposed to the browser;
+all others are server-only secrets. After adding/changing any, **redeploy**.
+
+> Note: the Turnstile **secret** and the Stripe webhook signing secret are entered
+> in Supabase/Stripe respectively — only the keys below go in Vercel.
+
+### Required — core app
+
+| Variable | Where to get it | Example |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API → Project URL | `https://abcd.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → `anon` `public` key | `eyJ…` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` secret | `eyJ…` |
+| `NEXT_PUBLIC_SITE_URL` | Your deployed URL (full, **with** scheme) | `https://popup-v1.vercel.app` |
+
+### Required — payments (test now, live after Stripe approval)
+
+| Variable | Where to get it | Example |
+| --- | --- | --- |
+| `STRIPE_SECRET_KEY` | Stripe → Developers → API keys (secret) | `sk_test_…` / `sk_live_…` |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe → Developers → API keys (publishable) | `pk_test_…` / `pk_live_…` |
+| `STRIPE_WEBHOOK_SECRET` | Stripe → Webhooks → your endpoint → signing secret | `whsec_…` |
+| `PLATFORM_FEE_BPS` | Platform commission, basis points (9% = 900) | `900` |
+| `RELEASE_DELAY_HOURS` | Payout hold after shipping. `0` for testing, `72` in prod | `72` |
+
+### Recommended
+
+| Variable | Where to get it | Example |
+| --- | --- | --- |
+| `NEXT_PUBLIC_APP_ENV` | Environment label for monitoring | `production` |
+| `CRON_SECRET` | Random string (`openssl rand -hex 32`); protects the payout cron | `a1b2c3…` |
+| `SENTRY_DSN` | Sentry → Project → Client Keys (DSN) | `https://…@o…ingest.sentry.io/…` |
+| `NEXT_PUBLIC_SENTRY_DSN` | Same DSN value (browser) | `https://…@o…ingest.sentry.io/…` |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile → site key (secret goes in Supabase) | `0x4AAAA…` |
+
+### Optional — notifications
+
+| Variable | Where to get it | Example |
+| --- | --- | --- |
+| `RESEND_API_KEY` | Resend → API Keys | `re_…` |
+| `RESEND_FROM` | A verified sender | `PopUp <hello@yourdomain>` |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY` | `npx web-push generate-vapid-keys` | `B…` |
+| `VAPID_PRIVATE_KEY` | from the same command | `…` |
+| `VAPID_SUBJECT` | contact mailto/URL | `mailto:hello@yourdomain` |
+
+### Configured outside Vercel
+
+| Setting | Where | Purpose |
+| --- | --- | --- |
+| Turnstile **secret** key | Supabase → Authentication → Captcha | Server-side captcha verification |
+| Stripe webhook events | Stripe → Webhooks | `checkout.session.completed`, `account.updated` |
+| Google OAuth client ID/secret | Supabase → Authentication → Providers → Google | Google sign-in |
+| `TEST_SUPABASE_URL` / `TEST_SUPABASE_ANON_KEY` / `TEST_SUPABASE_SERVICE_ROLE_KEY` | GitHub → Settings → Secrets → Actions | Run the RLS suite in CI against staging |
+
+### Copy-paste checklist (Vercel Production)
+
+```
+# Required
+[ ] NEXT_PUBLIC_SUPABASE_URL
+[ ] NEXT_PUBLIC_SUPABASE_ANON_KEY
+[ ] SUPABASE_SERVICE_ROLE_KEY
+[ ] NEXT_PUBLIC_SITE_URL
+[ ] STRIPE_SECRET_KEY
+[ ] NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+[ ] STRIPE_WEBHOOK_SECRET
+[ ] PLATFORM_FEE_BPS=900
+[ ] RELEASE_DELAY_HOURS=72        # use 0 while testing
+# Recommended
+[ ] NEXT_PUBLIC_APP_ENV=production
+[ ] CRON_SECRET
+[ ] SENTRY_DSN
+[ ] NEXT_PUBLIC_SENTRY_DSN
+[ ] NEXT_PUBLIC_TURNSTILE_SITE_KEY
+# Optional (notifications)
+[ ] RESEND_API_KEY
+[ ] RESEND_FROM
+[ ] NEXT_PUBLIC_VAPID_PUBLIC_KEY
+[ ] VAPID_PRIVATE_KEY
+[ ] VAPID_SUBJECT
+```
+
 ## 1. Supabase (per environment)
 
 1. Create the project; copy URL + anon + service-role keys.
