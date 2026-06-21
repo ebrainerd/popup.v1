@@ -4,6 +4,7 @@ import { getCurrentProfile } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { UserMenu } from "@/components/user-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function SiteHeader() {
   const profile = await getCurrentProfile();
@@ -41,6 +42,7 @@ export async function SiteHeader() {
           >
             <Search className="size-4" />
           </Link>
+          <ThemeToggle />
           {profile ? (
             <>
               <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
