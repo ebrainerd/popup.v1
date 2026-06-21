@@ -58,7 +58,10 @@ export default async function ShopPage({ params }: { params: Promise<{ id: strin
     isFollowing = Boolean(data);
   }
 
-  const embed = isOpen && shop.is_live ? parseLiveEmbed(shop.live_url) : null;
+  // The live section activates whenever the shop is open and a stream URL is set
+  // (pasting a URL "just works"). "Go live" separately controls the LIVE badge,
+  // the Explore live filter, and follower notifications.
+  const embed = isOpen && shop.live_url ? parseLiveEmbed(shop.live_url) : null;
   const initialMessages = await getChatMessages(shop.id);
 
   const currentUser: ChatSender | null = profile

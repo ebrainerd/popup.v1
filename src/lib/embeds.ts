@@ -19,7 +19,7 @@ export function parseLiveEmbed(rawUrl: string | null | undefined, parentHost = "
 
   const host = url.hostname.replace(/^www\./, "");
 
-  // YouTube: watch?v=, youtu.be/, /live/, /embed/
+  // YouTube: watch?v=, youtu.be/, /live/<id>, /embed/<id>, /channel/<id>/live
   if (host === "youtube.com" || host === "m.youtube.com" || host === "youtu.be") {
     let id: string | null = null;
     if (host === "youtu.be") {
@@ -32,6 +32,18 @@ export function parseLiveEmbed(rawUrl: string | null | undefined, parentHost = "
     if (id) {
       return { embeddable: true, kind: "youtube", src: `https://www.youtube.com/embed/${id}` };
     }
+    // Channel live URL: /channel/<CHANNEL_ID>/live → embeddable live stream.
+    const channelMatch = url.pathname.match(/^\/channel\/([^/]+)\/live\/?$/);
+    if (channelMatch) {
+      return {
+        embeddable: true,
+        kind: "youtube",
+        src: `https://www.youtube.com/embed/live_stream?channel=${channelMatch[1]}`,
+      };
+    }
+    // Handle/custom live URLs (e.g. /@handle/live, /c/Name/live) can't be
+    // embedded without resolving the video/channel id — offer a watch link.
+    return { embeddable: false, kind: "external", href: url.toString() };
   }
 
   // Twitch: twitch.tv/<channel>
