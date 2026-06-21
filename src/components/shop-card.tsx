@@ -13,7 +13,7 @@ export function ShopCard({ shop }: { shop: ShopWithSeller }) {
   return (
     <Link
       href={`/shop/${shop.id}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
         {shop.cover_url ? (
