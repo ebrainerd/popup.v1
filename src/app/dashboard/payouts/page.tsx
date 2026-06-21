@@ -59,6 +59,12 @@ export default async function PayoutsPage({
                   Stripe isn&apos;t configured on the server.
                 </p>
               )}
+              {error === "onboarding_failed" && (
+                <p className="rounded-md bg-live/10 px-3 py-2 text-sm text-live">
+                  We couldn&apos;t start payout onboarding right now. Please try again in a
+                  moment — if this keeps happening, contact support.
+                </p>
+              )}
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="font-medium">
