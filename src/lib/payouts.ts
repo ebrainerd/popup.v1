@@ -1,4 +1,5 @@
 import "server-only";
+import * as Sentry from "@sentry/nextjs";
 import { getStripe, releaseDelayHours } from "@/lib/stripe";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
@@ -78,6 +79,7 @@ export async function releaseOrderFunds(
     return { released: true };
   } catch (err) {
     console.error("releaseOrderFunds failed", err);
+    Sentry.captureException(err, { tags: { area: "payout_release" }, extra: { orderId } });
     return { released: false, reason: "transfer_error" };
   }
 }

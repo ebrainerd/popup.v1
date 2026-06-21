@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
+import * as Sentry from "@sentry/nextjs";
 import { getStripe } from "@/lib/stripe";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     console.error("Stripe webhook handler error", err);
+    Sentry.captureException(err, { tags: { area: "stripe_webhook", event: event.type } });
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
 
