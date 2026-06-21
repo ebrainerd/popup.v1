@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "*",
         allow: "/",
         // Keep private/authenticated and API surfaces out of search indexes.
-        disallow: ["/dashboard", "/orders", "/api/", "/auth/"],
+        disallow: ["/dashboard", "/orders", "/following", "/api/", "/auth/"],
       },
     ],
     sitemap: `${base}/sitemap.xml`,

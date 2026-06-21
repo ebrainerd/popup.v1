@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
@@ -33,6 +34,13 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <Link
+            href="/search"
+            aria-label="Find creators"
+            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Search className="size-4" />
+          </Link>
           {profile ? (
             <>
               <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
