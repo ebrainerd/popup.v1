@@ -79,7 +79,13 @@ export default function PrivacyPage() {
 
         <section>
           <h2 className="text-xl font-bold">8. Contact</h2>
-          <p>Privacy questions: privacy@your-domain.example.</p>
+          <p>
+            Privacy questions:{" "}
+            <a href="mailto:popup.shop.live@gmail.com" className="text-primary hover:underline">
+              popup.shop.live@gmail.com
+            </a>
+            .
+          </p>
         </section>
       </div>
     </div>

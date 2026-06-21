@@ -93,7 +93,13 @@ export default function TermsPage() {
 
         <section>
           <h2 className="text-xl font-bold">10. Contact</h2>
-          <p>Questions about these Terms: support@your-domain.example.</p>
+          <p>
+            Questions about these Terms:{" "}
+            <a href="mailto:popup.shop.live@gmail.com" className="text-primary hover:underline">
+              popup.shop.live@gmail.com
+            </a>
+            .
+          </p>
         </section>
       </div>
     </div>
