@@ -17,19 +17,16 @@ export async function SiteHeader() {
 
         <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
           <Link href="/" className="text-muted-foreground transition-colors hover:text-foreground">
+            Home
+          </Link>
+          <Link href="/explore" className="text-muted-foreground transition-colors hover:text-foreground">
             Explore
           </Link>
-          <Link
-            href="/?tab=live"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Happening Now
+          <Link href="/sell" className="text-muted-foreground transition-colors hover:text-foreground">
+            Sell
           </Link>
-          <Link
-            href="/?tab=soon"
-            className="text-muted-foreground transition-colors hover:text-foreground"
-          >
-            Opening Soon
+          <Link href="/about" className="text-muted-foreground transition-colors hover:text-foreground">
+            About
           </Link>
         </nav>
 
