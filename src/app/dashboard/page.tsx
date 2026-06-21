@@ -41,9 +41,9 @@ export default async function DashboardPage() {
           </h1>
           <p className="text-muted-foreground">Manage your drops and orders.</p>
         </div>
-        <Button asChild>
+        <Button asChild className="rounded-full">
           <Link href="/dashboard/shops/new">
-            <Plus className="size-4" /> Create shop
+            <Plus className="size-4" /> Create Drop
           </Link>
         </Button>
       </div>
@@ -66,10 +66,11 @@ export default async function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard icon={<DollarSign />} label="Gross sales" value={formatCurrency(grossSales)} />
-        <StatCard icon={<Store />} label="Active shops" value={String(activeCount)} />
-        <StatCard icon={<CalendarDays />} label="Total shops" value={String(shops.length)} />
+        <StatCard tone="success" icon={<DollarSign />} label="Gross sales" value={formatCurrency(grossSales)} />
+        <StatCard tone="accent" icon={<Store />} label="Active shops" value={String(activeCount)} />
+        <StatCard tone="highlight" icon={<CalendarDays />} label="Total shops" value={String(shops.length)} />
         <StatCard
+          tone="primary"
           icon={<Star />}
           label="Avg rating"
           value={profile.rating_count > 0 ? Number(profile.rating_avg ?? 0).toFixed(1) : "—"}
@@ -80,16 +81,16 @@ export default async function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
             <Store className="size-8 text-muted-foreground" />
-            <p className="text-muted-foreground">You haven&apos;t created any shops yet.</p>
-            <Button asChild>
-              <Link href="/dashboard/shops/new">Create your first shop</Link>
+            <p className="text-muted-foreground">You haven&apos;t created any drops yet.</p>
+            <Button asChild className="rounded-full">
+              <Link href="/dashboard/shops/new">Create your first drop</Link>
             </Button>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
           <div className="space-y-8">
-            <ShopSection title="Live now" shops={live} />
+            <ShopSection title="Dropping Live" shops={live} />
             <ShopSection title="Upcoming" shops={upcoming} />
             <ShopSection title="Ended" shops={ended} />
           </div>
@@ -112,24 +113,35 @@ export default async function DashboardPage() {
   );
 }
 
+const STAT_TONES = {
+  primary: "bg-primary/15 text-primary shadow-[0_0_18px_-4px_var(--primary)]",
+  accent: "bg-accent/15 text-accent shadow-[0_0_18px_-4px_var(--accent)]",
+  highlight: "bg-highlight/15 text-highlight shadow-[0_0_18px_-4px_var(--highlight)]",
+  success: "bg-success/15 text-success shadow-[0_0_18px_-4px_var(--success)]",
+} as const;
+
 function StatCard({
   icon,
   label,
   value,
+  tone = "primary",
 }: {
   icon: React.ReactNode;
   label: string;
   value: string;
+  tone?: keyof typeof STAT_TONES;
 }) {
   return (
     <Card>
       <CardContent className="flex items-center gap-3 p-4">
-        <span className="flex size-9 items-center justify-center rounded-md bg-primary/10 text-primary [&_svg]:size-4">
+        <span
+          className={`flex size-10 items-center justify-center rounded-full [&_svg]:size-4 ${STAT_TONES[tone]}`}
+        >
           {icon}
         </span>
         <div>
           <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-lg font-bold">{value}</p>
+          <p className="text-lg font-bold tabular-nums">{value}</p>
         </div>
       </CardContent>
     </Card>

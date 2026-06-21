@@ -8,6 +8,7 @@ import { getBuyerOrders } from "@/lib/orders";
 import { OrderStatusBadge } from "@/components/order-status-badge";
 import { ConfirmReceiptButton } from "@/components/confirm-receipt-button";
 import { RatingForm } from "@/components/rating-form";
+import { CheckoutCelebration } from "@/components/checkout-celebration";
 import { formatCurrency } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Your orders" };
@@ -29,10 +30,13 @@ export default async function OrdersPage({
       <h1 className="mb-6 text-2xl font-bold">Your orders</h1>
 
       {checkout === "success" && (
-        <div className="mb-6 flex items-center gap-2 rounded-md bg-success/10 px-4 py-3 text-sm text-success">
-          <CheckCircle2 className="size-5" />
-          Payment successful! Your order is confirmed.
-        </div>
+        <>
+          <CheckoutCelebration />
+          <div className="mb-6 flex items-center gap-2 rounded-md bg-success/10 px-4 py-3 text-sm text-success">
+            <CheckCircle2 className="size-5" />
+            Payment successful! Your order is confirmed.
+          </div>
+        </>
       )}
 
       {orders.length === 0 ? (

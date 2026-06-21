@@ -14,11 +14,11 @@ export function ViewerCount({ className }: { className?: string }) {
         "inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold",
         className,
       )}
-      title="People viewing right now"
+      title="People in the room right now"
     >
       <span className="inline-block h-1.5 w-1.5 rounded-full bg-success animate-live-pulse" />
       <Eye className="size-3.5" />
-      {viewerCount} watching
+      {viewerCount} in the room
     </span>
   );
 }

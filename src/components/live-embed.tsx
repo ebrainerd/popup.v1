@@ -22,16 +22,22 @@ export function LiveEmbed({ embed }: { embed: NonNullable<LiveEmbedType> }) {
   }
 
   return (
-      <div className="overflow-hidden rounded-xl border border-border bg-black">
-        <div className="relative aspect-video w-full">
-          <iframe
-            src={embed.src}
-            title="Live stream"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 h-full w-full"
-          />
-        </div>
+    <div className="overflow-hidden rounded-xl border border-primary/60 bg-black glow-primary">
+      <div className="flex items-center gap-2 px-4 py-2">
+        <Radio className="size-4 text-live animate-live-pulse" />
+        <span className="text-sm font-semibold uppercase tracking-wide text-live">
+          Dropping Live
+        </span>
       </div>
-    );
+      <div className="relative aspect-video w-full">
+        <iframe
+          src={embed.src}
+          title="Live stream"
+          allow="autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          className="absolute inset-0 h-full w-full"
+        />
+      </div>
+    </div>
+  );
 }
