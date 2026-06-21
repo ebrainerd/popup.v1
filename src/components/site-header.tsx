@@ -22,13 +22,13 @@ export async function SiteHeader() {
             href="/?tab=live"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
-            Live now
+            Happening Now
           </Link>
           <Link
             href="/?tab=soon"
             className="text-muted-foreground transition-colors hover:text-foreground"
           >
-            Opening soon
+            Opening Soon
           </Link>
         </nav>
 
@@ -45,8 +45,8 @@ export async function SiteHeader() {
               <Button asChild variant="ghost" size="sm">
                 <Link href="/login">Log in</Link>
               </Button>
-              <Button asChild size="sm">
-                <Link href="/signup">Start a shop</Link>
+              <Button asChild size="sm" className="rounded-full">
+                <Link href="/signup">Start a Drop</Link>
               </Button>
             </>
           )}
