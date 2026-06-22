@@ -7,6 +7,9 @@ public shops in an Explore feed and follow their favorite sellers.
 This repository contains the **MVP web app** (Next.js + Supabase + Stripe),
 built in milestones. See `docs/ROADMAP.md` for what's shipped and what's next.
 
+> **Picking up the project?** Start with **`docs/HANDOFF.md`** — current status,
+> pending owner actions (e.g. custom-domain setup), and conventions.
+
 ## Stack
 
 - **Framework:** Next.js 16 (App Router, React Server Components) + TypeScript

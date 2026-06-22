@@ -306,6 +306,73 @@ export async function notifyOrderShipped(orderId: string): Promise<void> {
 }
 
 /**
+ * Nudge buyers to confirm receipt on shipped-but-unconfirmed orders. First
+ * nudge ~3 days after shipping, a second ~4 days later (max 2). Runs from the
+ * cron; returns the number of nudges sent.
+ */
+export async function nudgeAwaitingReceipt(): Promise<number> {
+  if (!process.env.RESEND_API_KEY) return 0;
+  try {
+    const supabase = createServiceRoleClient();
+    const now = Date.now();
+    const shippedCutoff = new Date(now - 3 * 24 * 3_600_000).toISOString();
+    const nudgeCutoff = new Date(now - 4 * 24 * 3_600_000).toISOString();
+
+    const { data: orders } = await supabase
+      .from("orders")
+      .select(
+        `id, buyer_id, receipt_nudge_count,
+         product:products!orders_product_id_fkey(title),
+         shop:shops!orders_shop_id_fkey(name)`,
+      )
+      .is("received_at", null)
+      .in("status", ["shipped", "in_transit", "delivered"])
+      .lt("shipped_at", shippedCutoff)
+      .lt("receipt_nudge_count", 2)
+      .or(`receipt_nudge_at.is.null,receipt_nudge_at.lt.${nudgeCutoff}`);
+
+    if (!orders || orders.length === 0) return 0;
+    const site = getSiteUrl();
+    let sent = 0;
+
+    for (const row of orders) {
+      const o = row as unknown as {
+        id: string;
+        buyer_id: string;
+        receipt_nudge_count: number;
+        product: { title: string } | null;
+        shop: { name: string } | null;
+      };
+      const buyerEmail = await emailForUser(o.buyer_id);
+      if (buyerEmail) {
+        await sendResendEmail(
+          buyerEmail,
+          `Did your order arrive? — ${escapeHtml(o.product?.title ?? "your item")}`,
+          `<h2>Did it arrive? 📬</h2>
+           <p>Your order of <strong>${escapeHtml(o.product?.title ?? "your item")}</strong> from
+           <strong>${escapeHtml(o.shop?.name ?? "the shop")}</strong> shipped a few days ago.</p>
+           <p>If it's here, please <a href="${site}/orders">confirm you received it</a> — it lets the
+           seller know it arrived and unlocks rating them. If it hasn't arrived, reach out to the seller.</p>`,
+        );
+        sent++;
+      }
+      await supabase
+        .from("orders")
+        .update({
+          receipt_nudge_count: o.receipt_nudge_count + 1,
+          receipt_nudge_at: new Date().toISOString(),
+        })
+        .eq("id", o.id);
+    }
+    return sent;
+  } catch (err) {
+    console.error("nudgeAwaitingReceipt failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" } });
+    return 0;
+  }
+}
+
+/**
  * Remind sellers about paid orders they haven't shipped within 3 days.
  * Funds stay withheld until an order ships, so this just nudges. Runs from the
  * cron; sends each reminder once. Returns the number of reminders sent.
