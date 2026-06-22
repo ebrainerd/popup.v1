@@ -1,5 +1,8 @@
 # AGENTS.md
 
+> **Read `docs/HANDOFF.md` first** for current project status, pending owner
+> actions (e.g. custom-domain wiring), and conventions before starting work.
+
 ## Cursor Cloud specific instructions
 
 PopUp is a single Next.js 16 (App Router) web app backed by a local Supabase
