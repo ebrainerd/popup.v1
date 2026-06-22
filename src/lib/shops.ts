@@ -48,8 +48,12 @@ export async function getExploreShops(
     .neq("status", "draft");
 
   if (tab === "streaming") {
-    // Shops with an active live stream running right now.
-    query = query.eq("is_live", true).lte("start_at", nowIso).gt("end_at", nowIso);
+    // Open shops with a live stream attached (matches what actually displays on
+    // the shop page: open + a live URL set, regardless of the "Go live" flag).
+    query = query
+      .not("live_url", "is", null)
+      .lte("start_at", nowIso)
+      .gt("end_at", nowIso);
   } else if (tab === "soon") {
     query = query.gt("start_at", nowIso);
   } else if (tab === "following" && followedSellerIds) {

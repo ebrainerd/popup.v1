@@ -31,7 +31,7 @@ export function ShopCard({ shop }: { shop: ShopWithSeller }) {
         )}
 
         <div className="absolute left-2 top-2 flex gap-1.5">
-          {shop.is_live && status === "open" ? (
+          {status === "open" && (shop.is_live || shop.live_url) ? (
             <Badge variant="live">
               <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-white animate-live-pulse" />
               LIVE
