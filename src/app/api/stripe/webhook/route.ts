@@ -98,20 +98,24 @@ async function handleCheckoutCompleted(
     session.customer_details ??
     null;
 
-  const { error } = await supabase.from("orders").insert({
-    buyer_id: buyerId,
-    shop_id: shopId,
-    product_id: productId,
-    amount_paid: amountPaid,
-    platform_fee: platformFee,
-    shipping_amount: shippingAmount,
-    shipping_address: shippingAddress as Record<string, unknown> | null,
-    status: "paid",
-    stripe_session_id: session.id,
-    payment_intent: paymentIntent,
-  });
-  if (error) {
-    console.error("Failed to insert order", error.message);
+  const { data: inserted, error } = await supabase
+    .from("orders")
+    .insert({
+      buyer_id: buyerId,
+      shop_id: shopId,
+      product_id: productId,
+      amount_paid: amountPaid,
+      platform_fee: platformFee,
+      shipping_amount: shippingAmount,
+      shipping_address: shippingAddress as Record<string, unknown> | null,
+      status: "paid",
+      stripe_session_id: session.id,
+      payment_intent: paymentIntent,
+    })
+    .select("id")
+    .single();
+  if (error || !inserted) {
+    console.error("Failed to insert order", error?.message);
     return;
   }
 
@@ -121,4 +125,8 @@ async function handleCheckoutCompleted(
     .from("product_reservations")
     .update({ status: "completed" })
     .eq("session_id", session.id);
+
+  // Email buyer + seller (best-effort, no-op without Resend configured).
+  const { notifyOrderPlaced } = await import("@/lib/notifications");
+  await notifyOrderPlaced(inserted.id);
 }

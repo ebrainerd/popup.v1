@@ -57,6 +57,10 @@ export async function markShipped(
     .eq("id", orderId);
   if (error) return { ok: false, error: error.message };
 
+  // Email the buyer that it shipped (best-effort, no-op without Resend).
+  const { notifyOrderShipped } = await import("@/lib/notifications");
+  await notifyOrderShipped(orderId);
+
   // Attempt release (respects the configured hold window; no-op if too early).
   await releaseOrderFunds(orderId);
 

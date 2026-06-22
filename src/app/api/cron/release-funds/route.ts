@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { releaseEligibleOrders, releaseExpiredHolds } from "@/lib/payouts";
+import { remindUnshippedOrders } from "@/lib/notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -22,5 +23,6 @@ export async function GET(request: NextRequest) {
 
   const released = await releaseEligibleOrders();
   const holdsReleased = await releaseExpiredHolds();
-  return NextResponse.json({ released, holdsReleased });
+  const shipReminders = await remindUnshippedOrders();
+  return NextResponse.json({ released, holdsReleased, shipReminders });
 }
