@@ -141,6 +141,7 @@ export interface Database {
           transfer_id: string | null;
           released_at: string | null;
           received_at: string | null;
+          ship_reminder_sent_at: string | null;
         };
         Insert: {
           id?: string;
@@ -162,6 +163,7 @@ export interface Database {
           transfer_id?: string | null;
           released_at?: string | null;
           received_at?: string | null;
+          ship_reminder_sent_at?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["orders"]["Insert"]>;
         Relationships: [];
