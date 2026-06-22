@@ -55,6 +55,25 @@ async function sendPushToUsers(userIds: string[], payload: PushPayload) {
   );
 }
 
+/** Send one email via Resend. No-op if RESEND_API_KEY isn't configured. */
+async function sendResendEmail(to: string, subject: string, html: string) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey || !to) return;
+  const from = process.env.RESEND_FROM || "PopUp <onboarding@resend.dev>";
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ from, to, subject, html }),
+  });
+}
+
+/** Resolve a user's email via the auth admin API (service role). */
+async function emailForUser(userId: string): Promise<string | null> {
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase.auth.admin.getUserById(userId);
+  return data.user?.email ?? null;
+}
+
 async function sendEmailToUsers(userIds: string[], subject: string, html: string) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || userIds.length === 0) return;
@@ -130,5 +149,76 @@ export async function notifyFollowersOfLive(shopId: string): Promise<void> {
   } catch (err) {
     console.error("notifyFollowersOfLive failed", err);
     Sentry.captureException(err, { tags: { area: "notifications" }, extra: { shopId } });
+  }
+}
+
+function formatMoney(cents: number): string {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
+}
+
+/**
+ * Email both buyer and seller when an order is placed. Fire-and-forget:
+ * never throws; no-ops if email isn't configured.
+ */
+export async function notifyOrderPlaced(orderId: string): Promise<void> {
+  try {
+    if (!process.env.RESEND_API_KEY) return;
+    const supabase = createServiceRoleClient();
+    const { data: order } = await supabase
+      .from("orders")
+      .select(
+        `id, buyer_id, amount_paid, shipping_amount, created_at,
+         product:products!orders_product_id_fkey(title),
+         shop:shops!orders_shop_id_fkey(id, name, seller_id)`,
+      )
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+
+    const o = order as unknown as {
+      id: string;
+      buyer_id: string;
+      amount_paid: number;
+      product: { title: string } | null;
+      shop: { id: string; name: string; seller_id: string } | null;
+    };
+    const itemTitle = o.product?.title ?? "your item";
+    const shopName = o.shop?.name ?? "a PopUp shop";
+    const site = getSiteUrl();
+    const shortId = o.id.slice(0, 8);
+    const total = formatMoney(o.amount_paid);
+
+    const [buyerEmail, sellerEmail] = await Promise.all([
+      emailForUser(o.buyer_id),
+      o.shop ? emailForUser(o.shop.seller_id) : Promise.resolve(null),
+    ]);
+
+    await Promise.allSettled([
+      buyerEmail
+        ? sendResendEmail(
+            buyerEmail,
+            `Order confirmed — ${itemTitle}`,
+            `<h2>Thanks for your order! 🎉</h2>
+             <p>You bought <strong>${itemTitle}</strong> from <strong>${shopName}</strong>.</p>
+             <p><strong>Order #${shortId}</strong> · Total ${total}</p>
+             <p>Track its status anytime in <a href="${site}/orders">Your orders</a>. We'll keep
+             you posted as it ships.</p>`,
+          )
+        : Promise.resolve(),
+      sellerEmail && o.shop
+        ? sendResendEmail(
+            sellerEmail,
+            `New sale — ${itemTitle}`,
+            `<h2>You made a sale! 💸</h2>
+             <p><strong>${itemTitle}</strong> sold for ${total}.</p>
+             <p><strong>Order #${shortId}</strong></p>
+             <p>Pack it up and <a href="${site}/dashboard/shops/${o.shop.id}">mark it shipped with a
+             tracking number</a> so your payout is released.</p>`,
+          )
+        : Promise.resolve(),
+    ]);
+  } catch (err) {
+    console.error("notifyOrderPlaced failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
   }
 }
