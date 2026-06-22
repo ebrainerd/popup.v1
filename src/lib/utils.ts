@@ -22,6 +22,22 @@ export function toCents(amount: string | number): number {
 
 export type ShopStatus = "scheduled" | "open" | "ended";
 
+/** Best-effort carrier tracking URL from a carrier name + tracking number. */
+export function carrierTrackingUrl(
+  carrier: string | null,
+  tracking: string | null,
+): string | null {
+  if (!tracking) return null;
+  const t = encodeURIComponent(tracking);
+  const c = (carrier ?? "").toLowerCase();
+  if (c.includes("usps")) return `https://tools.usps.com/go/TrackConfirmAction?tLabels=${t}`;
+  if (c.includes("ups")) return `https://www.ups.com/track?tracknum=${t}`;
+  if (c.includes("fedex")) return `https://www.fedex.com/fedextrack/?trknbr=${t}`;
+  if (c.includes("dhl")) return `https://www.dhl.com/en/express/tracking.html?AWB=${t}`;
+  // Unknown carrier: a generic package-tracking aggregator.
+  return `https://www.google.com/search?q=${encodeURIComponent(`${carrier ?? ""} tracking ${tracking}`)}`;
+}
+
 /** Derive a shop's live-state from its schedule. */
 export function deriveShopStatus(
   startAt: string | Date,
