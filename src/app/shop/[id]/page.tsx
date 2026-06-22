@@ -45,10 +45,9 @@ export default async function ShopPage({
 }) {
   const { id } = await params;
   const { checkout } = await searchParams;
-  const shop = await getShopWithDetails(id);
-  if (!shop) notFound();
-
   const profile = await getCurrentProfile();
+  const shop = await getShopWithDetails(id, profile?.id);
+  if (!shop) notFound();
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const isOpen = status === "open";
   const seller = shop.seller;

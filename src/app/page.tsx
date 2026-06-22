@@ -37,8 +37,7 @@ export default async function HomePage() {
           className="animate-drift absolute -z-10 left-1/2 top-1/2 h-[120%] w-[60%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/25 blur-3xl"
         />
         <h1 className="mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-          <span className="inline-block">Shops that open —</span>{" "}
-          <span className="inline-block">and close —</span>{" "}
+          <span className="inline-block">Shops that open and close</span>{" "}
           <span className="inline-block">on the clock.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-xl text-pretty text-white/90 sm:text-lg">

@@ -112,8 +112,13 @@ export async function searchShops(query: string): Promise<ShopWithSeller[]> {
   return (data ?? []) as unknown as ShopWithSeller[];
 }
 
-/** A single shop with seller + visible products (used on the public shop page). */
-export async function getShopWithDetails(shopId: string): Promise<ShopWithDetails | null> {
+/** A single shop with seller + visible products (used on the public shop page).
+ * `viewerId` (the current user) is excluded from the held-stock calculation so a
+ * buyer is never blocked by their *own* in-progress checkout hold. */
+export async function getShopWithDetails(
+  shopId: string,
+  viewerId?: string,
+): Promise<ShopWithDetails | null> {
   const supabase = await createClient();
 
   const { data: shop, error } = await supabase
@@ -145,11 +150,13 @@ export async function getShopWithDetails(shopId: string): Promise<ShopWithDetail
   if (ids.length > 0) {
     const { data: holds } = await supabase
       .from("product_reservations")
-      .select("product_id")
+      .select("product_id, buyer_id")
       .in("product_id", ids)
       .eq("status", "held")
       .gt("expires_at", nowIso);
     for (const h of holds ?? []) {
+      // Don't count the viewer's own hold against them (e.g. they hit Back).
+      if (viewerId && h.buyer_id === viewerId) continue;
       held.set(h.product_id, (held.get(h.product_id) ?? 0) + 1);
     }
   }
