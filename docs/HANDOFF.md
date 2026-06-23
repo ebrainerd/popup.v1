@@ -29,7 +29,9 @@ fixes/features: navigation pages, Explore sort + filters (incl. Following),
 user/shop search, draft→publish flow, live-stream auto-display, inventory
 reservations (no overselling), light/dark theme, detailed buyer order view,
 and the full **order-email lifecycle** (purchase, shipped, unshipped reminder,
-receipt nudge). Production runs in Stripe **live** mode.
+receipt nudge). **Creator drop loop** shipped: launch checklist, drop reminders
+(signup + UI), waiting room, share kit, upcoming drops on homepage, post-drop
+report. Production runs in Stripe **live** mode.
 
 ## ⚠️ Pending owner actions (do these when you can)
 
@@ -55,6 +57,20 @@ custom domain is purchased and pointed at Vercel, update **all** of these:
 - [ ] Cron runs **daily** (Vercel Hobby limit) at `/api/cron/release-funds`; it
       releases held funds, frees expired checkout holds, sends ship reminders, and
       sends receipt nudges. On Vercel **Pro** you can increase the frequency.
+- [ ] **Drop reminder cron not wired in Vercel yet.** The route
+      `/api/cron/send-drop-reminders` exists and is idempotent, but it was
+      removed from `vercel.json` because Vercel **Hobby only allows daily**
+      cron schedules — a `*/15 * * * *` entry blocks deployment. Until this is
+      fixed, opening-time reminders will not send automatically. Options:
+      - Upgrade to Vercel **Pro** and add
+        `{ "path": "/api/cron/send-drop-reminders", "schedule": "*/15 * * * *" }`
+        back to `vercel.json`, or
+      - Trigger manually / via Supabase scheduled function:
+        `GET /api/cron/send-drop-reminders?secret=<CRON_SECRET>` (every 15 min
+        in production), or
+      - Fold a best-effort daily pass into `/api/cron/release-funds` (opening
+        reminders only; 1h/24h windows need sub-hour scheduling).
+      Apply migration `0010_creator_drop_loop.sql` before reminders work at all.
 
 ## Email notifications (current behavior)
 
@@ -66,6 +82,8 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
 - **Unshipped > 3 days** → seller reminder (funds stay withheld until shipped).
 - **Shipped, unconfirmed ~3 days** → buyer "did it arrive? confirm receipt" nudge
   (max 2, ~4 days apart). Tracked via `orders.receipt_nudge_count/_at`.
+- **Drop reminders** (24h / 1h / opening) → buyer email (+ push if enabled) when
+  cron is wired; see pending item above. Signup UI works regardless.
 
 ## Conventions for future agents
 
@@ -86,5 +104,5 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
   Amazon IVS / LiveKit / Mux. Tracked as item #7 in prior discussions.
 - Scale hardening (Realtime connection limits, Explore caching, load testing).
 - Carrier tracking API for real delivery ETAs (Shippo/EasyPost/AfterShip).
-- Scheduled "opening soon" follower notifications (needs sub-daily cron).
+- Wire drop-reminder cron (see pending items above).
 - Nonce-based strict CSP; per-viewer avatar stack in the room.
