@@ -56,6 +56,13 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
       : product.price;
   const shipping = shop.shipping_rate ?? 0;
   const total = unitAmount + shipping;
+  // Stripe rejects charges under $0.50 — fail clearly (covers legacy items).
+  if (total < 50) {
+    return {
+      ok: false,
+      error: "This item's total is below the $0.50 minimum and can't be purchased.",
+    };
+  }
   const fee = platformFee(total);
 
   const site = getSiteUrl();

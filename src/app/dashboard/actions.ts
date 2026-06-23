@@ -266,12 +266,35 @@ export async function deleteShop(shopId: string): Promise<void> {
   redirect("/dashboard");
 }
 
+// Stripe's minimum chargeable amount is $0.50 USD — items below that can't be
+// purchased, so we don't allow listing them.
+const MIN_PRICE_USD = 0.5;
+const MAX_PHOTOS = 8;
+
+/** Parse a JSON array of photo URLs from a form field. */
+function parsePhotoUrls(raw: FormDataEntryValue | null | undefined): string[] {
+  if (typeof raw !== "string" || !raw) return [];
+  try {
+    const arr = JSON.parse(raw);
+    if (Array.isArray(arr)) {
+      return arr
+        .filter((u): u is string => typeof u === "string" && /^https?:\/\//.test(u))
+        .slice(0, MAX_PHOTOS);
+    }
+  } catch {
+    /* ignore */
+  }
+  return [];
+}
+
 const productSchema = z.object({
   shop_id: z.string().uuid(),
   title: z.string().trim().min(1, "Title is required.").max(140),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
-  photo_url: z.string().url().optional().or(z.literal("")),
-  price: z.coerce.number().min(0, "Price must be positive.").max(1_000_000),
+  price: z.coerce
+    .number()
+    .min(MIN_PRICE_USD, "Price must be at least $0.50 (the payment minimum).")
+    .max(1_000_000),
   quantity: z.coerce.number().int().min(0).max(1_000_000),
 });
 
@@ -282,7 +305,6 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     shop_id: formData.get("shop_id"),
     title: formData.get("title"),
     description: formData.get("description") ?? "",
-    photo_url: formData.get("photo_url") ?? "",
     price: formData.get("price") ?? 0,
     quantity: formData.get("quantity") ?? 1,
   });
@@ -290,6 +312,7 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
   const d = parsed.data;
+  const photoUrls = parsePhotoUrls(formData.get("photo_urls"));
 
   // Ownership is also enforced by RLS; this is a friendly early check.
   const { data: shop } = await supabase
@@ -304,7 +327,8 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     shop_id: d.shop_id,
     title: d.title,
     description: d.description || null,
-    photo_url: d.photo_url || null,
+    photo_url: photoUrls[0] ?? null,
+    photo_urls: photoUrls,
     price: toCents(d.price),
     quantity: d.quantity,
   });
@@ -320,8 +344,10 @@ const updateProductSchema = z.object({
   shop_id: z.string().uuid(),
   title: z.string().trim().min(1, "Title is required.").max(140),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
-  photo_url: z.string().url().optional().or(z.literal("")),
-  price: z.coerce.number().min(0, "Price must be positive.").max(1_000_000),
+  price: z.coerce
+    .number()
+    .min(MIN_PRICE_USD, "Price must be at least $0.50 (the payment minimum).")
+    .max(1_000_000),
   quantity: z.coerce.number().int().min(0).max(1_000_000),
 });
 
@@ -332,7 +358,7 @@ export async function updateProduct(input: {
   shop_id: string;
   title: string;
   description?: string;
-  photo_url?: string;
+  photo_urls?: string[];
   price: number;
   quantity: number;
 }): Promise<UpdateProductResult> {
@@ -343,6 +369,9 @@ export async function updateProduct(input: {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
   const d = parsed.data;
+  const photoUrls = (input.photo_urls ?? [])
+    .filter((u) => typeof u === "string" && /^https?:\/\//.test(u))
+    .slice(0, MAX_PHOTOS);
 
   const { data: shop } = await supabase
     .from("shops")
@@ -357,7 +386,8 @@ export async function updateProduct(input: {
     .update({
       title: d.title,
       description: d.description || null,
-      photo_url: d.photo_url || null,
+      photo_url: photoUrls[0] ?? null,
+      photo_urls: photoUrls,
       price: toCents(d.price),
       quantity: d.quantity,
     })

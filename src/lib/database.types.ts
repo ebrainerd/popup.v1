@@ -97,6 +97,7 @@ export interface Database {
           title: string;
           description: string | null;
           photo_url: string | null;
+          photo_urls: string[];
           price: number;
           quantity: number;
           discount_price: number | null;
@@ -110,6 +111,7 @@ export interface Database {
           title: string;
           description?: string | null;
           photo_url?: string | null;
+          photo_urls?: string[];
           price: number;
           quantity?: number;
           discount_price?: number | null;

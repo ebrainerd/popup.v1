@@ -40,6 +40,9 @@ export async function setFlashDiscount(
   if (discountPrice >= data.price) {
     return { ok: false, error: "Discount must be lower than the current price." };
   }
+  if (discountPrice < 50) {
+    return { ok: false, error: "Flash price must be at least $0.50 (the payment minimum)." };
+  }
 
   revalidatePath(`/shop/${data.shop_id}`);
   return { ok: true, productId, discountPrice };
@@ -66,7 +69,10 @@ export async function clearFlashDiscount(productId: string): Promise<FlashClearR
 const flashItemSchema = z.object({
   title: z.string().trim().min(1, "Title is required.").max(140),
   description: z.string().trim().max(2000).optional().or(z.literal("")),
-  price: z.coerce.number().min(0).max(1_000_000),
+  price: z.coerce
+    .number()
+    .min(0.5, "Price must be at least $0.50 (the payment minimum).")
+    .max(1_000_000),
   quantity: z.coerce.number().int().min(0).max(1_000_000),
   photo_url: z.string().url().optional().or(z.literal("")),
 });

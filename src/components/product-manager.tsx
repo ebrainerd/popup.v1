@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageUpload } from "@/components/image-upload";
+import { MultiImageUpload } from "@/components/multi-image-upload";
 import { formatCurrency } from "@/lib/utils";
 
 const initialState: ActionState = { error: null };
@@ -76,8 +76,8 @@ export function ProductManager({
           <h3 className="font-semibold">New product</h3>
 
           <div className="space-y-2">
-            <Label>Photo</Label>
-            <ImageUpload name="photo_url" bucket="products" aspect="square" label="Upload product photo" />
+            <Label>Photos</Label>
+            <MultiImageUpload name="photo_urls" bucket="products" />
           </div>
 
           <div className="space-y-1.5">
@@ -92,8 +92,9 @@ export function ProductManager({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="price">Price (USD, shipping included)</Label>
-              <Input id="price" name="price" type="number" min={0} step="0.01" required placeholder="24.00" />
+              <Label htmlFor="price">Price (USD)</Label>
+              <Input id="price" name="price" type="number" min={0.5} step="0.01" required placeholder="24.00" />
+              <p className="text-xs text-muted-foreground">Minimum $0.50.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="quantity">Quantity</Label>
@@ -124,12 +125,18 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const initialPhotos =
+    product.photo_urls && product.photo_urls.length > 0
+      ? product.photo_urls
+      : product.photo_url
+        ? [product.photo_url]
+        : [];
   const [fields, setFields] = useState({
     title: product.title,
     description: product.description ?? "",
     price: (product.price / 100).toFixed(2),
     quantity: String(product.quantity),
-    photo_url: product.photo_url ?? "",
+    photo_urls: initialPhotos,
   });
 
   function save() {
@@ -140,7 +147,7 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
         shop_id: shopId,
         title: fields.title,
         description: fields.description,
-        photo_url: fields.photo_url,
+        photo_urls: fields.photo_urls,
         price: parseFloat(fields.price) || 0,
         quantity: parseInt(fields.quantity) || 0,
       });
@@ -156,13 +163,10 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
   if (editing) {
     return (
       <div className="space-y-3 rounded-lg border border-primary/40 p-3">
-        <ImageUpload
-          name={`edit_photo_${product.id}`}
+        <MultiImageUpload
           bucket="products"
-          aspect="square"
-          defaultValue={fields.photo_url || null}
-          label="Upload product photo"
-          onChange={(u) => setFields((f) => ({ ...f, photo_url: u }))}
+          defaultValue={fields.photo_urls}
+          onChange={(urls) => setFields((f) => ({ ...f, photo_urls: urls }))}
         />
         <Input
           value={fields.title}
@@ -178,11 +182,11 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
         <div className="grid grid-cols-2 gap-2">
           <Input
             type="number"
-            min={0}
+            min={0.5}
             step="0.01"
             value={fields.price}
             onChange={(e) => setFields({ ...fields, price: e.target.value })}
-            placeholder="Price"
+            placeholder="Price (min $0.50)"
           />
           <Input
             type="number"

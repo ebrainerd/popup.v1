@@ -109,7 +109,7 @@ export function FlashControls({ products }: { products: Product[] }) {
           <Label className="text-xs">Flash price</Label>
           <Input
             type="number"
-            min={0}
+            min={0.5}
             step="0.01"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
@@ -176,7 +176,7 @@ export function FlashControls({ products }: { products: Product[] }) {
                 <Label className="text-xs">Price</Label>
                 <Input
                   type="number"
-                  min={0}
+                  min={0.5}
                   step="0.01"
                   value={item.price}
                   onChange={(e) => setItem({ ...item, price: e.target.value })}
