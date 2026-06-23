@@ -15,6 +15,7 @@ import {
 } from "@/lib/realtime";
 import type { Product } from "@/lib/database.types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useShopOpen } from "@/hooks/use-shop-open";
 
 function photosOf(product: Product): string[] {
   if (product.photo_urls && product.photo_urls.length > 0) return product.photo_urls;
@@ -26,14 +27,19 @@ export function ProductsGridLive({
   initialProducts,
   isOpen,
   isAuthed,
+  startAt,
+  endAt,
 }: {
   shopId: string;
   initialProducts: Product[];
   isOpen: boolean;
   isAuthed: boolean;
+  startAt: string;
+  endAt: string;
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [openId, setOpenId] = useState<string | null>(null);
+  const shopOpen = useShopOpen(startAt, endAt, isOpen);
 
   useShopEvent(ROOM_EVENTS.flashPrice, (payload) => {
     const { productId, discountPrice } = payload as FlashPriceBroadcast;
@@ -74,7 +80,7 @@ export function ProductsGridLive({
             key={product.id}
             product={product}
             shopId={shopId}
-            isOpen={isOpen}
+            isOpen={shopOpen}
             isAuthed={isAuthed}
             onOpenDetails={() => setOpenId(product.id)}
           />

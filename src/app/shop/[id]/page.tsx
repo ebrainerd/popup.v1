@@ -293,6 +293,8 @@ export default async function ShopPage({
               initialProducts={shop.products}
               isOpen={isOpen}
               isAuthed={Boolean(profile)}
+              startAt={shop.start_at}
+              endAt={shop.end_at}
             />
           </section>
 
@@ -305,7 +307,12 @@ export default async function ShopPage({
                 isScheduled
               />
             ) : (
-              <ShopChat initialMessages={initialMessages} isOpen={isOpen} />
+              <ShopChat
+                initialMessages={initialMessages}
+                isOpen={isOpen}
+                startAt={shop.start_at}
+                endAt={shop.end_at}
+              />
             )}
           </aside>
         </div>

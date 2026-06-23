@@ -50,3 +50,31 @@ export function deriveShopStatus(
   if (now >= end) return "ended";
   return "open";
 }
+
+/**
+ * Compute schedule timestamps when a seller ends a shop early.
+ * Preserves orders/history; only closes the purchase window.
+ */
+export function computeEndShopTimes(
+  startAt: string | Date,
+  endAt: string | Date,
+  now: Date = new Date(),
+): { start_at: string; end_at: string } {
+  const start = new Date(startAt);
+  const end = new Date(endAt);
+  const nowIso = now.toISOString();
+
+  if (now >= end) {
+    return { start_at: start.toISOString(), end_at: end.toISOString() };
+  }
+
+  // Scheduled but not yet open — collapse the window so end_at > start_at.
+  if (now < start) {
+    return {
+      start_at: new Date(now.getTime() - 60_000).toISOString(),
+      end_at: nowIso,
+    };
+  }
+
+  return { start_at: start.toISOString(), end_at: nowIso };
+}

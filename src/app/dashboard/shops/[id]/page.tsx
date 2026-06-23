@@ -104,6 +104,7 @@ export default async function ManageShopPage({
             shopId={shop.id}
             isLive={shop.is_live}
             isOpen={isOpen}
+            isEnded={isEnded}
             hasLiveUrl={Boolean(shop.live_url)}
           />
         </CardContent>

@@ -9,7 +9,8 @@ import { sendChatMessage, muteUser } from "@/app/shop/chat-actions";
 import { ROOM_EVENTS, type ChatBroadcast, type SystemBroadcast } from "@/lib/realtime";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, deriveShopStatus } from "@/lib/utils";
+import { useShopOpen } from "@/hooks/use-shop-open";
 
 type ChatItem =
   | { kind: "chat"; data: ChatBroadcast }
@@ -20,10 +21,15 @@ const QUICK_EMOJI = ["🔥", "❤️", "😍", "🎉", "👏", "💯"];
 export function ShopChat({
   initialMessages,
   isOpen,
+  startAt,
+  endAt,
 }: {
   initialMessages: ChatBroadcast[];
   isOpen: boolean;
+  startAt: string;
+  endAt: string;
 }) {
+  const shopOpen = useShopOpen(startAt, endAt, isOpen);
   const { shopId, currentUser, isOwner, broadcast } = useShopRoom();
   const [items, setItems] = useState<ChatItem[]>(() =>
     initialMessages.map((m) => ({ kind: "chat", data: m })),
@@ -132,8 +138,12 @@ export function ShopChat({
       </div>
 
       <div className="border-t border-border p-3">
-        {!isOpen ? (
-          <p className="text-center text-sm text-muted-foreground">Chat is closed.</p>
+        {!shopOpen ? (
+          <p className="text-center text-sm text-muted-foreground">
+            {deriveShopStatus(startAt, endAt) === "ended"
+              ? "This shop has ended."
+              : "Chat opens when the shop goes live."}
+          </p>
         ) : !currentUser ? (
           <Button asChild variant="outline" className="w-full">
             <Link href="/login">Log in to chat</Link>

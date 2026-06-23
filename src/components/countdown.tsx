@@ -27,7 +27,7 @@ function subscribe(cb: () => void) {
 }
 
 /** Current time in ms, or null during SSR / first hydration render. */
-function useNow(): number | null {
+export function useNow(): number | null {
   return useSyncExternalStore(
     subscribe,
     () => current,

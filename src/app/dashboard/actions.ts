@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { deriveShopStatus, toCents } from "@/lib/utils";
+import { deriveShopStatus, toCents, computeEndShopTimes } from "@/lib/utils";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
 
@@ -256,6 +256,44 @@ export async function toggleLive(shopId: string, isLive: boolean): Promise<Actio
 
   revalidatePath(`/dashboard/shops/${shopId}`);
   revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
+}
+
+export async function endShop(shopId: string): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("start_at, end_at, status")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+
+  const now = new Date();
+  if (deriveShopStatus(shop.start_at, shop.end_at, now) === "ended") {
+    return { error: "This shop has already ended." };
+  }
+
+  const times = computeEndShopTimes(shop.start_at, shop.end_at, now);
+  const nextStatus = shop.status === "draft" ? "draft" : "ended";
+
+  const { error } = await supabase
+    .from("shops")
+    .update({
+      start_at: times.start_at,
+      end_at: times.end_at,
+      is_live: false,
+      status: nextStatus,
+    })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+  revalidatePath("/explore");
   return { ...initialOk };
 }
 
