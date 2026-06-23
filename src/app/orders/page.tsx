@@ -17,6 +17,7 @@ import { OrderStatusBadge } from "@/components/order-status-badge";
 import { ConfirmReceiptButton } from "@/components/confirm-receipt-button";
 import { RatingForm } from "@/components/rating-form";
 import { CheckoutCelebration } from "@/components/checkout-celebration";
+import { PostPurchaseCta } from "@/components/post-purchase-cta";
 import { cn, formatCurrency, carrierTrackingUrl } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Your orders" };
@@ -51,6 +52,7 @@ export default async function OrdersPage({
       {checkout === "success" && (
         <>
           <CheckoutCelebration />
+          <PostPurchaseCta orders={orders} />
           <div className="mb-6 flex items-center gap-2 rounded-md bg-success/10 px-4 py-3 text-sm text-success">
             <CheckCircle2 className="size-5" />
             Payment successful! Your order is confirmed.

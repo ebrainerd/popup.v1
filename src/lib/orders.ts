@@ -7,6 +7,7 @@ export type BuyerOrder = Order & {
   shop: {
     id: string;
     name: string;
+    seller_id: string;
     seller: { username: string; display_name: string | null } | null;
   } | null;
   hasRating: boolean;
@@ -24,7 +25,7 @@ export async function getBuyerOrders(userId: string): Promise<BuyerOrder[]> {
     .select(
       `*,
        product:products!orders_product_id_fkey(title, photo_url),
-       shop:shops!orders_shop_id_fkey(id, name, seller:profiles!shops_seller_id_fkey(username, display_name))`,
+       shop:shops!orders_shop_id_fkey(id, name, seller_id, seller:profiles!shops_seller_id_fkey(username, display_name))`,
     )
     .eq("buyer_id", userId)
     .order("created_at", { ascending: false });

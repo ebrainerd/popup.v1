@@ -46,7 +46,7 @@ export default async function ExplorePage({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
       <h1 className="mb-1 text-3xl font-extrabold tracking-tight">Explore</h1>
-      <p className="mb-6 text-muted-foreground">Drops happening now and opening soon.</p>
+      <p className="mb-6 text-muted-foreground">Upcoming drops, live shops, and creators you follow.</p>
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         {/* Filters */}
@@ -98,17 +98,29 @@ export default async function ExplorePage({
           <p className="text-muted-foreground">
             {tab === "following"
               ? user
-                ? "None of the creators you follow are live right now."
-                : "Log in to see live drops from creators you follow."
+                ? "No upcoming or live drops from creators you follow."
+                : "Log in to see drops from creators you follow."
               : tab === "streaming"
-                ? "No one is streaming live right now."
+                ? "No one is streaming live right now. Check upcoming drops instead."
                 : tab === "soon"
-                  ? "Nothing opening soon yet."
-                  : "No open shops yet. The next drop could be yours."}
+                  ? "Nothing opening soon yet. Follow creators or start your own drop."
+                  : "No open or upcoming drops yet. The next one could be yours."}
           </p>
           <Button asChild className="mt-4 rounded-full">
-            <Link href={tab === "following" && !user ? "/login?redirectTo=/explore?tab=following" : "/signup"}>
-              {tab === "following" && !user ? "Log in" : "Start a drop"}
+            <Link
+              href={
+                tab === "following" && !user
+                  ? "/login?redirectTo=/explore?tab=following"
+                  : tab === "soon" || tab === "streaming"
+                    ? "/explore?tab=soon"
+                    : "/signup"
+              }
+            >
+              {tab === "following" && !user
+                ? "Log in"
+                : tab === "soon" || tab === "streaming"
+                  ? "Browse upcoming"
+                  : "Start a drop"}
             </Link>
           </Button>
         </div>

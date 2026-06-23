@@ -415,3 +415,64 @@ export async function deleteProduct(productId: string, shopId: string): Promise<
     revalidatePath(`/shop/${shopId}`);
   }
 }
+
+/** Duplicate a shop as a new draft with products copied. */
+export async function duplicateShop(shopId: string): Promise<void> {
+  const { supabase, user } = await requireUser();
+
+  const { data: source } = await supabase
+    .from("shops")
+    .select("*")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!source) redirect("/dashboard");
+
+  const { data: products } = await supabase
+    .from("products")
+    .select("*")
+    .eq("shop_id", shopId);
+
+  const start = new Date();
+  start.setDate(start.getDate() + 7);
+  const end = new Date(start);
+  end.setHours(end.getHours() + 4);
+
+  const { data: copy, error } = await supabase
+    .from("shops")
+    .insert({
+      seller_id: user.id,
+      name: `${source.name} (copy)`,
+      slug: slugify(`${source.name}-copy-${Date.now()}`),
+      description: source.description,
+      cover_url: source.cover_url,
+      start_at: start.toISOString(),
+      end_at: end.toISOString(),
+      visibility: source.visibility,
+      shipping_rate: source.shipping_rate,
+      live_url: source.live_url,
+      status: "draft",
+    })
+    .select("id")
+    .single();
+
+  if (error || !copy) redirect(`/dashboard/shops/${shopId}`);
+
+  if (products && products.length > 0) {
+    await supabase.from("products").insert(
+      products.map((p) => ({
+        shop_id: copy.id,
+        title: p.title,
+        description: p.description,
+        photo_url: p.photo_url,
+        photo_urls: p.photo_urls,
+        price: p.price,
+        quantity: p.quantity,
+        is_flash_only: p.is_flash_only,
+      })),
+    );
+  }
+
+  revalidatePath("/dashboard");
+  redirect(`/dashboard/shops/${copy.id}?duplicated=1`);
+}

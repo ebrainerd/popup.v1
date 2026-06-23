@@ -3,14 +3,24 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, Package, Truck } from "lucide-react";
-import { getShopWithDetails, getChatMessages } from "@/lib/shops";
+import {
+  getShopWithDetails,
+  getChatMessages,
+  getShopAnnouncements,
+} from "@/lib/shops";
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { getSiteUrl } from "@/lib/env";
+import { getDropReminderCount, getUserDropReminder } from "@/lib/drop-reminders";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { deriveShopStatus, formatCurrency } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
 import { FollowButton } from "@/components/follow-button";
+import { RemindMeButton } from "@/components/remind-me-button";
+import { ShareDropCard } from "@/components/share-drop-card";
+import { WaitingRoomBanner } from "@/components/waiting-room-banner";
+import { ShopAnnouncements } from "@/components/shop-announcements";
 import { LiveEmbed } from "@/components/live-embed";
 import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
 import { ShopRoom } from "@/components/shop-room";
@@ -30,9 +40,31 @@ export async function generateMetadata({
   const { id } = await params;
   const shop = await getShopWithDetails(id);
   if (!shop) return { title: "Shop not found" };
+
+  const seller = shop.seller;
+  const sellerLabel = seller ? `@${seller.username}` : "PopUp";
+  const description =
+    shop.description ??
+    `${shop.name} by ${sellerLabel} — limited drop on PopUp. Opens ${new Date(shop.start_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.`;
+  const site = getSiteUrl();
+  const ogImage = shop.cover_url ?? `${site}/opengraph-image`;
+
   return {
     title: shop.name,
-    description: shop.description ?? `Shop ${shop.name} on PopUp`,
+    description,
+    openGraph: {
+      title: `${shop.name} · ${sellerLabel}`,
+      description,
+      url: `${site}/shop/${id}`,
+      type: "website",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: shop.name }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: shop.name,
+      description,
+      images: [ogImage],
+    },
   };
 }
 
@@ -50,26 +82,35 @@ export default async function ShopPage({
   if (!shop) notFound();
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const isOpen = status === "open";
+  const isScheduled = status === "scheduled";
   const seller = shop.seller;
   const isOwner = profile?.id === shop.seller_id;
 
   let isFollowing = false;
+  let hasReminder = false;
   if (profile && seller && !isOwner) {
     const supabase = await createClient();
-    const { data } = await supabase
-      .from("shop_follows")
-      .select("follower_id")
-      .eq("seller_id", seller.id)
-      .eq("follower_id", profile.id)
-      .maybeSingle();
-    isFollowing = Boolean(data);
+    const [{ data: follow }, reminder] = await Promise.all([
+      supabase
+        .from("shop_follows")
+        .select("follower_id")
+        .eq("seller_id", seller.id)
+        .eq("follower_id", profile.id)
+        .maybeSingle(),
+      getUserDropReminder(shop.id, profile.id),
+    ]);
+    isFollowing = Boolean(follow);
+    hasReminder = Boolean(reminder);
+  } else if (profile) {
+    hasReminder = Boolean(await getUserDropReminder(shop.id, profile.id));
   }
 
-  // The live section activates whenever the shop is open and a stream URL is set
-  // (pasting a URL "just works"). "Go live" separately controls the LIVE badge,
-  // the Explore live filter, and follower notifications.
   const embed = isOpen && shop.live_url ? parseLiveEmbed(shop.live_url) : null;
-  const initialMessages = await getChatMessages(shop.id);
+  const [initialMessages, announcements, reminderCount] = await Promise.all([
+    getChatMessages(shop.id),
+    getShopAnnouncements(shop.id),
+    getDropReminderCount(shop.id),
+  ]);
 
   const currentUser: ChatSender | null = profile
     ? {
@@ -80,10 +121,17 @@ export default async function ShopPage({
       }
     : null;
 
+  const allSoldOut =
+    isOpen && shop.products.length > 0 && shop.products.every((p) => p.quantity === 0);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       {checkout === "canceled" && <ReleaseHoldOnCancel shopId={shop.id} />}
-      {/* Hero: the live stream takes over when streaming; otherwise the cover. */}
+
+      {isScheduled && (
+        <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
+      )}
+
       {embed?.embeddable ? (
         <div className="mb-6">
           <LiveEmbed embed={embed} />
@@ -98,17 +146,28 @@ export default async function ShopPage({
           <div className="absolute left-4 top-4 flex gap-2">
             {isOpen ? (
               <Badge variant="success">Open now</Badge>
-            ) : status === "scheduled" ? (
+            ) : isScheduled ? (
               <Badge variant="accent">Opening soon</Badge>
             ) : (
               <Badge variant="muted">Ended</Badge>
             )}
           </div>
+          {isScheduled && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+              <div className="text-center text-white">
+                <p className="text-sm font-medium uppercase tracking-widest opacity-90">
+                  Drop opens in
+                </p>
+                <div className="mt-2 text-2xl font-bold">
+                  <Countdown startAt={shop.start_at} endAt={shop.end_at} />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={Boolean(isOwner)}>
-        {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-2">
             <h1 className="text-3xl font-extrabold tracking-tight">{shop.name}</h1>
@@ -146,10 +205,27 @@ export default async function ShopPage({
 
           <div className="flex flex-col items-start gap-3 sm:items-end">
             <div className="flex items-center gap-2">
-              <ViewerCount />
+              {isOpen && <ViewerCount />}
               <Countdown startAt={shop.start_at} endAt={shop.end_at} />
             </div>
-            {seller && !isOwner && (
+            {isScheduled && !isOwner && (
+              <div className="flex flex-wrap items-center gap-2">
+                <RemindMeButton
+                  shopId={shop.id}
+                  initialSubscribed={hasReminder}
+                  isAuthed={Boolean(profile)}
+                  reminderCount={reminderCount}
+                />
+                {seller && (
+                  <FollowButton
+                    sellerId={seller.id}
+                    initialFollowing={isFollowing}
+                    isAuthed={Boolean(profile)}
+                  />
+                )}
+              </div>
+            )}
+            {isOpen && seller && !isOwner && (
               <FollowButton
                 sellerId={seller.id}
                 initialFollowing={isFollowing}
@@ -167,26 +243,50 @@ export default async function ShopPage({
           </div>
         </div>
 
-        {/* External live (Instagram, etc.) shows a "watch externally" card here. */}
+        {isScheduled && seller && (
+          <div className="mb-8 grid gap-4 lg:grid-cols-2">
+            <ShareDropCard
+              shopId={shop.id}
+              shopName={shop.name}
+              sellerHandle={seller.username}
+              startAt={shop.start_at}
+            />
+          </div>
+        )}
+
+        {allSoldOut && !isOwner && seller && (
+          <div className="mb-8 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center">
+            <p className="font-medium">Sold out!</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Follow @{seller.username} and set a reminder for their next drop.
+            </p>
+            <div className="mt-4 flex justify-center gap-2">
+              <FollowButton
+                sellerId={seller.id}
+                initialFollowing={isFollowing}
+                isAuthed={Boolean(profile)}
+              />
+            </div>
+          </div>
+        )}
+
         {embed && !embed.embeddable && (
           <div className="mb-8">
             <LiveEmbed embed={embed} />
           </div>
         )}
 
-        {/* Seller flash-drop controls */}
         {isOwner && isOpen && (
           <div className="mb-8">
             <FlashControls products={shop.products} />
           </div>
         )}
 
-        {/* Products + chat */}
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <section>
             <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
               <Package className="size-5" />
-              Products
+              {isScheduled ? "Product preview" : "Products"}
             </h2>
             <ProductsGridLive
               shopId={shop.id}
@@ -197,7 +297,16 @@ export default async function ShopPage({
           </section>
 
           <aside>
-            <ShopChat initialMessages={initialMessages} isOpen={isOpen} />
+            {isScheduled ? (
+              <ShopAnnouncements
+                shopId={shop.id}
+                initialAnnouncements={announcements}
+                isOwner={Boolean(isOwner)}
+                isScheduled
+              />
+            ) : (
+              <ShopChat initialMessages={initialMessages} isOpen={isOpen} />
+            )}
           </aside>
         </div>
 

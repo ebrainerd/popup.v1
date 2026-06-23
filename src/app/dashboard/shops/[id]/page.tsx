@@ -5,6 +5,9 @@ import { ArrowLeft, ExternalLink } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
 import { getSellerOrders } from "@/lib/orders";
+import { getDropReminderCount } from "@/lib/drop-reminders";
+import { computeDropHealth } from "@/lib/drop-readiness";
+import { getDropReport } from "@/lib/drop-analytics";
 import { SellerOrdersTable } from "@/components/seller-orders-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +18,8 @@ import { ProductManager } from "@/components/product-manager";
 import { ShopQuickActions } from "@/components/shop-quick-actions";
 import { PublishControls } from "@/components/publish-controls";
 import { CopyLink } from "@/components/copy-link";
+import { LaunchChecklist, DropHealthSummary } from "@/components/launch-checklist";
+import { DropReportCard } from "@/components/drop-report";
 import { deriveShopStatus } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Manage shop" };
@@ -32,8 +37,15 @@ export default async function ManageShopPage({
 
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const isOpen = status === "open";
+  const isEnded = status === "ended";
 
-  const orders = await getSellerOrders(shop.id);
+  const [orders, reminderCount] = await Promise.all([
+    getSellerOrders(shop.id),
+    getDropReminderCount(shop.id),
+  ]);
+
+  const health = computeDropHealth(shop, profile, reminderCount);
+  const report = isEnded ? await getDropReport(shop.id, profile.id) : null;
 
   return (
     <div className="space-y-8">
@@ -62,13 +74,20 @@ export default async function ManageShopPage({
             <Countdown startAt={shop.start_at} endAt={shop.end_at} />
             <Button asChild variant="outline" size="sm">
               <Link href={`/shop/${shop.id}`}>
-                <ExternalLink className="size-4" /> View
+                <ExternalLink className="size-4" /> Preview public drop
               </Link>
             </Button>
             <CopyLink path={`/shop/${shop.id}`} />
           </div>
         </div>
       </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <LaunchChecklist health={health} shopId={shop.id} />
+        <DropHealthSummary health={health} />
+      </div>
+
+      {report && <DropReportCard report={report} shopId={shop.id} />}
 
       <PublishControls
         shopId={shop.id}

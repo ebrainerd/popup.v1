@@ -429,3 +429,135 @@ export async function remindUnshippedOrders(): Promise<number> {
     return 0;
   }
 }
+
+type DropReminderRow = {
+  id: string;
+  user_id: string;
+  email_enabled: boolean;
+  push_enabled: boolean;
+  before_24h_sent_at: string | null;
+  before_1h_sent_at: string | null;
+  opening_sent_at: string | null;
+  shop: {
+    id: string;
+    name: string;
+    start_at: string;
+    end_at: string;
+    status: string;
+    seller: { username: string; display_name: string | null } | null;
+  } | null;
+};
+
+const REMINDER_COPY = {
+  opening: {
+    subject: (name: string) => `${name} is open now!`,
+    pushTitle: (name: string) => `${name} just opened! 🔥`,
+    pushBody: () => "The drop is live — jump in before items sell out.",
+    html: (name: string, seller: string, url: string) =>
+      `<p><strong>${name}</strong> by <strong>${seller}</strong> is open right now.</p>
+       <p><a href="${url}">Join the drop →</a></p>`,
+  },
+  "1h": {
+    subject: (name: string) => `${name} opens in 1 hour`,
+    pushTitle: (name: string) => `${name} opens in 1 hour ⏰`,
+    pushBody: () => "Get ready — the drop starts soon.",
+    html: (name: string, seller: string, url: string, when: string) =>
+      `<p><strong>${name}</strong> by <strong>${seller}</strong> opens in about an hour (${when}).</p>
+       <p><a href="${url}">View the drop →</a></p>`,
+  },
+  "24h": {
+    subject: (name: string) => `${name} opens tomorrow`,
+    pushTitle: (name: string) => `${name} opens in 24 hours`,
+    pushBody: () => "Mark your calendar — the drop is almost here.",
+    html: (name: string, seller: string, url: string, when: string) =>
+      `<p><strong>${name}</strong> by <strong>${seller}</strong> opens ${when}.</p>
+       <p><a href="${url}">View the drop →</a></p>`,
+  },
+} as const;
+
+/**
+ * Send due drop reminders (24h, 1h, opening). Idempotent per window.
+ * Returns count of reminders sent. Never throws.
+ */
+export async function sendDropReminders(): Promise<number> {
+  try {
+    const { dueReminderWindows, markReminderSent } = await import("@/lib/drop-reminders");
+    const supabase = createServiceRoleClient();
+    const now = new Date();
+
+    const { data: rows } = await supabase
+      .from("drop_reminders")
+      .select(
+        `id, user_id, email_enabled, push_enabled,
+         before_24h_sent_at, before_1h_sent_at, opening_sent_at,
+         shop:shops!drop_reminders_shop_id_fkey(id, name, start_at, end_at, status, seller:profiles!shops_seller_id_fkey(username, display_name))`,
+      )
+      .is("cancelled_at", null);
+
+    if (!rows || rows.length === 0) return 0;
+
+    const site = getSiteUrl();
+    let sent = 0;
+
+    for (const row of rows) {
+      const r = row as unknown as DropReminderRow;
+      const shop = r.shop;
+      if (!shop || shop.status === "draft") continue;
+      if (new Date(shop.end_at).getTime() < now.getTime()) continue;
+
+      const windows = dueReminderWindows(shop.start_at, now, r);
+      const window = windows.includes("opening")
+        ? "opening"
+        : windows.includes("1h")
+          ? "1h"
+          : windows[0];
+      if (!window) continue;
+
+      const copy = REMINDER_COPY[window];
+      const sellerName = shop.seller?.display_name || shop.seller?.username || "A creator";
+      const url = `${site}/shop/${shop.id}`;
+      const when = new Date(shop.start_at).toLocaleString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      });
+
+      const tasks: Promise<unknown>[] = [];
+
+      if (r.email_enabled) {
+        const email = await emailForUser(r.user_id);
+        if (email) {
+          tasks.push(
+            sendResendEmail(
+              email,
+              copy.subject(shop.name),
+              copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url, when),
+            ),
+          );
+        }
+      }
+
+      if (r.push_enabled) {
+        tasks.push(
+          sendPushToUsers([r.user_id], {
+            title: copy.pushTitle(shop.name),
+            body: copy.pushBody(),
+            url,
+          }),
+        );
+      }
+
+      await Promise.allSettled(tasks);
+      await markReminderSent(r.id, window);
+      sent++;
+    }
+
+    return sent;
+  } catch (err) {
+    console.error("sendDropReminders failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" } });
+    return 0;
+  }
+}

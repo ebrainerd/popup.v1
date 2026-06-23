@@ -66,6 +66,7 @@ export interface Database {
           live_url: string | null;
           status: ShopStatusColumn;
           peak_viewers: number;
+          featured_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -84,6 +85,7 @@ export interface Database {
           live_url?: string | null;
           status?: ShopStatusColumn;
           peak_viewers?: number;
+          featured_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -266,6 +268,52 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["push_subscriptions"]["Insert"]>;
         Relationships: [];
       };
+      drop_reminders: {
+        Row: {
+          id: string;
+          shop_id: string;
+          user_id: string;
+          email_enabled: boolean;
+          push_enabled: boolean;
+          before_24h_sent_at: string | null;
+          before_1h_sent_at: string | null;
+          opening_sent_at: string | null;
+          created_at: string;
+          cancelled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          shop_id: string;
+          user_id: string;
+          email_enabled?: boolean;
+          push_enabled?: boolean;
+          before_24h_sent_at?: string | null;
+          before_1h_sent_at?: string | null;
+          opening_sent_at?: string | null;
+          created_at?: string;
+          cancelled_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["drop_reminders"]["Insert"]>;
+        Relationships: [];
+      };
+      shop_announcements: {
+        Row: {
+          id: string;
+          shop_id: string;
+          seller_id: string;
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          shop_id: string;
+          seller_id: string;
+          message: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["shop_announcements"]["Insert"]>;
+        Relationships: [];
+      };
       product_reservations: {
         Row: {
           id: string;
@@ -328,3 +376,5 @@ export type Product = Database["public"]["Tables"]["products"]["Row"];
 export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type Rating = Database["public"]["Tables"]["ratings"]["Row"];
 export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
+export type DropReminder = Database["public"]["Tables"]["drop_reminders"]["Row"];
+export type ShopAnnouncement = Database["public"]["Tables"]["shop_announcements"]["Row"];

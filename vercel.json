@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/release-funds",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/send-drop-reminders",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

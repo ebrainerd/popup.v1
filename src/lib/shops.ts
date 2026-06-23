@@ -57,11 +57,8 @@ export async function getExploreShops(
   } else if (tab === "soon") {
     query = query.gt("start_at", nowIso);
   } else if (tab === "following" && followedSellerIds) {
-    // Open ("live") shops from followed sellers.
-    query = query
-      .in("seller_id", followedSellerIds)
-      .lte("start_at", nowIso)
-      .gt("end_at", nowIso);
+    // Open + upcoming shops from followed sellers.
+    query = query.in("seller_id", followedSellerIds).gt("end_at", nowIso);
   } else {
     // Everything that hasn't ended yet (open + opening soon).
     query = query.gt("end_at", nowIso);
@@ -90,6 +87,89 @@ export async function getExploreShops(
       .slice(0, 48);
   }
   return (data ?? []) as unknown as ShopWithSeller[];
+}
+
+/** Upcoming and featured drops for the homepage. Featured first, then soonest. */
+export async function getUpcomingDrops(limit = 6): Promise<ShopWithSeller[]> {
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+
+  const { data: featured, error: featuredErr } = await supabase
+    .from("shops")
+    .select(`*, seller:profiles!shops_seller_id_fkey(${SELLER_FIELDS})`)
+    .eq("visibility", "public")
+    .neq("status", "draft")
+    .gt("end_at", nowIso)
+    .not("featured_at", "is", null)
+    .order("featured_at", { ascending: false })
+    .limit(limit);
+
+  if (featuredErr) {
+    console.error("getUpcomingDrops featured error", featuredErr.message);
+  }
+
+  const featuredList = (featured ?? []) as unknown as ShopWithSeller[];
+  const remaining = limit - featuredList.length;
+  if (remaining <= 0) return featuredList.slice(0, limit);
+
+  const featuredIds = featuredList.map((s) => s.id);
+  const query = supabase
+    .from("shops")
+    .select(`*, seller:profiles!shops_seller_id_fkey(${SELLER_FIELDS})`)
+    .eq("visibility", "public")
+    .neq("status", "draft")
+    .gt("start_at", nowIso)
+    .order("start_at", { ascending: true })
+    .limit(remaining + featuredIds.length);
+
+  const { data: upcoming, error } = await query;
+  if (error) {
+    console.error("getUpcomingDrops error", error.message);
+    return featuredList;
+  }
+
+  const upcomingFiltered = (upcoming ?? [])
+    .filter((s) => !featuredIds.includes(s.id))
+    .slice(0, remaining) as unknown as ShopWithSeller[];
+
+  return [...featuredList, ...upcomingFiltered];
+}
+
+/** Currently open shops for homepage "live now" section. */
+export async function getOpenShops(limit = 6): Promise<ShopWithSeller[]> {
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("shops")
+    .select(`*, seller:profiles!shops_seller_id_fkey(${SELLER_FIELDS})`)
+    .eq("visibility", "public")
+    .neq("status", "draft")
+    .lte("start_at", nowIso)
+    .gt("end_at", nowIso)
+    .order("start_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    console.error("getOpenShops error", error.message);
+    return [];
+  }
+  return (data ?? []) as unknown as ShopWithSeller[];
+}
+
+/** Seller announcements for the waiting room. */
+export async function getShopAnnouncements(shopId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("shop_announcements")
+    .select("*")
+    .eq("shop_id", shopId)
+    .order("created_at", { ascending: true })
+    .limit(50);
+  if (error) {
+    console.error("getShopAnnouncements error", error.message);
+    return [];
+  }
+  return data ?? [];
 }
 
 /** Search public, published shops by name. */

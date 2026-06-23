@@ -43,7 +43,7 @@ export function ShopCard({ shop }: { shop: ShopWithSeller }) {
           ) : status === "open" ? (
             <Badge variant="success">Open now</Badge>
           ) : status === "scheduled" ? (
-            <Badge variant="accent">Soon</Badge>
+            <Badge variant="accent">Opening soon</Badge>
           ) : (
             <Badge variant="muted">Ended</Badge>
           )}

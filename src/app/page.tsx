@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { Store, Bell, Zap, ArrowRight, Sparkles, Radio } from "lucide-react";
-import { getExploreShops } from "@/lib/shops";
+import { Store, Bell, Zap, ArrowRight, Sparkles, Radio, CalendarClock } from "lucide-react";
+import { getUpcomingDrops, getOpenShops } from "@/lib/shops";
 import { ShopCard } from "@/components/shop-card";
 import { Button } from "@/components/ui/button";
 import { LiveTicker } from "@/components/live-ticker";
@@ -38,8 +38,8 @@ const STEPS = [
 ];
 
 export default async function HomePage() {
-  const preview = (await getExploreShops("all", "popular")).slice(0, 6);
-  const liveCount = preview.filter((s) => s.is_live || s.live_url).length;
+  const [upcoming, liveNow] = await Promise.all([getUpcomingDrops(6), getOpenShops(6)]);
+  const liveCount = liveNow.filter((s) => s.is_live || s.live_url).length;
 
   return (
     <>
@@ -118,13 +118,13 @@ export default async function HomePage() {
           {/* Quick stats */}
           <div className="animate-fade-up animate-fade-up-delay-4 mx-auto mt-10 flex max-w-md justify-center gap-6 sm:gap-10">
             <div className="text-center">
-              <p className="text-2xl font-extrabold sm:text-3xl">{preview.length || "—"}</p>
-              <p className="text-xs text-white/70 sm:text-sm">Shops live</p>
+              <p className="text-2xl font-extrabold sm:text-3xl">{upcoming.length || "—"}</p>
+              <p className="text-xs text-white/70 sm:text-sm">Upcoming drops</p>
             </div>
             <div className="h-10 w-px bg-white/20" />
             <div className="text-center">
               <p className="text-2xl font-extrabold sm:text-3xl">{liveCount || "—"}</p>
-              <p className="text-xs text-white/70 sm:text-sm">Streaming now</p>
+              <p className="text-xs text-white/70 sm:text-sm">Live now</p>
             </div>
             <div className="h-10 w-px bg-white/20" />
             <div className="text-center">
@@ -160,7 +160,48 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Happening Now preview */}
+        {/* Upcoming Drops */}
+        <section className="mb-14">
+          <div className="animate-fade-up mb-6 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <span className="flex size-8 items-center justify-center rounded-full bg-accent/15 text-accent">
+                <CalendarClock className="size-4" />
+              </span>
+              <h2 className="text-2xl font-bold">
+                Upcoming <span className="text-gradient-brand">Drops</span>
+              </h2>
+            </div>
+            <Link
+              href="/explore?tab=soon"
+              className="group inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+            >
+              See all
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+
+          {upcoming.length === 0 ? (
+            <div className="glass-card rounded-2xl border-dashed p-12 text-center">
+              <CalendarClock className="mx-auto mb-3 size-8 text-accent/60" />
+              <p className="text-muted-foreground">
+                No drops scheduled yet. Be the first creator to launch on PopUp.
+              </p>
+              <Button asChild className="mt-4 rounded-full">
+                <Link href="/signup">Start a drop</Link>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {upcoming.map((shop, i) => (
+                <div key={shop.id} className={cn("animate-fade-up", FADE_DELAYS[Math.min(i, 4)])}>
+                  <ShopCard shop={shop} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Live now */}
         <section>
           <div className="animate-fade-up mb-6 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -168,7 +209,7 @@ export default async function HomePage() {
                 <Radio className="size-4" />
               </span>
               <h2 className="text-2xl font-bold">
-                Happening <span className="text-gradient-brand">Now</span>
+                Live <span className="text-gradient-brand">Now</span>
               </h2>
             </div>
             <Link
@@ -180,17 +221,19 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          {preview.length === 0 ? (
+          {liveNow.length === 0 ? (
             <div className="glass-card rounded-2xl border-dashed p-12 text-center">
               <Sparkles className="mx-auto mb-3 size-8 text-primary/60" />
-              <p className="text-muted-foreground">No open shops yet. The next drop could be yours.</p>
-              <Button asChild className="mt-4 rounded-full">
-                <Link href="/signup">Start a drop</Link>
+              <p className="text-muted-foreground">
+                Nothing live right now — set reminders on upcoming drops so you don&apos;t miss out.
+              </p>
+              <Button asChild variant="outline" className="mt-4 rounded-full">
+                <Link href="/explore?tab=soon">Browse upcoming drops</Link>
               </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {preview.map((shop, i) => (
+              {liveNow.map((shop, i) => (
                 <div key={shop.id} className={cn("animate-fade-up", FADE_DELAYS[Math.min(i, 4)])}>
                   <ShopCard shop={shop} />
                 </div>
