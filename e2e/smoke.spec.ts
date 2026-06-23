@@ -7,11 +7,12 @@ import { test, expect } from "@playwright/test";
  * docs/TESTING.md.
  */
 
-test("home renders the hero and Happening Now feed", async ({ page }) => {
+test("home renders the hero and drop feed sections", async ({ page }) => {
   const res = await page.goto("/");
   expect(res?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: /shops that open/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Happening Now" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /upcoming drops/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /live now/i })).toBeVisible();
 });
 
 test("explore page has filters and sort", async ({ page }) => {
