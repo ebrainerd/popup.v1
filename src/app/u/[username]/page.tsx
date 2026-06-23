@@ -7,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { ShopCard } from "@/components/shop-card";
 import { FollowButton } from "@/components/follow-button";
 import { NotifyButton } from "@/components/notify-button";
+import { ProfileBioForm } from "@/components/profile-bio-form";
 import { deriveShopStatus } from "@/lib/utils";
 import type { ShopWithSeller } from "@/lib/shops";
 
@@ -68,36 +69,43 @@ export default async function ProfilePage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
-      <div className="mb-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-        <div className="relative h-20 w-20 overflow-hidden rounded-full bg-muted">
-          {profile.avatar_url ? (
-            <Image src={profile.avatar_url} alt={profile.username} fill className="object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground">
-              {(profile.display_name || profile.username).charAt(0).toUpperCase()}
+      <div className="mb-8">
+        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-muted">
+            {profile.avatar_url ? (
+              <Image src={profile.avatar_url} alt={profile.username} fill className="object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground">
+                {(profile.display_name || profile.username).charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <h1 className="text-2xl font-bold">{profile.display_name || profile.username}</h1>
+            <p className="text-muted-foreground">@{profile.username}</p>
+            <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
+              {profile.rating_count > 0 && (
+                <span className="flex items-center gap-1">
+                  <Star className="size-4 fill-current text-primary" />
+                  {Number(profile.rating_avg ?? 0).toFixed(1)} ({profile.rating_count})
+                </span>
+              )}
+              <span>{followerCount ?? 0} followers</span>
+            </div>
+          </div>
+          {!isOwner && (
+            <div className="flex items-center gap-2">
+              <FollowButton sellerId={profile.id} initialFollowing={isFollowing} isAuthed={Boolean(user)} />
+              {user && <NotifyButton />}
             </div>
           )}
         </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{profile.display_name || profile.username}</h1>
-          <p className="text-muted-foreground">@{profile.username}</p>
-          <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
-            {profile.rating_count > 0 && (
-              <span className="flex items-center gap-1">
-                <Star className="size-4 fill-current text-primary" />
-                {Number(profile.rating_avg ?? 0).toFixed(1)} ({profile.rating_count})
-              </span>
-            )}
-            <span>{followerCount ?? 0} followers</span>
-          </div>
-          {profile.bio && <p className="mt-2 max-w-xl text-pretty">{profile.bio}</p>}
-        </div>
-        {!isOwner && (
-          <div className="flex items-center gap-2">
-            <FollowButton sellerId={profile.id} initialFollowing={isFollowing} isAuthed={Boolean(user)} />
-            {user && <NotifyButton />}
-          </div>
+
+        {!isOwner && profile.bio && (
+          <p className="mt-4 max-w-xl text-pretty text-foreground/90">{profile.bio}</p>
         )}
+
+        {isOwner && <ProfileBioForm key={profile.bio ?? ""} bio={profile.bio} />}
       </div>
 
       <ShopSections shops={(shops ?? []) as unknown as ShopWithSeller[]} />
