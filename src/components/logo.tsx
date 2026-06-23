@@ -9,9 +9,7 @@ export function Logo({ className }: { className?: string }) {
       >
         P
       </span>
-      <span>
-        Pop<span className="text-gradient-brand">Up</span>
-      </span>
+      <span>PopUp</span>
     </span>
   );
 }
