@@ -7,6 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AnimatedBackground } from "@/components/animated-background";
 import { getSiteUrl } from "@/lib/env";
 
 export const metadata: Metadata = {
@@ -52,6 +53,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
+          <AnimatedBackground />
           <ServiceWorkerRegister />
           <SiteHeader />
           <main className="flex-1">{children}</main>

@@ -122,6 +122,104 @@ body {
   animation: popup-drift 14s ease-in-out infinite;
 }
 
+/* ---------------------------------------------------------------------------
+   Living, moving background — floating aurora blobs that roam the page.
+   Each blob travels a slightly different loop at a different speed so the
+   motion never visibly repeats. Pure CSS so it works without JS / hydration.
+--------------------------------------------------------------------------- */
+@keyframes popup-blob-a {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  33%  { transform: translate3d(6vw, 8vh, 0) scale(1.18); }
+  66%  { transform: translate3d(-4vw, 4vh, 0) scale(0.9); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes popup-blob-b {
+  0%   { transform: translate3d(0, 0, 0) scale(1); }
+  30%  { transform: translate3d(-8vw, 6vh, 0) scale(0.95); }
+  60%  { transform: translate3d(5vw, -7vh, 0) scale(1.22); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+@keyframes popup-blob-c {
+  0%   { transform: translate3d(0, 0, 0) scale(1.05); }
+  40%  { transform: translate3d(7vw, -5vh, 0) scale(1.25); }
+  70%  { transform: translate3d(-6vw, -8vh, 0) scale(0.92); }
+  100% { transform: translate3d(0, 0, 0) scale(1.05); }
+}
+@keyframes popup-blob-d {
+  0%   { transform: translate3d(0, 0, 0) scale(0.95); }
+  50%  { transform: translate3d(-7vw, -6vh, 0) scale(1.2); }
+  100% { transform: translate3d(0, 0, 0) scale(0.95); }
+}
+.animate-blob-a { animation: popup-blob-a 24s ease-in-out infinite; }
+.animate-blob-b { animation: popup-blob-b 30s ease-in-out infinite; }
+.animate-blob-c { animation: popup-blob-c 27s ease-in-out infinite; }
+.animate-blob-d { animation: popup-blob-d 33s ease-in-out infinite; }
+
+/* Slowly rotating conic shimmer behind the blobs for extra depth. */
+@keyframes popup-spin-slow {
+  to { transform: rotate(360deg); }
+}
+.animate-spin-slow { animation: popup-spin-slow 60s linear infinite; }
+
+/* Animated multi-stop gradient text (used on the hero headline). */
+@keyframes popup-gradient-pan {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+.text-gradient-animate {
+  background-image: linear-gradient(
+    100deg,
+    var(--primary) 0%,
+    var(--highlight) 30%,
+    var(--accent) 55%,
+    var(--primary) 80%,
+    var(--highlight) 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: popup-gradient-pan 8s ease-in-out infinite;
+}
+
+/* Twinkling sparkles floating around the hero. */
+@keyframes popup-twinkle {
+  0%, 100% { opacity: 0.15; transform: translateY(0) scale(0.85); }
+  50%      { opacity: 1;    transform: translateY(-10px) scale(1.1); }
+}
+.animate-twinkle { animation: popup-twinkle 4s ease-in-out infinite; }
+
+/* Gentle float for floating chips / emoji. */
+@keyframes popup-float {
+  0%, 100% { transform: translateY(0) rotate(var(--float-rot, 0deg)); }
+  50%      { transform: translateY(-12px) rotate(var(--float-rot, 0deg)); }
+}
+.animate-float { animation: popup-float 6s ease-in-out infinite; }
+
+/* Entrance: fade + rise. Pair with .reveal-delay-* for staggering. */
+@keyframes popup-reveal-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-reveal-up {
+  opacity: 0;
+  animation: popup-reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.reveal-delay-1 { animation-delay: 0.1s; }
+.reveal-delay-2 { animation-delay: 0.2s; }
+.reveal-delay-3 { animation-delay: 0.3s; }
+.reveal-delay-4 { animation-delay: 0.45s; }
+.reveal-delay-5 { animation-delay: 0.6s; }
+
+/* Marquee strip of fun words. */
+@keyframes popup-marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: popup-marquee 26s linear infinite;
+}
+
 /* Bouncy price reveal for flash drops */
 @keyframes popup-price-pop {
   0%   { transform: scale(0.8); }
@@ -142,7 +240,21 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-live-pulse,
   .animate-drift,
-  .animate-price-pop {
+  .animate-price-pop,
+  .animate-blob-a,
+  .animate-blob-b,
+  .animate-blob-c,
+  .animate-blob-d,
+  .animate-spin-slow,
+  .text-gradient-animate,
+  .animate-twinkle,
+  .animate-float,
+  .animate-marquee {
     animation: none;
+  }
+  /* Reveals must not leave content invisible when motion is disabled. */
+  .animate-reveal-up {
+    animation: none;
+    opacity: 1;
   }
 }
