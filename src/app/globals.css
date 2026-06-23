@@ -139,10 +139,162 @@ body {
     0 0 28px color-mix(in srgb, var(--primary) 35%, transparent);
 }
 
+/* ---------------------------------------------------------------------------
+   Ambient background — drifting orbs, aurora mesh, sparkles, ticker
+--------------------------------------------------------------------------- */
+
+@keyframes popup-aurora {
+  0%, 100% {
+    background-position: 0% 50%;
+    filter: hue-rotate(0deg);
+  }
+  33% {
+    background-position: 50% 0%;
+    filter: hue-rotate(15deg);
+  }
+  66% {
+    background-position: 100% 50%;
+    filter: hue-rotate(-10deg);
+  }
+}
+.animate-aurora {
+  background: linear-gradient(
+    125deg,
+    color-mix(in srgb, var(--primary) 30%, transparent),
+    color-mix(in srgb, var(--accent) 25%, transparent),
+    color-mix(in srgb, var(--highlight) 20%, transparent),
+    color-mix(in srgb, var(--primary) 30%, transparent)
+  );
+  background-size: 400% 400%;
+  animation: popup-aurora 18s ease-in-out infinite;
+}
+
+@keyframes popup-orb-1 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  25%      { transform: translate3d(12%, 8%, 0) scale(1.08); }
+  50%      { transform: translate3d(6%, 18%, 0) scale(0.95); }
+  75%      { transform: translate3d(-8%, 10%, 0) scale(1.12); }
+}
+@keyframes popup-orb-2 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  33%      { transform: translate3d(-14%, 12%, 0) scale(1.1); }
+  66%      { transform: translate3d(-6%, -8%, 0) scale(0.92); }
+}
+@keyframes popup-orb-3 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  50%      { transform: translate3d(10%, -12%, 0) scale(1.15) rotate(5deg); }
+}
+@keyframes popup-orb-4 {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  40%      { transform: translate3d(-10%, -6%, 0) scale(1.06); }
+  80%      { transform: translate3d(8%, 4%, 0) scale(0.94); }
+}
+.animate-orb-1 { animation: popup-orb-1 22s ease-in-out infinite; }
+.animate-orb-2 { animation: popup-orb-2 26s ease-in-out infinite; }
+.animate-orb-3 { animation: popup-orb-3 20s ease-in-out infinite; }
+.animate-orb-4 { animation: popup-orb-4 24s ease-in-out infinite; }
+
+@keyframes popup-sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.5) translateY(0); }
+  50%      { opacity: 0.9; transform: scale(1) translateY(-12px); }
+}
+.animate-sparkle {
+  animation: popup-sparkle 4s ease-in-out infinite;
+}
+
+@keyframes popup-ticker {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: popup-ticker 35s linear infinite;
+}
+
+/* Entrance animations */
+@keyframes popup-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: popup-fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-up-delay-1 { animation-delay: 0.1s; }
+.animate-fade-up-delay-2 { animation-delay: 0.2s; }
+.animate-fade-up-delay-3 { animation-delay: 0.3s; }
+.animate-fade-up-delay-4 { animation-delay: 0.4s; }
+.animate-fade-up-delay-5 { animation-delay: 0.5s; }
+
+/* Shimmer sweep for CTAs and live cards */
+@keyframes popup-shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: popup-shimmer 3s linear infinite;
+}
+
+/* Gentle float for decorative elements */
+@keyframes popup-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: popup-float 4s ease-in-out infinite;
+}
+
+/* Gradient text */
+.text-gradient-brand {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 50%, var(--highlight) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Glass card surface */
+.glass-card {
+  background: color-mix(in srgb, var(--card) 70%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* Live card glow pulse */
+@keyframes popup-live-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 40%, transparent),
+      0 4px 24px color-mix(in srgb, var(--primary) 15%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 70%, transparent),
+      0 8px 32px color-mix(in srgb, var(--primary) 30%, transparent);
+  }
+}
+.animate-live-glow {
+  animation: popup-live-glow 2.5s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-live-pulse,
   .animate-drift,
-  .animate-price-pop {
+  .animate-price-pop,
+  .animate-aurora,
+  .animate-orb-1,
+  .animate-orb-2,
+  .animate-orb-3,
+  .animate-orb-4,
+  .animate-sparkle,
+  .animate-ticker,
+  .animate-fade-up,
+  .animate-shimmer,
+  .animate-float,
+  .animate-live-glow {
     animation: none;
   }
 }

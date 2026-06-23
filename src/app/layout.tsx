@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
+import { AnimatedBackground } from "@/components/animated-background";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
@@ -50,11 +51,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${GeistSans.variable} ${GeistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="relative min-h-full flex flex-col">
         <ThemeProvider>
+          <AnimatedBackground />
           <ServiceWorkerRegister />
           <SiteHeader />
-          <main className="flex-1">{children}</main>
+          <main className="relative flex-1">{children}</main>
           <SiteFooter />
         </ThemeProvider>
       </body>

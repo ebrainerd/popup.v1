@@ -4,16 +4,20 @@ import { Eye, Star } from "lucide-react";
 import type { ShopWithSeller } from "@/lib/shops";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
-import { deriveShopStatus, formatCurrency } from "@/lib/utils";
+import { deriveShopStatus, formatCurrency, cn } from "@/lib/utils";
 
 export function ShopCard({ shop }: { shop: ShopWithSeller }) {
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const seller = shop.seller;
+  const isLive = status === "open" && (shop.is_live || shop.live_url);
 
   return (
     <Link
       href={`/shop/${shop.id}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-border bg-card transition-[transform,box-shadow] duration-200 ease-out hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      className={cn(
+        "group flex flex-col overflow-hidden rounded-2xl border border-border bg-card/80 backdrop-blur-sm transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1.5 hover:shadow-xl motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        isLive && "animate-live-glow",
+      )}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-muted">
         {shop.cover_url ? (
