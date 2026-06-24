@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Heart } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
+import { isInviteOnlyMode } from "@/lib/discovery";
 import { getFollowedSellers } from "@/lib/users";
 import { UserCard } from "@/components/user-card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ export default async function FollowingPage() {
   if (!user) redirect("/login?redirectTo=/following");
 
   const sellers = await getFollowedSellers(user.id);
+  const inviteOnly = isInviteOnlyMode();
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8">
@@ -27,9 +29,15 @@ export default async function FollowingPage() {
         <div className="rounded-lg border border-dashed border-border p-10 text-center">
           <Heart className="mx-auto mb-2 size-7 text-muted-foreground" />
           <p className="text-muted-foreground">You&apos;re not following anyone yet.</p>
-          <Button asChild className="mt-4 rounded-full">
-            <Link href="/search">Find creators</Link>
-          </Button>
+          {inviteOnly ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Open a creator&apos;s PopUp shop link, then tap Follow on their drop page.
+            </p>
+          ) : (
+            <Button asChild className="mt-4 rounded-full">
+              <Link href="/search">Find creators</Link>
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
