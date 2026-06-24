@@ -10,7 +10,7 @@ export default function NotFound() {
         The page you&apos;re looking for doesn&apos;t exist or its countdown ran out.
       </p>
       <Button asChild className="mt-6">
-        <Link href="/">Back to Explore</Link>
+        <Link href="/">Back home</Link>
       </Button>
     </div>
   );

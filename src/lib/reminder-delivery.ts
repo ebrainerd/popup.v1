@@ -4,6 +4,8 @@ import type { ReminderWindow } from "@/lib/drop-reminder-windows";
 
 export type DeliveryStatus = "processing" | "sent" | "failed" | "skipped_no_provider";
 
+const STALE_PROCESSING_MS = 10 * 60 * 1000;
+
 /** Whether automated email reminders can be delivered in this environment. */
 export function isEmailReminderDeliveryConfigured(): boolean {
   const apiKey = process.env.RESEND_API_KEY;
@@ -48,12 +50,89 @@ export async function canDeliverReminder(input: {
 
 export type DeliveryClaim = "claimed" | "already_claimed" | "error";
 
-/** Claim a reminder window for sending (idempotent under concurrency). */
+type ExistingDelivery = {
+  status: DeliveryStatus;
+  attempted_at: string;
+};
+
+/** Pure claim resolution for tests and claimReminderDelivery. */
+export function resolveDeliveryClaim(
+  existing: ExistingDelivery | null,
+  nowMs: number = Date.now(),
+): "insert" | "retry" | "already_claimed" {
+  if (!existing) return "insert";
+  if (existing.status === "sent") return "already_claimed";
+  if (existing.status === "processing") {
+    const age = nowMs - new Date(existing.attempted_at).getTime();
+    return age >= STALE_PROCESSING_MS ? "retry" : "already_claimed";
+  }
+  if (existing.status === "failed" || existing.status === "skipped_no_provider") {
+    return "retry";
+  }
+  return "already_claimed";
+}
+
+/** Finalize status from per-channel send outcomes. */
+export function resolveReminderDeliveryOutcome(input: {
+  emailWanted: boolean;
+  pushWanted: boolean;
+  emailSucceeded: boolean;
+  pushSucceeded: boolean;
+}): DeliveryStatus | "sent" {
+  const anyWanted = input.emailWanted || input.pushWanted;
+  const anySucceeded =
+    (input.emailWanted && input.emailSucceeded) ||
+    (input.pushWanted && input.pushSucceeded);
+  if (anySucceeded) return "sent";
+  return anyWanted ? "failed" : "skipped_no_provider";
+}
+
+/** Claim a reminder window for sending (idempotent under concurrency; retries failed/skipped). */
 export async function claimReminderDelivery(
   reminderId: string,
   window: ReminderWindow,
 ): Promise<DeliveryClaim> {
   const supabase = createServiceRoleClient();
+  const now = new Date().toISOString();
+
+  const { data: existing, error: readErr } = await supabase
+    .from("drop_reminder_deliveries")
+    .select("status, attempted_at")
+    .eq("reminder_id", reminderId)
+    .eq("reminder_window", window)
+    .maybeSingle();
+
+  if (readErr) {
+    console.error("claimReminderDelivery read error", readErr.message);
+    return "error";
+  }
+
+  const action = resolveDeliveryClaim(existing as ExistingDelivery | null);
+
+  if (action === "already_claimed") return "already_claimed";
+
+  if (action === "retry") {
+    const { data: updated, error } = await supabase
+      .from("drop_reminder_deliveries")
+      .update({
+        status: "processing",
+        attempted_at: now,
+        sent_at: null,
+        error: null,
+      })
+      .eq("reminder_id", reminderId)
+      .eq("reminder_window", window)
+      .in("status", ["failed", "skipped_no_provider", "processing"])
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      console.error("claimReminderDelivery retry error", error.message);
+      return "error";
+    }
+    return updated ? "claimed" : "already_claimed";
+  }
+
   const { error } = await supabase.from("drop_reminder_deliveries").insert({
     reminder_id: reminderId,
     reminder_window: window,
@@ -61,7 +140,7 @@ export async function claimReminderDelivery(
   });
   if (error?.code === "23505") return "already_claimed";
   if (error) {
-    console.error("claimReminderDelivery error", error.message);
+    console.error("claimReminderDelivery insert error", error.message);
     return "error";
   }
   return "claimed";

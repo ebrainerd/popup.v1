@@ -8,6 +8,7 @@ import { deriveShopStatus, formatCurrency } from "@/lib/utils";
 
 export function SellerShopRow({ shop }: { shop: Shop }) {
   const status = deriveShopStatus(shop.start_at, shop.end_at);
+  const isDraft = shop.status === "draft";
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
@@ -23,7 +24,8 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate font-semibold">{shop.name}</p>
-          {shop.is_live && status === "open" && <Badge variant="live">LIVE</Badge>}
+          {isDraft && <Badge variant="muted">Draft</Badge>}
+          {!isDraft && shop.is_live && status === "open" && <Badge variant="live">LIVE</Badge>}
           {shop.visibility === "private" && <Badge variant="muted">Private</Badge>}
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">

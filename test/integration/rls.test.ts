@@ -149,7 +149,37 @@ describe.skipIf(!enabled)("Row Level Security", () => {
     expect(error).not.toBeNull();
   });
 
-  it("exposes aggregate reminder counts without leaking reminder rows", async () => {
+  it("hides draft shop reminder counts from anonymous visitors", async () => {
+    const { data: shop } = await sellerClient
+      .from("shops")
+      .insert({
+        seller_id: sellerId,
+        name: "Draft reminder shop",
+        start_at: futureIso(1),
+        end_at: futureIso(3),
+        visibility: "public",
+        status: "draft",
+      })
+      .select("id")
+      .single();
+
+    await sellerClient.from("drop_reminders").insert({
+      shop_id: shop!.id,
+      user_id: buyerId,
+      email_enabled: true,
+    });
+
+    const { data: count } = await anon.rpc("drop_reminder_count", { target_shop: shop!.id });
+    expect(Number(count)).toBe(0);
+
+    const rows = await anon
+      .from("drop_reminders")
+      .select("id")
+      .eq("shop_id", shop!.id);
+    expect(rows.data ?? []).toHaveLength(0);
+  });
+
+  it("exposes aggregate reminder counts for published shops without leaking rows", async () => {
     const { data: shop } = await sellerClient
       .from("shops")
       .insert({
@@ -162,6 +192,15 @@ describe.skipIf(!enabled)("Row Level Security", () => {
       })
       .select("id")
       .single();
+
+    await sellerClient
+      .from("products")
+      .insert({ shop_id: shop!.id, title: "Drop item", price: 500 });
+
+    await sellerClient
+      .from("shops")
+      .update({ status: "scheduled" })
+      .eq("id", shop!.id);
 
     await sellerClient.from("drop_reminders").insert({
       shop_id: shop!.id,
