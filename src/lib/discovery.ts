@@ -14,3 +14,8 @@ export function isInviteOnlyMode(): boolean {
 export function isMarketplaceMode(): boolean {
   return getDiscoveryMode() === "marketplace";
 }
+
+/** In invite-only launch, all shops are link-only (private). */
+export function resolveShopVisibility(requested: "public" | "private"): "public" | "private" {
+  return isInviteOnlyMode() ? "private" : requested;
+}
