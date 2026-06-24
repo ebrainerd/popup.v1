@@ -15,6 +15,46 @@ Buyers should enter through a creator's shared shop link. PopUp can become a
 marketplace later, after there is enough scheduled supply to make discovery
 feel alive.
 
+## Positioning model
+
+Use the same mental model that Partiful uses for party invites, but for online
+pop-up shops.
+
+Partiful does not primarily sell "browse events." It sells "make a great party
+invite." PopUp should not primarily sell "browse shops." It should sell:
+
+> The easiest way to create an online pop-up shop.
+
+The product should feel like a creation tool first:
+
+1. Seller creates a timed shop.
+2. Seller gets one shareable link.
+3. Seller sends that link anywhere.
+4. Buyers open the link, join the waitlist, and show up when the shop opens.
+5. PopUp handles the selling mechanics.
+
+### Copy hierarchy
+
+Use this hierarchy across homepage, nav, empty states, and onboarding:
+
+- Primary promise: "Online pop-up shops in one link."
+- Primary CTA: "Create shop" or "Create a pop-up shop."
+- Supporting line: "Create a timed shop, share it anywhere, go live, and sell
+  before the clock runs out."
+- Buyer note: "Got a creator's PopUp link? Open it directly to join their
+  drop."
+
+Avoid these early-stage phrases:
+
+- "Explore shops."
+- "Browse what's happening now."
+- "Marketplace."
+- "Discover live shops."
+- "Trending shops."
+
+Those phrases create an expectation of broad buyer-side liquidity. Save them
+for the later marketplace phase.
+
 ## Why invite-link only
 
 - It removes the "empty marketplace" failure mode.
@@ -78,7 +118,9 @@ Do not render an empty marketplace grid in invite-only mode.
 In invite-only mode:
 
 - Remove "Live now" counts and any copy implying broad marketplace activity.
-- Replace "Browse what's happening now" with "See how seller-led drops work."
+- Replace "Browse what's happening now" with "Create a pop-up shop" or "See how
+  PopUp shops work."
+- Use "Online pop-up shops in one link" as the main homepage framing.
 - Keep product capability sections:
   - Timed drops.
   - Shareable shop links.
@@ -258,6 +300,12 @@ Acceptance:
 ### Seller-led launch kit
 
 - Make share link/caption copy the most prominent dashboard action.
+- Use Partiful-style creation language:
+  - "Create shop."
+  - "Customize your drop page."
+  - "Share your shop link."
+  - "Text/post this link to your audience."
+  - "Open your shop when the countdown hits zero."
 - Add "Launch checklist" copy focused on seller-owned channels:
   - Post to Instagram/TikTok.
   - Add to Discord.
