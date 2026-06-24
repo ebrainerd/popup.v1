@@ -6,6 +6,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { deriveShopStatus, toCents, computeEndShopTimes } from "@/lib/utils";
 import { resolveShopVisibility } from "@/lib/discovery";
+import {
+  DEFAULT_AUCTION_DURATION,
+  MIN_INCREMENT_CENTS,
+} from "@/lib/auction-bidding";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
 
@@ -328,27 +332,99 @@ function parsePhotoUrls(raw: FormDataEntryValue | null | undefined): string[] {
   return [];
 }
 
-const productSchema = z.object({
-  shop_id: z.string().uuid(),
-  title: z.string().trim().min(1, "Title is required.").max(140),
-  description: z.string().trim().max(2000).optional().or(z.literal("")),
-  price: z.coerce
-    .number()
-    .min(MIN_PRICE_USD, "Price must be at least $0.50 (the payment minimum).")
-    .max(1_000_000),
-  quantity: z.coerce.number().int().min(0).max(1_000_000),
-});
+const productSchema = z
+  .object({
+    shop_id: z.string().uuid(),
+    title: z.string().trim().min(1, "Title is required.").max(140),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
+    sale_type: z.enum(["buy_now", "auction"]).default("buy_now"),
+    price: z.coerce.number().min(0).max(1_000_000),
+    quantity: z.coerce.number().int().min(0).max(1_000_000),
+    auction_starting_bid: z.coerce.number().min(0).optional(),
+    auction_min_increment: z.coerce.number().min(0).optional(),
+    auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_allow_prebids: z.coerce.boolean().optional(),
+    auction_sudden_death: z.coerce.boolean().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.sale_type === "buy_now") {
+      if (d.price < MIN_PRICE_USD) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Price must be at least $0.50 (the payment minimum).",
+          path: ["price"],
+        });
+      }
+      return;
+    }
+    if (d.quantity !== 1) {
+      ctx.addIssue({ code: "custom", message: "Auction items must have quantity 1.", path: ["quantity"] });
+    }
+    const start = d.auction_starting_bid ?? 0;
+    const inc = d.auction_min_increment ?? 0;
+    if (start < MIN_PRICE_USD) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Starting bid must be at least $0.50.",
+        path: ["auction_starting_bid"],
+      });
+    }
+    if (inc < MIN_INCREMENT_CENTS / 100) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Minimum increment must be at least $0.50.",
+        path: ["auction_min_increment"],
+      });
+    }
+    if (!d.auction_duration_seconds || d.auction_duration_seconds < 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Choose an auction duration.",
+        path: ["auction_duration_seconds"],
+      });
+    }
+  });
+
+function parseProductForm(formData: FormData) {
+  return {
+    shop_id: formData.get("shop_id"),
+    title: formData.get("title"),
+    description: formData.get("description") ?? "",
+    sale_type: formData.get("sale_type") ?? "buy_now",
+    price: formData.get("price") ?? 0,
+    quantity: formData.get("quantity") ?? 1,
+    auction_starting_bid: formData.get("auction_starting_bid") ?? undefined,
+    auction_min_increment: formData.get("auction_min_increment") ?? undefined,
+    auction_duration_seconds: formData.get("auction_duration_seconds") ?? undefined,
+    auction_allow_prebids: formData.get("auction_allow_prebids") === "on",
+    auction_sudden_death: formData.get("auction_sudden_death") === "on",
+  };
+}
+
+function productInsertFromParsed(d: z.infer<typeof productSchema>, photoUrls: string[]) {
+  const isAuction = d.sale_type === "auction";
+  const startingCents = isAuction ? toCents(d.auction_starting_bid ?? 0) : toCents(d.price);
+  return {
+    shop_id: d.shop_id,
+    title: d.title,
+    description: d.description || null,
+    photo_url: photoUrls[0] ?? null,
+    photo_urls: photoUrls,
+    sale_type: d.sale_type,
+    price: isAuction ? startingCents : toCents(d.price),
+    quantity: isAuction ? 1 : d.quantity,
+    auction_starting_bid: isAuction ? startingCents : null,
+    auction_min_increment: isAuction ? toCents(d.auction_min_increment ?? 1) : null,
+    auction_duration_seconds: isAuction ? d.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION : null,
+    auction_allow_prebids: isAuction ? d.auction_allow_prebids !== false : true,
+    auction_sudden_death: isAuction ? Boolean(d.auction_sudden_death) : false,
+  };
+}
 
 export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase, user } = await requireUser();
 
-  const parsed = productSchema.safeParse({
-    shop_id: formData.get("shop_id"),
-    title: formData.get("title"),
-    description: formData.get("description") ?? "",
-    price: formData.get("price") ?? 0,
-    quantity: formData.get("quantity") ?? 1,
-  });
+  const parsed = productSchema.safeParse(parseProductForm(formData));
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
@@ -364,15 +440,7 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
 
-  const { error } = await supabase.from("products").insert({
-    shop_id: d.shop_id,
-    title: d.title,
-    description: d.description || null,
-    photo_url: photoUrls[0] ?? null,
-    photo_urls: photoUrls,
-    price: toCents(d.price),
-    quantity: d.quantity,
-  });
+  const { error } = await supabase.from("products").insert(productInsertFromParsed(d, photoUrls));
   if (error) return { error: error.message };
 
   revalidatePath(`/dashboard/shops/${d.shop_id}`);
@@ -380,17 +448,33 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
   return { ...initialOk };
 }
 
-const updateProductSchema = z.object({
-  product_id: z.string().uuid(),
-  shop_id: z.string().uuid(),
-  title: z.string().trim().min(1, "Title is required.").max(140),
-  description: z.string().trim().max(2000).optional().or(z.literal("")),
-  price: z.coerce
-    .number()
-    .min(MIN_PRICE_USD, "Price must be at least $0.50 (the payment minimum).")
-    .max(1_000_000),
-  quantity: z.coerce.number().int().min(0).max(1_000_000),
-});
+const updateProductSchema = z
+  .object({
+    product_id: z.string().uuid(),
+    shop_id: z.string().uuid(),
+    title: z.string().trim().min(1, "Title is required.").max(140),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
+    sale_type: z.enum(["buy_now", "auction"]),
+    price: z.coerce.number().min(0).max(1_000_000),
+    quantity: z.coerce.number().int().min(0).max(1_000_000),
+    auction_starting_bid: z.coerce.number().min(0).optional(),
+    auction_min_increment: z.coerce.number().min(0).optional(),
+    auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_allow_prebids: z.boolean().optional(),
+    auction_sudden_death: z.boolean().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.sale_type === "buy_now" && d.price < MIN_PRICE_USD) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Price must be at least $0.50.",
+        path: ["price"],
+      });
+    }
+    if (d.sale_type === "auction" && d.quantity !== 1) {
+      ctx.addIssue({ code: "custom", message: "Auction quantity must be 1.", path: ["quantity"] });
+    }
+  });
 
 export type UpdateProductResult = { ok: boolean; error?: string };
 
@@ -400,12 +484,23 @@ export async function updateProduct(input: {
   title: string;
   description?: string;
   photo_urls?: string[];
+  sale_type?: "buy_now" | "auction";
   price: number;
   quantity: number;
+  auction_starting_bid?: number;
+  auction_min_increment?: number;
+  auction_duration_seconds?: number;
+  auction_allow_prebids?: boolean;
+  auction_sudden_death?: boolean;
 }): Promise<UpdateProductResult> {
   const { supabase, user } = await requireUser();
 
-  const parsed = updateProductSchema.safeParse(input);
+  const parsed = updateProductSchema.safeParse({
+    ...input,
+    sale_type: input.sale_type ?? "buy_now",
+    auction_allow_prebids: input.auction_allow_prebids ?? true,
+    auction_sudden_death: input.auction_sudden_death ?? false,
+  });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
@@ -422,6 +517,19 @@ export async function updateProduct(input: {
     .maybeSingle();
   if (!shop) return { ok: false, error: "Shop not found." };
 
+  const { data: liveRun } = await supabase
+    .from("auction_runs")
+    .select("id, bid_count, status")
+    .eq("product_id", d.product_id)
+    .in("status", ["live", "awaiting_payment"])
+    .maybeSingle();
+  if (liveRun && (liveRun.bid_count > 0 || liveRun.status === "awaiting_payment")) {
+    return { ok: false, error: "Cannot edit while an auction is live or awaiting payment." };
+  }
+
+  const isAuction = d.sale_type === "auction";
+  const startingCents = isAuction ? toCents(d.auction_starting_bid ?? d.price) : toCents(d.price);
+
   const { error } = await supabase
     .from("products")
     .update({
@@ -429,8 +537,14 @@ export async function updateProduct(input: {
       description: d.description || null,
       photo_url: photoUrls[0] ?? null,
       photo_urls: photoUrls,
-      price: toCents(d.price),
-      quantity: d.quantity,
+      sale_type: d.sale_type,
+      price: isAuction ? startingCents : toCents(d.price),
+      quantity: isAuction ? 1 : d.quantity,
+      auction_starting_bid: isAuction ? startingCents : null,
+      auction_min_increment: isAuction ? toCents(d.auction_min_increment ?? 1) : null,
+      auction_duration_seconds: isAuction ? d.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION : null,
+      auction_allow_prebids: isAuction ? d.auction_allow_prebids !== false : true,
+      auction_sudden_death: isAuction ? Boolean(d.auction_sudden_death) : false,
     })
     .eq("id", d.product_id)
     .eq("shop_id", d.shop_id);
@@ -443,18 +557,25 @@ export async function updateProduct(input: {
 
 export async function deleteProduct(productId: string, shopId: string): Promise<void> {
   const { supabase, user } = await requireUser();
-  // RLS guards ownership via owns_shop(); verify shop belongs to the user too.
   const { data: shop } = await supabase
     .from("shops")
     .select("id")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
-  if (shop) {
-    await supabase.from("products").delete().eq("id", productId);
-    revalidatePath(`/dashboard/shops/${shopId}`);
-    revalidatePath(`/shop/${shopId}`);
-  }
+  if (!shop) return;
+
+  const { data: blocked } = await supabase
+    .from("auction_runs")
+    .select("id")
+    .eq("product_id", productId)
+    .in("status", ["live", "awaiting_payment", "paid"])
+    .maybeSingle();
+  if (blocked) return;
+
+  await supabase.from("products").delete().eq("id", productId);
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
 }
 
 /** Duplicate a shop as a new draft with products copied. */
@@ -510,6 +631,12 @@ export async function duplicateShop(shopId: string): Promise<void> {
         price: p.price,
         quantity: p.quantity,
         is_flash_only: p.is_flash_only,
+        sale_type: p.sale_type,
+        auction_starting_bid: p.auction_starting_bid,
+        auction_min_increment: p.auction_min_increment,
+        auction_duration_seconds: p.auction_duration_seconds,
+        auction_allow_prebids: p.auction_allow_prebids,
+        auction_sudden_death: p.auction_sudden_death,
       })),
     );
   }

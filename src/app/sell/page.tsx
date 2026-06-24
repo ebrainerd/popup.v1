@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Clock, Radio, Zap, CreditCard, Bell, BarChart3 } from "lucide-react";
+import { Clock, Radio, Zap, CreditCard, Bell, BarChart3, Gavel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = {
   title: "Sell on PopUp",
-  description: "Open a timed pop-up shop, go live, run flash drops, and get paid.",
+  description: "Open a timed pop-up shop, run live auctions, go live, and get paid.",
 };
 
 const FEATURES = [
   { icon: <Clock className="size-5" />, title: "Time-boxed drops", body: "Schedule a start and end — your shop opens and closes automatically." },
+  { icon: <Gavel className="size-5" />, title: "Live auctions", body: "Run countdown auctions with max bids, soft-close extensions, and winner checkout." },
   { icon: <Radio className="size-5" />, title: "Go live", body: "Stream and chat with buyers in real time while your shop is open." },
   { icon: <Zap className="size-5" />, title: "Flash drops", body: "Surprise discounts and flash-only items that broadcast instantly to the room." },
   { icon: <CreditCard className="size-5" />, title: "Get paid", body: "Stripe-powered checkout and payouts. A simple 9% platform fee per sale." },
@@ -22,11 +23,11 @@ export default function SellPage() {
     <div className="mx-auto max-w-5xl px-4 py-12">
       <section className="mx-auto max-w-2xl text-center">
         <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Create an online pop-up shop in one link.
+          Run live auctions from your own shop link.
         </h1>
         <p className="mt-4 text-pretty text-muted-foreground sm:text-lg">
-          Schedule your drop, customize the page, share the link with your audience, and open when
-          the countdown hits zero.
+          Schedule your drop, add auction lots or Buy Now items, share the link with your audience,
+          and open when the countdown hits zero.
         </p>
         <div className="mt-7 flex justify-center">
           <Button asChild size="lg" className="rounded-full px-8">

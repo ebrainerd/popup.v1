@@ -116,12 +116,14 @@ function ProductCard({
   const photos = photosOf(product);
   const discounted = product.discount_price != null && product.discount_price < product.price;
   const soldOut = product.quantity <= 0;
+  const isAuction = product.sale_type === "auction";
 
   return (
     <div
       className={cn(
         "flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow",
         discounted ? "border-primary/60 glow-primary" : "border-border",
+        isAuction && "border-accent/50",
       )}
     >
       <Gallery
@@ -130,6 +132,11 @@ function ProductCard({
         onImageClick={onOpenDetails}
         overlay={
           <>
+            {isAuction && (
+              <Badge variant="accent" className="absolute left-2 top-2">
+                Auction
+              </Badge>
+            )}
             {product.is_flash_only && (
               <Badge variant="accent" className="absolute left-2 top-2">
                 Flash item
@@ -157,13 +164,19 @@ function ProductCard({
         )}
         <div className="mt-auto flex items-end justify-between pt-2">
           <PriceBlock product={product} />
-          <BuyButton
-            shopId={shopId}
-            productId={product.id}
-            isOpen={isOpen}
-            soldOut={soldOut}
-            isAuthed={isAuthed}
-          />
+          {isAuction ? (
+            <span className="text-xs text-muted-foreground">
+              {product.auction_allow_prebids ? "Pre-bids welcome" : "Bidding opens live"}
+            </span>
+          ) : (
+            <BuyButton
+              shopId={shopId}
+              productId={product.id}
+              isOpen={isOpen}
+              soldOut={soldOut}
+              isAuthed={isAuthed}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -240,9 +253,14 @@ function ProductDetailDialog({
 function PriceBlock({ product }: { product: Product }) {
   const discounted = product.discount_price != null && product.discount_price < product.price;
   const soldOut = product.quantity <= 0;
+  const isAuction = product.sale_type === "auction";
   return (
     <div>
-      {discounted ? (
+      {isAuction ? (
+        <span className="text-lg font-bold">
+          Starting {formatCurrency(product.auction_starting_bid ?? product.price)}
+        </span>
+      ) : discounted ? (
         <div className="flex items-baseline gap-2">
           <span key={product.discount_price} className="animate-price-pop text-lg font-bold text-live">
             {formatCurrency(product.discount_price!)}
@@ -254,7 +272,9 @@ function PriceBlock({ product }: { product: Product }) {
       ) : (
         <span className="text-lg font-bold">{formatCurrency(product.price)}</span>
       )}
-      <p className="text-xs text-muted-foreground">{soldOut ? "Out of stock" : `${product.quantity} left`}</p>
+      <p className="text-xs text-muted-foreground">
+        {isAuction ? "1-of-1 lot" : soldOut ? "Out of stock" : `${product.quantity} left`}
+      </p>
     </div>
   );
 }

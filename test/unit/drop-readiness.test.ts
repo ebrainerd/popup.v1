@@ -21,7 +21,26 @@ const baseShop: ShopWithDetails = {
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   seller: null,
-  products: [{ id: "p1", shop_id: "shop-1", title: "Item", description: null, photo_url: null, photo_urls: [], price: 1000, quantity: 5, discount_price: null, is_flash_only: false, flash_expires_at: null, created_at: new Date().toISOString() }],
+  products: [{
+    id: "p1",
+    shop_id: "shop-1",
+    title: "Item",
+    description: null,
+    photo_url: null,
+    photo_urls: [],
+    price: 1000,
+    quantity: 5,
+    discount_price: null,
+    is_flash_only: false,
+    flash_expires_at: null,
+    sale_type: "buy_now",
+    auction_starting_bid: null,
+    auction_min_increment: null,
+    auction_duration_seconds: null,
+    auction_allow_prebids: true,
+    auction_sudden_death: false,
+    created_at: new Date().toISOString(),
+  }],
 };
 
 describe("computeDropHealth", () => {

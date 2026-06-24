@@ -36,6 +36,12 @@ export async function POST(request: NextRequest) {
       }
       case "checkout.session.expired": {
         const session = event.data.object as Stripe.Checkout.Session;
+        const meta = session.metadata ?? {};
+        if (meta.auction_id) {
+          await supabase.rpc("expire_auction_payment", {
+            p_auction_id: meta.auction_id,
+          });
+        }
         // Buyer abandoned checkout — free the held unit.
         await supabase
           .from("product_reservations")
@@ -75,6 +81,8 @@ async function handleCheckoutCompleted(
   const productId = meta.product_id;
   const shopId = meta.shop_id;
   const buyerId = meta.buyer_id;
+  const auctionId = meta.auction_id ?? null;
+  const winningBidId = meta.winning_bid_id ?? null;
   if (!productId || !shopId || !buyerId) return;
 
   // Idempotency: skip if we already recorded this session.
@@ -111,6 +119,8 @@ async function handleCheckoutCompleted(
       status: "paid",
       stripe_session_id: session.id,
       payment_intent: paymentIntent,
+      auction_id: auctionId,
+      winning_bid_id: winningBidId || null,
     })
     .select("id")
     .single();
@@ -125,6 +135,14 @@ async function handleCheckoutCompleted(
     .from("product_reservations")
     .update({ status: "completed" })
     .eq("session_id", session.id);
+
+  if (auctionId) {
+    await supabase.rpc("settle_auction_payment", {
+      p_auction_id: auctionId,
+      p_order_id: inserted.id,
+      p_stripe_session_id: session.id,
+    });
+  }
 
   // Email buyer + seller (best-effort, no-op without Resend configured).
   const { notifyOrderPlaced } = await import("@/lib/notifications");
