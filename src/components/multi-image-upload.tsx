@@ -4,6 +4,11 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  isAcceptableImageFile,
+  prepareImageForUpload,
+} from "@/lib/image-upload-client";
 import { cn } from "@/lib/utils";
 
 /**
@@ -55,16 +60,20 @@ export function MultiImageUpload({
       }
       const added: string[] = [];
       for (const file of list.slice(0, room)) {
-        if (!file.type.startsWith("image/")) continue;
-        if (file.size > 5 * 1024 * 1024) {
+        if (!isAcceptableImageFile(file)) {
+          setError("Please choose image files (JPEG, PNG, WebP, or HEIC).");
+          continue;
+        }
+        const prepared = await prepareImageForUpload(file);
+        if (prepared.size > 5 * 1024 * 1024) {
           setError("Each image must be under 5MB.");
           continue;
         }
-        const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+        const ext = prepared.name.split(".").pop()?.toLowerCase() || "jpg";
         const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
         const { error: uploadError } = await supabase.storage
           .from(bucket)
-          .upload(path, file, { cacheControl: "3600", upsert: false });
+          .upload(path, prepared, { cacheControl: "3600", upsert: false });
         if (uploadError) {
           setError(uploadError.message);
           continue;
@@ -138,7 +147,7 @@ export function MultiImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_UPLOAD_ACCEPT}
         multiple
         className="hidden"
         onChange={(e) => {

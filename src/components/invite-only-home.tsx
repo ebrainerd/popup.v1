@@ -72,7 +72,7 @@ export function InviteOnlyHomePage() {
 
         <p className="animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
           <Store className="size-3.5" />
-          Partiful for online pop-up shops
+          Timed online pop-up shops
         </p>
 
         <h1 className="animate-fade-up animate-fade-up-delay-1 mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
