@@ -29,6 +29,9 @@ import { ViewerCount } from "@/components/viewer-count";
 import { ShopChat } from "@/components/shop-chat";
 import { ProductsGridLive } from "@/components/products-grid-live";
 import { FlashControls } from "@/components/flash-controls";
+import { AuctionControls } from "@/components/auction-controls";
+import { AuctionLivePanel } from "@/components/auction-live-panel";
+import { getShopAuctionRuns, getLiveAuctionPanelState } from "@/lib/auctions";
 import type { ChatSender } from "@/lib/realtime";
 
 export const dynamic = "force-dynamic";
@@ -107,10 +110,13 @@ export default async function ShopPage({
   }
 
   const embed = isOpen && shop.live_url ? parseLiveEmbed(shop.live_url) : null;
-  const [initialMessages, announcements, reminderCount] = await Promise.all([
+  const [initialMessages, announcements, reminderCount, auctionRuns, auctionPanel] =
+    await Promise.all([
     getChatMessages(shop.id),
     getShopAnnouncements(shop.id),
     getDropReminderCount(shop.id),
+    getShopAuctionRuns(shop.id),
+    getLiveAuctionPanelState(shop.id, profile?.id ?? null),
   ]);
 
   const currentUser: ChatSender | null = profile
@@ -279,10 +285,19 @@ export default async function ShopPage({
         )}
 
         {isOwner && isOpen && (
-          <div className="mb-8">
+          <div className="mb-8 space-y-4">
+            <AuctionControls shopId={shop.id} products={shop.products} runs={auctionRuns} />
             <FlashControls products={shop.products} />
           </div>
         )}
+
+        <AuctionLivePanel
+          shopId={shop.id}
+          initial={auctionPanel}
+          isAuthed={Boolean(profile)}
+          isOwner={Boolean(isOwner)}
+          userId={profile?.id ?? null}
+        />
 
         <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
           <section>

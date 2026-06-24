@@ -35,6 +35,21 @@ export function DropReportCard({
               report.reminderToPurchase !== null ? `${report.reminderToPurchase}%` : "—"
             }
           />
+          {report.auctionsRun > 0 && (
+            <>
+              <Metric label="Auctions run" value={String(report.auctionsRun)} />
+              <Metric label="Auction revenue" value={formatCurrency(report.auctionRevenue)} />
+              <Metric label="Avg bids / auction" value={String(report.avgBidsPerAuction)} />
+              <Metric label="Highest bid" value={formatCurrency(report.highestBid)} />
+              <Metric label="Unsold auctions" value={String(report.unsoldAuctions)} />
+              <Metric
+                label="Auction payment rate"
+                value={
+                  report.auctionPaymentRate !== null ? `${report.auctionPaymentRate}%` : "—"
+                }
+              />
+            </>
+          )}
         </dl>
 
         {report.sellThrough.length > 0 && (

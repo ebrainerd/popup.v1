@@ -4,6 +4,7 @@ import {
   Link2,
   Clock,
   Zap,
+  Gavel,
   ArrowRight,
   Sparkles,
   Megaphone,
@@ -41,6 +42,12 @@ const CAPABILITIES = [
     accent: "from-highlight/25 to-highlight/5",
   },
   {
+    icon: <Gavel className="size-5" />,
+    title: "Live auctions",
+    body: "Run countdown auctions in the room with max bids, anti-snipe extensions, and instant winner checkout.",
+    accent: "from-live/20 to-live/5",
+  },
+  {
     icon: <Zap className="size-5" />,
     title: "Flash drops",
     body: "Run limited flash pricing live in the room while the clock ticks.",
@@ -76,11 +83,12 @@ export function InviteOnlyHomePage() {
         </p>
 
         <h1 className="animate-fade-up animate-fade-up-delay-1 mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-          Online pop-up shops in one link.
+          Online pop-up shops with live auctions in one link.
         </h1>
 
         <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-pretty text-white/90 sm:text-lg">
-          Create a timed shop, share it anywhere, go live, and sell before the clock runs out.
+          Create a timed shop, share it anywhere, run live auctions or Buy Now drops, and sell before
+          the clock runs out.
         </p>
 
         <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex flex-col items-center gap-3">

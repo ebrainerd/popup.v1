@@ -11,6 +11,12 @@ export type DropReport = {
   reminderSignups: number;
   followersGained: number;
   reminderToPurchase: number | null;
+  auctionsRun: number;
+  auctionRevenue: number;
+  avgBidsPerAuction: number;
+  highestBid: number;
+  unsoldAuctions: number;
+  auctionPaymentRate: number | null;
 };
 
 /** Post-drop summary for the seller dashboard. */
@@ -25,11 +31,11 @@ export async function getDropReport(shopId: string, sellerId: string): Promise<D
     .maybeSingle();
   if (!shop) return null;
 
-  const [{ data: orders }, { data: products }, { count: chatCount }, { count: reminderCount }] =
+  const [{ data: orders }, { data: products }, { count: chatCount }, { count: reminderCount }, { data: auctionRuns }] =
     await Promise.all([
       supabase
         .from("orders")
-        .select("id, amount_paid, buyer_id, product_id")
+        .select("id, amount_paid, buyer_id, product_id, auction_id")
         .eq("shop_id", shopId)
         .not("status", "in", '("canceled","refunded")'),
       supabase.from("products").select("id, title, quantity").eq("shop_id", shopId),
@@ -42,6 +48,10 @@ export async function getDropReport(shopId: string, sellerId: string): Promise<D
         .select("id", { count: "exact", head: true })
         .eq("shop_id", shopId)
         .is("cancelled_at", null),
+      supabase
+        .from("auction_runs")
+        .select("id, status, bid_count, current_bid")
+        .eq("shop_id", shopId),
     ]);
 
   const orderList = orders ?? [];
@@ -82,6 +92,20 @@ export async function getDropReport(shopId: string, sellerId: string): Promise<D
         : null;
   }
 
+  const runs = auctionRuns ?? [];
+  const finishedRuns = runs.filter((r) =>
+    ["paid", "unsold", "payment_expired", "awaiting_payment"].includes(r.status),
+  );
+  const auctionOrders = orderList.filter((o) => o.auction_id);
+  const auctionRevenue = auctionOrders.reduce((sum, o) => sum + (o.amount_paid ?? 0), 0);
+  const bidTotals = finishedRuns.reduce((sum, r) => sum + (r.bid_count ?? 0), 0);
+  const highestBid = runs.reduce((max, r) => Math.max(max, r.current_bid ?? 0), 0);
+  const unsoldAuctions = runs.filter((r) => r.status === "unsold").length;
+  const winners = runs.filter((r) =>
+    ["awaiting_payment", "paid", "payment_expired"].includes(r.status),
+  ).length;
+  const paidAuctions = runs.filter((r) => r.status === "paid").length;
+
   return {
     grossSales,
     orderCount: orderList.length,
@@ -92,5 +116,11 @@ export async function getDropReport(shopId: string, sellerId: string): Promise<D
     reminderSignups: reminderCount ?? 0,
     followersGained: followersGained ?? 0,
     reminderToPurchase,
+    auctionsRun: finishedRuns.length,
+    auctionRevenue,
+    avgBidsPerAuction: finishedRuns.length ? Math.round(bidTotals / finishedRuns.length) : 0,
+    highestBid,
+    unsoldAuctions,
+    auctionPaymentRate: winners > 0 ? Math.round((paidAuctions / winners) * 100) : null,
   };
 }

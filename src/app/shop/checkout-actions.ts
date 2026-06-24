@@ -204,3 +204,159 @@ export async function releaseMyHolds(shopId: string): Promise<void> {
 
   revalidatePath(`/shop/${shopId}`);
 }
+
+export async function createAuctionCheckoutSession(auctionId: string): Promise<CheckoutResult> {
+  const stripe = getStripe();
+  if (!stripe) return { ok: false, error: "Payments aren't enabled yet." };
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { ok: false, error: "Log in to checkout." };
+
+  const { data: run } = await supabase
+    .from("auction_runs")
+    .select("*")
+    .eq("id", auctionId)
+    .maybeSingle();
+  if (!run) return { ok: false, error: "Auction not found." };
+  if (run.status !== "awaiting_payment") {
+    return { ok: false, error: "This auction is not awaiting payment." };
+  }
+  if (run.current_winner_id !== user.id) {
+    return { ok: false, error: "Only the winning bidder can checkout." };
+  }
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("id, title, shop_id, quantity")
+    .eq("id", run.product_id)
+    .maybeSingle();
+  if (!product) return { ok: false, error: "Product not found." };
+  if (product.quantity <= 0) {
+    return { ok: false, error: "This item is no longer available." };
+  }
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id, name, seller_id, shipping_rate, start_at, end_at")
+    .eq("id", product.shop_id)
+    .maybeSingle();
+  if (!shop) return { ok: false, error: "Shop not found." };
+  if (deriveShopStatus(shop.start_at, shop.end_at) !== "open") {
+    return { ok: false, error: "This shop is closed." };
+  }
+
+  const { data: seller } = await supabase
+    .from("profiles")
+    .select("stripe_account_id, stripe_onboarded")
+    .eq("id", shop.seller_id)
+    .single();
+  if (!seller?.stripe_account_id || !seller.stripe_onboarded) {
+    return { ok: false, error: "This seller isn't set up to accept payments yet." };
+  }
+
+  const { data: maxBid } = await supabase
+    .from("auction_max_bids")
+    .select("id")
+    .eq("auction_id", auctionId)
+    .eq("bidder_id", user.id)
+    .maybeSingle();
+
+  const unitAmount = run.current_bid;
+  const shipping = shop.shipping_rate ?? 0;
+  const total = unitAmount + shipping;
+  if (total < 50) {
+    return { ok: false, error: "Winning bid total is below the $0.50 minimum." };
+  }
+  const fee = platformFee(total);
+  const site = getSiteUrl();
+  const HOLD_MINUTES = 30;
+
+  const { data: reservationId, error: reserveError } = await supabase.rpc("reserve_product", {
+    p_product: product.id,
+    p_buyer: user.id,
+    p_session: null,
+    p_ttl_minutes: HOLD_MINUTES,
+  });
+  if (reserveError || !reservationId) {
+    return { ok: false, error: "Could not start checkout. Please try again." };
+  }
+
+  async function releaseReservation() {
+    await supabase
+      .from("product_reservations")
+      .update({ status: "released" })
+      .eq("id", reservationId as string);
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      client_reference_id: user.id,
+      expires_at: Math.floor(Date.now() / 1000) + HOLD_MINUTES * 60,
+      line_items: [
+        {
+          quantity: 1,
+          price_data: {
+            currency: "usd",
+            unit_amount: unitAmount,
+            product_data: { name: `${product.title} — ${shop.name} (auction win)` },
+          },
+        },
+      ],
+      shipping_address_collection: { allowed_countries: ["US"] },
+      ...(shipping > 0
+        ? {
+            shipping_options: [
+              {
+                shipping_rate_data: {
+                  type: "fixed_amount",
+                  fixed_amount: { amount: shipping, currency: "usd" },
+                  display_name: "Flat-rate shipping",
+                },
+              },
+            ],
+          }
+        : {}),
+      payment_intent_data: {
+        metadata: {
+          product_id: product.id,
+          shop_id: shop.id,
+          buyer_id: user.id,
+          auction_id: auctionId,
+          winning_bid_id: maxBid?.id ?? "",
+        },
+      },
+      metadata: {
+        product_id: product.id,
+        shop_id: shop.id,
+        buyer_id: user.id,
+        seller_account: seller.stripe_account_id,
+        platform_fee: String(fee),
+        shipping_amount: String(shipping),
+        reservation_id: reservationId as string,
+        auction_id: auctionId,
+        winning_bid_id: maxBid?.id ?? "",
+      },
+      success_url: `${site}/orders?checkout=success`,
+      cancel_url: `${site}/shop/${shop.id}?checkout=canceled`,
+    });
+
+    if (!session.url) {
+      await releaseReservation();
+      return { ok: false, error: "Could not start checkout." };
+    }
+
+    await supabase
+      .from("product_reservations")
+      .update({ session_id: session.id })
+      .eq("id", reservationId as string);
+
+    return { ok: true, url: session.url };
+  } catch (err) {
+    await releaseReservation();
+    return { ok: false, error: err instanceof Error ? err.message : "Checkout failed." };
+  }
+}

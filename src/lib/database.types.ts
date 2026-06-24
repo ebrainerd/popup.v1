@@ -8,6 +8,23 @@
 
 export type ShopVisibility = "public" | "private";
 export type ShopStatusColumn = "draft" | "scheduled" | "open" | "ended" | "canceled";
+export type ProductSaleType = "buy_now" | "auction";
+export type AuctionRunStatus =
+  | "queued"
+  | "live"
+  | "ended"
+  | "awaiting_payment"
+  | "paid"
+  | "payment_expired"
+  | "canceled"
+  | "unsold";
+export type AuctionBidEventType =
+  | "prebid"
+  | "bid"
+  | "proxy_bid"
+  | "outbid"
+  | "win"
+  | "extend";
 export type OrderStatus =
   | "paid"
   | "shipped"
@@ -105,6 +122,12 @@ export interface Database {
           discount_price: number | null;
           is_flash_only: boolean;
           flash_expires_at: string | null;
+          sale_type: ProductSaleType;
+          auction_starting_bid: number | null;
+          auction_min_increment: number | null;
+          auction_duration_seconds: number | null;
+          auction_allow_prebids: boolean;
+          auction_sudden_death: boolean;
           created_at: string;
         };
         Insert: {
@@ -119,6 +142,12 @@ export interface Database {
           discount_price?: number | null;
           is_flash_only?: boolean;
           flash_expires_at?: string | null;
+          sale_type?: ProductSaleType;
+          auction_starting_bid?: number | null;
+          auction_min_increment?: number | null;
+          auction_duration_seconds?: number | null;
+          auction_allow_prebids?: boolean;
+          auction_sudden_death?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["products"]["Insert"]>;
@@ -148,6 +177,8 @@ export interface Database {
           ship_reminder_sent_at: string | null;
           receipt_nudge_count: number;
           receipt_nudge_at: string | null;
+          auction_id: string | null;
+          winning_bid_id: string | null;
         };
         Insert: {
           id?: string;
@@ -172,8 +203,96 @@ export interface Database {
           ship_reminder_sent_at?: string | null;
           receipt_nudge_count?: number;
           receipt_nudge_at?: string | null;
+          auction_id?: string | null;
+          winning_bid_id?: string | null;
         };
         Update: Partial<Database["public"]["Tables"]["orders"]["Insert"]>;
+        Relationships: [];
+      };
+      auction_runs: {
+        Row: {
+          id: string;
+          shop_id: string;
+          product_id: string;
+          seller_id: string;
+          status: AuctionRunStatus;
+          starting_bid: number;
+          min_increment: number;
+          current_bid: number;
+          current_winner_id: string | null;
+          winning_bid_id: string | null;
+          bid_count: number;
+          starts_at: string | null;
+          ends_at: string | null;
+          soft_close_seconds: number;
+          sudden_death: boolean;
+          checkout_expires_at: string | null;
+          stripe_session_id: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          shop_id: string;
+          product_id: string;
+          seller_id: string;
+          status: AuctionRunStatus;
+          starting_bid: number;
+          min_increment: number;
+          current_bid: number;
+          current_winner_id?: string | null;
+          winning_bid_id?: string | null;
+          bid_count?: number;
+          starts_at?: string | null;
+          ends_at?: string | null;
+          soft_close_seconds?: number;
+          sudden_death?: boolean;
+          checkout_expires_at?: string | null;
+          stripe_session_id?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["auction_runs"]["Insert"]>;
+        Relationships: [];
+      };
+      auction_max_bids: {
+        Row: {
+          id: string;
+          auction_id: string;
+          bidder_id: string;
+          max_amount: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          auction_id: string;
+          bidder_id: string;
+          max_amount: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["auction_max_bids"]["Insert"]>;
+        Relationships: [];
+      };
+      auction_bid_events: {
+        Row: {
+          id: string;
+          auction_id: string;
+          bidder_id: string | null;
+          visible_amount: number;
+          event_type: AuctionBidEventType;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          auction_id: string;
+          bidder_id?: string | null;
+          visible_amount: number;
+          event_type: AuctionBidEventType;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["auction_bid_events"]["Insert"]>;
         Relationships: [];
       };
       shop_follows: {
@@ -385,6 +504,43 @@ export interface Database {
         Args: { target_shop: string };
         Returns: number;
       };
+      queue_auction_run: { Args: { p_product_id: string }; Returns: string };
+      start_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
+      place_auction_bid: {
+        Args: { p_auction_id: string; p_max_amount: number };
+        Returns: Record<string, unknown>;
+      };
+      finalize_auction_run: {
+        Args: { p_auction_id: string };
+        Returns: Record<string, unknown>;
+      };
+      cancel_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
+      compute_auction_visible_bid: {
+        Args: {
+          p_starting_bid: number;
+          p_min_increment: number;
+          p_winner_max: number;
+          p_runner_up_max: number;
+        };
+        Returns: number;
+      };
+      auction_next_minimum_bid: {
+        Args: {
+          p_starting_bid: number;
+          p_min_increment: number;
+          p_current_bid: number;
+          p_bid_count: number;
+        };
+        Returns: number;
+      };
+      settle_auction_payment: {
+        Args: { p_auction_id: string; p_order_id: string; p_stripe_session_id: string };
+        Returns: undefined;
+      };
+      expire_auction_payment: {
+        Args: { p_auction_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       shop_visibility: ShopVisibility;
@@ -404,3 +560,5 @@ export type Rating = Database["public"]["Tables"]["ratings"]["Row"];
 export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
 export type DropReminder = Database["public"]["Tables"]["drop_reminders"]["Row"];
 export type ShopAnnouncement = Database["public"]["Tables"]["shop_announcements"]["Row"];
+export type AuctionRun = Database["public"]["Tables"]["auction_runs"]["Row"];
+export type AuctionBidEvent = Database["public"]["Tables"]["auction_bid_events"]["Row"];

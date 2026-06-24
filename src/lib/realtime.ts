@@ -15,6 +15,11 @@ export const ROOM_EVENTS = {
   flashClear: "flash_clear",
   flashItem: "flash_item",
   live: "live",
+  auctionStarted: "auction_started",
+  auctionBid: "auction_bid",
+  auctionExtended: "auction_extended",
+  auctionEnded: "auction_ended",
+  auctionWon: "auction_won",
 } as const;
 
 export type RoomEvent = (typeof ROOM_EVENTS)[keyof typeof ROOM_EVENTS];
@@ -64,6 +69,38 @@ export type FlashItemBroadcast = {
 export type LiveBroadcast = {
   isLive: boolean;
   liveUrl: string | null;
+};
+
+export type AuctionStartedBroadcast = {
+  auctionId: string;
+  productId: string;
+  productTitle: string;
+  startingBid: number;
+  endsAt: string;
+  suddenDeath: boolean;
+};
+
+export type AuctionBidBroadcast = {
+  auctionId: string;
+  productId: string;
+  status: string;
+  currentBid: number;
+  bidCount: number;
+  currentWinnerId: string | null;
+  currentWinnerName: string | null;
+  endsAt: string | null;
+  nextMinimumBid: number;
+  extended?: boolean;
+};
+
+export type AuctionEndedBroadcast = {
+  auctionId: string;
+  productId: string;
+  status: "unsold" | "awaiting_payment" | "paid" | "payment_expired";
+  winningBid?: number;
+  winnerId?: string;
+  winnerName?: string;
+  checkoutExpiresAt?: string;
 };
 
 export type PresenceMeta = {
