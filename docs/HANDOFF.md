@@ -17,6 +17,7 @@ Stripe. Stack: **Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + Ver
 | Run locally / scripts | `README.md` |
 | Feature roadmap (M1–M3 done) | `docs/ROADMAP.md` |
 | Creator-led drop loop PRD | `docs/CREATOR_DROP_LOOP.md` |
+| Invite-only launch & fix plan | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
 | Testing & CI | `docs/TESTING.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
