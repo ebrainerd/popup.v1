@@ -74,11 +74,13 @@ Known gaps this PRD addresses:
 ### Non-goals for this phase
 
 - Native streaming.
-- Auctions.
 - International shipping and tax.
 - Full CRM or marketing automation.
 - Replacing seller-owned social channels.
 - Complex creator eligibility, paid ads, or recommendation algorithms.
+
+Note: live auctions became a separate core feature direction after this PRD;
+use `docs/AUCTIONS_PRD.md` for auction requirements.
 
 ## Target users
 
