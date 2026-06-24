@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
+import { isInviteOnlyMode } from "@/lib/discovery";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { UserMenu } from "@/components/user-menu";
@@ -8,6 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 
 export async function SiteHeader() {
   const profile = await getCurrentProfile();
+  const inviteOnly = isInviteOnlyMode();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50">
@@ -20,11 +22,13 @@ export async function SiteHeader() {
           <Link href="/" className="text-muted-foreground transition-colors hover:text-foreground">
             Home
           </Link>
-          <Link href="/explore" className="text-muted-foreground transition-colors hover:text-foreground">
-            Explore
-          </Link>
+          {!inviteOnly && (
+            <Link href="/explore" className="text-muted-foreground transition-colors hover:text-foreground">
+              Explore
+            </Link>
+          )}
           <Link href="/sell" className="text-muted-foreground transition-colors hover:text-foreground">
-            Sell
+            {inviteOnly ? "How it works" : "Sell"}
           </Link>
           <Link href="/about" className="text-muted-foreground transition-colors hover:text-foreground">
             About
@@ -32,13 +36,15 @@ export async function SiteHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/search"
-            aria-label="Find creators"
-            className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-          >
-            <Search className="size-4" />
-          </Link>
+          {!inviteOnly && (
+            <Link
+              href="/search"
+              aria-label="Find creators"
+              className="inline-flex size-9 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Search className="size-4" />
+            </Link>
+          )}
           <ThemeToggle />
           {profile ? (
             <>
@@ -53,7 +59,7 @@ export async function SiteHeader() {
                 <Link href="/login">Log in</Link>
               </Button>
               <Button asChild size="sm" className="rounded-full">
-                <Link href="/signup">Start a Drop</Link>
+                <Link href="/signup">{inviteOnly ? "Create shop" : "Start a Drop"}</Link>
               </Button>
             </>
           )}

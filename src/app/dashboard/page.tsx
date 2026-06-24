@@ -43,7 +43,7 @@ export default async function DashboardPage() {
         </div>
         <Button asChild className="rounded-full">
           <Link href="/dashboard/shops/new">
-            <Plus className="size-4" /> Create Drop
+            <Plus className="size-4" /> Create shop
           </Link>
         </Button>
       </div>

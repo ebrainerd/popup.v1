@@ -46,7 +46,7 @@ export function computeDropHealth(
     { id: "live", label: "Live stream URL added", done: hasLiveUrl, optional: true },
     { id: "payouts", label: "Stripe payouts connected", done: payoutsConnected },
     { id: "published", label: "Drop published", done: isPublished },
-    { id: "share", label: "Share link copied", done: false, optional: true },
+    { id: "share", label: "Share your shop link copied", done: false, optional: true },
   ];
 
   const required = items.filter((i) => !i.optional);

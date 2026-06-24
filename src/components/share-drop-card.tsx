@@ -17,8 +17,8 @@ function buildCaptions(shopName: string, sellerHandle: string, startAt: string):
   });
   return [
     {
-      label: "Short social",
-      text: `🔥 ${shopName} drops ${when}. Set a reminder so you don't miss it →`,
+      label: "Text / post",
+      text: `My pop-up shop opens ${when}. Grab the link before it sells out →`,
     },
     {
       label: "Live shopping",
@@ -26,7 +26,7 @@ function buildCaptions(shopName: string, sellerHandle: string, startAt: string):
     },
     {
       label: "Countdown",
-      text: `⏰ ${when} — ${shopName} opens on PopUp. Tap the link and hit "Remind me" before it sells out.`,
+      text: `⏰ ${when} — ${shopName} opens on PopUp. Open the link and join the waitlist.`,
     },
   ];
 }
@@ -77,14 +77,17 @@ export function ShareDropCard({
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Share2 className="size-4" />
-          Share this drop
+          Share your shop link
         </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Text or post this link to your audience before the countdown hits zero.
+        </p>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => copyText(url, "link")}>
             {copiedLink ? <Check className="size-4 text-success" /> : <Link2 className="size-4" />}
-            {copiedLink ? "Copied!" : "Copy link"}
+            {copiedLink ? "Copied!" : "Copy shop link"}
           </Button>
           <Button variant="outline" size="sm" onClick={nativeShare}>
             <Share2 className="size-4" />

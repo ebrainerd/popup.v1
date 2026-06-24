@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { Search as SearchIcon } from "lucide-react";
+import { isInviteOnlyMode } from "@/lib/discovery";
 import { searchProfiles } from "@/lib/users";
 import { searchShops } from "@/lib/shops";
 import { UserCard } from "@/components/user-card";
@@ -15,6 +17,10 @@ export default async function SearchPage({
 }: {
   searchParams: Promise<{ q?: string }>;
 }) {
+  if (isInviteOnlyMode()) {
+    redirect("/sell");
+  }
+
   const { q } = await searchParams;
   const query = (q ?? "").toString();
   const trimmed = query.trim();

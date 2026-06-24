@@ -28,6 +28,7 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → `anon` `public` key | `eyJ…` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` secret | `eyJ…` |
 | `NEXT_PUBLIC_SITE_URL` | Your deployed URL (full, **with** scheme) | `https://popup-v1.vercel.app` |
+| `NEXT_PUBLIC_DISCOVERY_MODE` | Launch mode: `invite_only` (default) or `marketplace` | `invite_only` |
 
 ### Required — payments (test now, live after Stripe approval)
 
@@ -44,7 +45,6 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | Variable | Where to get it | Example |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_ENV` | Environment label for monitoring | `production` |
-| `CRON_SECRET` | Random string (`openssl rand -hex 32`); protects the payout cron | `a1b2c3…` |
 | `SENTRY_DSN` | Sentry → Project → Client Keys (DSN) | `https://…@o…ingest.sentry.io/…` |
 | `NEXT_PUBLIC_SENTRY_DSN` | Same DSN value (browser) | `https://…@o…ingest.sentry.io/…` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile → site key (secret goes in Supabase) | `0x4AAAA…` |
@@ -122,7 +122,10 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 ## 3. Scheduled payouts (cron)
 
 `vercel.json` registers a **daily** cron hitting `/api/cron/release-funds`,
-which releases funds for orders past their hold window. Set `CRON_SECRET`;
+which releases funds for orders past their hold window. **`CRON_SECRET` is
+required in production** — cron routes return 500 if it is missing and 401 on bad
+tokens. Set the secret on both `/api/cron/release-funds` and
+`/api/cron/send-drop-reminders`.
 Vercel automatically sends it as a bearer token, and the route rejects
 unauthorized calls. To run it elsewhere, `GET /api/cron/release-funds?secret=<CRON_SECRET>`.
 

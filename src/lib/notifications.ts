@@ -476,12 +476,19 @@ const REMINDER_COPY = {
 } as const;
 
 /**
- * Send due drop reminders (24h, 1h, opening). Idempotent per window.
+ * Send due drop reminders (24h, 1h, opening). Idempotent per window via delivery claims.
  * Returns count of reminders sent. Never throws.
  */
 export async function sendDropReminders(): Promise<number> {
   try {
-    const { dueReminderWindows, markReminderSent } = await import("@/lib/drop-reminders");
+    const {
+      dueReminderWindows,
+    } = await import("@/lib/drop-reminders");
+    const {
+      canDeliverReminder,
+      claimReminderDelivery,
+      finalizeReminderDelivery,
+    } = await import("@/lib/reminder-delivery");
     const supabase = createServiceRoleClient();
     const now = new Date();
 
@@ -513,6 +520,20 @@ export async function sendDropReminders(): Promise<number> {
           : windows[0];
       if (!window) continue;
 
+      const claim = await claimReminderDelivery(r.id, window);
+      if (claim !== "claimed") continue;
+
+      const deliverable = await canDeliverReminder({
+        userId: r.user_id,
+        emailEnabled: r.email_enabled,
+        pushEnabled: r.push_enabled,
+      });
+
+      if (!deliverable) {
+        await finalizeReminderDelivery(r.id, window, "skipped_no_provider");
+        continue;
+      }
+
       const copy = REMINDER_COPY[window];
       const sellerName = shop.seller?.display_name || shop.seller?.username || "A creator";
       const url = `${site}/shop/${shop.id}`;
@@ -524,33 +545,52 @@ export async function sendDropReminders(): Promise<number> {
         minute: "2-digit",
       });
 
-      const tasks: Promise<unknown>[] = [];
+      let deliveryFailed = false;
+      let failureMessage: string | undefined;
 
-      if (r.email_enabled) {
-        const email = await emailForUser(r.user_id);
-        if (email) {
+      try {
+        const tasks: Promise<unknown>[] = [];
+
+        if (r.email_enabled) {
+          const email = await emailForUser(r.user_id);
+          if (email) {
+            tasks.push(
+              sendResendEmail(
+                email,
+                copy.subject(shop.name),
+                copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url, when),
+              ),
+            );
+          }
+        }
+
+        if (r.push_enabled) {
           tasks.push(
-            sendResendEmail(
-              email,
-              copy.subject(shop.name),
-              copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url, when),
-            ),
+            sendPushToUsers([r.user_id], {
+              title: copy.pushTitle(shop.name),
+              body: copy.pushBody(),
+              url,
+            }),
           );
         }
+
+        const results = await Promise.allSettled(tasks);
+        const rejected = results.find((res) => res.status === "rejected");
+        if (rejected && rejected.status === "rejected") {
+          deliveryFailed = true;
+          failureMessage = String(rejected.reason);
+        }
+      } catch (err) {
+        deliveryFailed = true;
+        failureMessage = err instanceof Error ? err.message : String(err);
       }
 
-      if (r.push_enabled) {
-        tasks.push(
-          sendPushToUsers([r.user_id], {
-            title: copy.pushTitle(shop.name),
-            body: copy.pushBody(),
-            url,
-          }),
-        );
+      if (deliveryFailed) {
+        await finalizeReminderDelivery(r.id, window, "failed", { error: failureMessage });
+        continue;
       }
 
-      await Promise.allSettled(tasks);
-      await markReminderSent(r.id, window);
+      await finalizeReminderDelivery(r.id, window, "sent", { markReminderSent: true });
       sent++;
     }
 

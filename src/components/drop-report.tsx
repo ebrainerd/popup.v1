@@ -27,7 +27,7 @@ export function DropReportCard({
           <Metric label="Units sold" value={String(report.unitsSold)} />
           <Metric label="Peak viewers" value={String(report.peakViewers)} />
           <Metric label="Chat messages" value={String(report.chatCount)} />
-          <Metric label="Reminders" value={String(report.reminderSignups)} />
+          <Metric label="Waitlist" value={String(report.reminderSignups)} />
           <Metric label="New followers" value={String(report.followersGained)} />
           <Metric
             label="Reminder → purchase"

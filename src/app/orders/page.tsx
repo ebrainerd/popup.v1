@@ -12,6 +12,8 @@ import {
   Check,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
+import { createClient } from "@/lib/supabase/server";
+import { isInviteOnlyMode } from "@/lib/discovery";
 import { getBuyerOrders, type BuyerOrder } from "@/lib/orders";
 import { OrderStatusBadge } from "@/components/order-status-badge";
 import { ConfirmReceiptButton } from "@/components/confirm-receipt-button";
@@ -45,6 +47,20 @@ export default async function OrdersPage({
   const { checkout } = await searchParams;
   const orders = await getBuyerOrders(user.id);
 
+  const sellerIds = [
+    ...new Set(orders.map((o) => o.shop?.seller_id).filter((id): id is string => Boolean(id))),
+  ];
+  const followingSellerIds = new Set<string>();
+  if (sellerIds.length > 0) {
+    const supabase = await createClient();
+    const { data: follows } = await supabase
+      .from("shop_follows")
+      .select("seller_id")
+      .eq("follower_id", user.id)
+      .in("seller_id", sellerIds);
+    (follows ?? []).forEach((f) => followingSellerIds.add(f.seller_id));
+  }
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="mb-6 text-2xl font-bold">Your orders</h1>
@@ -52,7 +68,7 @@ export default async function OrdersPage({
       {checkout === "success" && (
         <>
           <CheckoutCelebration />
-          <PostPurchaseCta orders={orders} />
+          <PostPurchaseCta orders={orders} followingSellerIds={followingSellerIds} />
           <div className="mb-6 flex items-center gap-2 rounded-md bg-success/10 px-4 py-3 text-sm text-success">
             <CheckCircle2 className="size-5" />
             Payment successful! Your order is confirmed.
@@ -64,9 +80,15 @@ export default async function OrdersPage({
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <Package className="mx-auto mb-2 size-8 text-muted-foreground" />
           <p className="text-muted-foreground">You haven&apos;t bought anything yet.</p>
-          <Link href="/explore" className="mt-2 inline-block text-primary hover:underline">
-            Explore open shops →
-          </Link>
+          {isInviteOnlyMode() ? (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Open a creator&apos;s PopUp shop link to join their drop.
+            </p>
+          ) : (
+            <Link href="/explore" className="mt-2 inline-block text-primary hover:underline">
+              Explore open shops →
+            </Link>
+          )}
         </div>
       ) : (
         <div className="space-y-5">

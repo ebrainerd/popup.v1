@@ -45,7 +45,7 @@ export function LaunchChecklist({ health, shopId }: { health: DropHealth; shopId
           </p>
         </div>
         <div onClick={markShareCopied}>
-          <CopyLink path={`/shop/${shopId}`} />
+          <CopyLink path={`/shop/${shopId}`} label="Share shop link" />
         </div>
       </CardHeader>
       <CardContent>
@@ -92,7 +92,7 @@ export function DropHealthSummary({ health }: { health: DropHealth }) {
           <Stat label="Products" value={String(health.productCount)} />
           <Stat label="Available units" value={String(health.availableUnits)} />
           <Stat label="Followers" value={String(health.followerCount)} />
-          <Stat label="Reminders" value={String(health.reminderCount)} />
+          <Stat label="Waitlist" value={String(health.reminderCount)} />
         </dl>
       </CardContent>
     </Card>

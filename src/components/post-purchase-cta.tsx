@@ -5,7 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FollowButton } from "@/components/follow-button";
 import type { BuyerOrder } from "@/lib/orders";
 
-export function PostPurchaseCta({ orders }: { orders: BuyerOrder[] }) {
+export function PostPurchaseCta({
+  orders,
+  followingSellerIds,
+}: {
+  orders: BuyerOrder[];
+  followingSellerIds: Set<string>;
+}) {
   if (orders.length === 0) return null;
 
   const latest = orders[0];
@@ -29,21 +35,33 @@ export function PostPurchaseCta({ orders }: { orders: BuyerOrder[] }) {
     }
   }
 
+  const alreadyFollowingPrimary =
+    primaryShop?.seller_id ? followingSellerIds.has(primaryShop.seller_id) : false;
+
   return (
     <Card className="mb-6 border-primary/30 bg-primary/5">
       <CardContent className="space-y-4 p-4">
         <p className="font-semibold">You caught the drop 🎉</p>
         {primarySeller && primaryShop && (
           <div className="flex flex-wrap items-center gap-3">
-            <FollowButton
-              sellerId={primaryShop.seller_id}
-              initialFollowing={false}
-              isAuthed
-            />
+            {alreadyFollowingPrimary ? (
+              <Button asChild variant="outline" size="sm" className="rounded-full">
+                <Link href={`/u/${primarySeller.username}`}>
+                  <Heart className="size-4 fill-current" />
+                  Following @{primarySeller.username}
+                </Link>
+              </Button>
+            ) : (
+              <FollowButton
+                sellerId={primaryShop.seller_id}
+                initialFollowing={false}
+                isAuthed
+              />
+            )}
             <Button asChild variant="outline" size="sm" className="rounded-full">
               <Link href={`/shop/${primaryShop.id}`}>
                 <Bell className="size-4" />
-                Get next drop reminders
+                Join their next waitlist
               </Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="rounded-full">

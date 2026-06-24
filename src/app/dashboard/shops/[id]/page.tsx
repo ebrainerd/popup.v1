@@ -74,10 +74,10 @@ export default async function ManageShopPage({
             <Countdown startAt={shop.start_at} endAt={shop.end_at} />
             <Button asChild variant="outline" size="sm">
               <Link href={`/shop/${shop.id}`}>
-                <ExternalLink className="size-4" /> Preview public drop
+                <ExternalLink className="size-4" /> Customize your drop page
               </Link>
             </Button>
-            <CopyLink path={`/shop/${shop.id}`} />
+            <CopyLink path={`/shop/${shop.id}`} label="Share shop link" />
           </div>
         </div>
       </div>

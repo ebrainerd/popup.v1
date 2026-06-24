@@ -296,6 +296,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["drop_reminders"]["Insert"]>;
         Relationships: [];
       };
+      drop_reminder_deliveries: {
+        Row: {
+          id: string;
+          reminder_id: string;
+          reminder_window: "24h" | "1h" | "opening";
+          status: "processing" | "sent" | "failed" | "skipped_no_provider";
+          attempted_at: string;
+          sent_at: string | null;
+          error: string | null;
+        };
+        Insert: {
+          id?: string;
+          reminder_id: string;
+          reminder_window: "24h" | "1h" | "opening";
+          status: "processing" | "sent" | "failed" | "skipped_no_provider";
+          attempted_at?: string;
+          sent_at?: string | null;
+          error?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["drop_reminder_deliveries"]["Insert"]>;
+        Relationships: [];
+      };
       shop_announcements: {
         Row: {
           id: string;
@@ -357,6 +379,10 @@ export interface Database {
       };
       held_quantity: {
         Args: { p_product: string };
+        Returns: number;
+      };
+      drop_reminder_count: {
+        Args: { target_shop: string };
         Returns: number;
       };
     };

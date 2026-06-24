@@ -11,6 +11,7 @@ import {
 import { getCurrentProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/env";
+import { isReminderDeliveryConfigured } from "@/lib/reminder-delivery";
 import { getDropReminderCount, getUserDropReminder } from "@/lib/drop-reminders";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { deriveShopStatus, formatCurrency } from "@/lib/utils";
@@ -215,6 +216,7 @@ export default async function ShopPage({
                   initialSubscribed={hasReminder}
                   isAuthed={Boolean(profile)}
                   reminderCount={reminderCount}
+                  deliveryConfigured={isReminderDeliveryConfigured()}
                 />
                 {seller && (
                   <FollowButton
