@@ -28,16 +28,17 @@ type PushPayload = {
   url: string;
 };
 
-async function sendPushToUsers(userIds: string[], payload: PushPayload) {
-  if (!ensureVapid() || userIds.length === 0) return;
+async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<number> {
+  if (!ensureVapid() || userIds.length === 0) return 0;
   const supabase = createServiceRoleClient();
   const { data: subs } = await supabase
     .from("push_subscriptions")
     .select("endpoint, p256dh, auth")
     .in("user_id", userIds);
-  if (!subs || subs.length === 0) return;
+  if (!subs || subs.length === 0) return 0;
 
   const body = JSON.stringify(payload);
+  let sent = 0;
   await Promise.allSettled(
     subs.map(async (s) => {
       try {
@@ -45,6 +46,7 @@ async function sendPushToUsers(userIds: string[], payload: PushPayload) {
           { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           body,
         );
+        sent++;
       } catch (err: unknown) {
         // Clean up expired/invalid subscriptions.
         const statusCode = (err as { statusCode?: number })?.statusCode;
@@ -54,18 +56,24 @@ async function sendPushToUsers(userIds: string[], payload: PushPayload) {
       }
     }),
   );
+  return sent;
 }
 
-/** Send one email via Resend. No-op if RESEND_API_KEY isn't configured. */
-async function sendResendEmail(to: string, subject: string, html: string) {
+/** Send one email via Resend. Returns false when skipped; throws on API failure. */
+async function sendResendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || !to) return;
+  if (!apiKey || !to) return false;
   const from = process.env.RESEND_FROM || "PopUp <onboarding@resend.dev>";
-  await fetch("https://api.resend.com/emails", {
+  const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({ from, to, subject, html }),
   });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Resend failed (${res.status}): ${body.slice(0, 200)}`);
+  }
+  return true;
 }
 
 /** Resolve a user's email via the auth admin API (service role). */
@@ -476,12 +484,22 @@ const REMINDER_COPY = {
 } as const;
 
 /**
- * Send due drop reminders (24h, 1h, opening). Idempotent per window.
+ * Send due drop reminders (24h, 1h, opening). Idempotent per window via delivery claims.
  * Returns count of reminders sent. Never throws.
  */
 export async function sendDropReminders(): Promise<number> {
   try {
-    const { dueReminderWindows, markReminderSent } = await import("@/lib/drop-reminders");
+    const {
+      dueReminderWindows,
+    } = await import("@/lib/drop-reminders");
+    const {
+      canDeliverReminder,
+      claimReminderDelivery,
+      finalizeReminderDelivery,
+      isEmailReminderDeliveryConfigured,
+      resolveReminderDeliveryOutcome,
+      userHasPushSubscription,
+    } = await import("@/lib/reminder-delivery");
     const supabase = createServiceRoleClient();
     const now = new Date();
 
@@ -513,6 +531,20 @@ export async function sendDropReminders(): Promise<number> {
           : windows[0];
       if (!window) continue;
 
+      const claim = await claimReminderDelivery(r.id, window);
+      if (claim !== "claimed") continue;
+
+      const deliverable = await canDeliverReminder({
+        userId: r.user_id,
+        emailEnabled: r.email_enabled,
+        pushEnabled: r.push_enabled,
+      });
+
+      if (!deliverable) {
+        await finalizeReminderDelivery(r.id, window, "skipped_no_provider");
+        continue;
+      }
+
       const copy = REMINDER_COPY[window];
       const sellerName = shop.seller?.display_name || shop.seller?.username || "A creator";
       const url = `${site}/shop/${shop.id}`;
@@ -524,33 +556,52 @@ export async function sendDropReminders(): Promise<number> {
         minute: "2-digit",
       });
 
-      const tasks: Promise<unknown>[] = [];
+      const emailWanted = r.email_enabled && isEmailReminderDeliveryConfigured();
+      const pushWanted = r.push_enabled && (await userHasPushSubscription(r.user_id));
 
-      if (r.email_enabled) {
-        const email = await emailForUser(r.user_id);
-        if (email) {
-          tasks.push(
-            sendResendEmail(
+      let emailSucceeded = false;
+      let pushSucceeded = false;
+      let failureMessage: string | undefined;
+
+      try {
+        if (emailWanted) {
+          const email = await emailForUser(r.user_id);
+          if (email) {
+            emailSucceeded = await sendResendEmail(
               email,
               copy.subject(shop.name),
               copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url, when),
-            ),
-          );
+            );
+          }
         }
-      }
 
-      if (r.push_enabled) {
-        tasks.push(
-          sendPushToUsers([r.user_id], {
+        if (pushWanted) {
+          const pushCount = await sendPushToUsers([r.user_id], {
             title: copy.pushTitle(shop.name),
             body: copy.pushBody(),
             url,
-          }),
-        );
+          });
+          pushSucceeded = pushCount > 0;
+        }
+      } catch (err) {
+        failureMessage = err instanceof Error ? err.message : String(err);
       }
 
-      await Promise.allSettled(tasks);
-      await markReminderSent(r.id, window);
+      const outcome = failureMessage
+        ? "failed"
+        : resolveReminderDeliveryOutcome({
+            emailWanted,
+            pushWanted,
+            emailSucceeded,
+            pushSucceeded,
+          });
+
+      if (outcome !== "sent") {
+        await finalizeReminderDelivery(r.id, window, outcome, { error: failureMessage });
+        continue;
+      }
+
+      await finalizeReminderDelivery(r.id, window, "sent", { markReminderSent: true });
       sent++;
     }
 

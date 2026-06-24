@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, BellOff } from "lucide-react";
+import { Bell, BellOff, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toggleDropReminder } from "@/app/shop/reminder-actions";
 import { cn } from "@/lib/utils";
@@ -12,15 +12,21 @@ export function RemindMeButton({
   initialSubscribed,
   isAuthed,
   reminderCount,
+  deliveryConfigured,
 }: {
   shopId: string;
   initialSubscribed: boolean;
   isAuthed: boolean;
   reminderCount: number;
+  deliveryConfigured: boolean;
 }) {
   const router = useRouter();
   const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [pending, startTransition] = useTransition();
+
+  const useWaitlistCopy = !deliveryConfigured;
+  const joinLabel = useWaitlistCopy ? "Join waitlist" : "Remind me";
+  const cancelLabel = useWaitlistCopy ? "Leave waitlist" : "Cancel reminder";
 
   function onClick() {
     if (!isAuthed) {
@@ -38,10 +44,17 @@ export function RemindMeButton({
     });
   }
 
-  const socialProof =
-    reminderCount >= 5
+  const socialProof = useWaitlistCopy
+    ? reminderCount >= 5
+      ? `${reminderCount} people on the waitlist`
+      : "Be first on the waitlist"
+    : reminderCount >= 5
       ? `${reminderCount} people want a reminder`
       : "Be first in the room";
+
+  const helper = useWaitlistCopy
+    ? "We’ll notify you when reminders are live — you’re on the list for now."
+    : null;
 
   return (
     <div className="flex flex-col items-start gap-1.5">
@@ -51,10 +64,15 @@ export function RemindMeButton({
         size="lg"
         className={cn("rounded-full", subscribed && "bg-accent text-accent-foreground")}
       >
-        {subscribed ? <BellOff className="size-4" /> : <Bell className="size-4" />}
-        {subscribed ? "Cancel reminder" : "Remind me"}
+        {subscribed ? (
+          useWaitlistCopy ? <Users className="size-4" /> : <BellOff className="size-4" />
+        ) : (
+          <Bell className="size-4" />
+        )}
+        {subscribed ? cancelLabel : joinLabel}
       </Button>
       <p className="text-xs text-muted-foreground">{socialProof}</p>
+      {subscribed && helper && <p className="text-xs text-muted-foreground">{helper}</p>}
     </div>
   );
 }

@@ -17,6 +17,7 @@ Stripe. Stack: **Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + Ver
 | Run locally / scripts | `README.md` |
 | Feature roadmap (M1–M3 done) | `docs/ROADMAP.md` |
 | Creator-led drop loop PRD | `docs/CREATOR_DROP_LOOP.md` |
+| Invite-only launch plan | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
 | Testing & CI | `docs/TESTING.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
@@ -29,9 +30,7 @@ fixes/features: navigation pages, Explore sort + filters (incl. Following),
 user/shop search, draft→publish flow, live-stream auto-display, inventory
 reservations (no overselling), light/dark theme, detailed buyer order view,
 and the full **order-email lifecycle** (purchase, shipped, unshipped reminder,
-receipt nudge). **Creator drop loop** shipped: launch checklist, drop reminders
-(signup + UI), waiting room, share kit, upcoming drops on homepage, post-drop
-report. Production runs in Stripe **live** mode.
+receipt nudge). **Invite-only launch mode** is the default (`NEXT_PUBLIC_DISCOVERY_MODE=invite_only`): homepage and nav are seller-led; Explore is hidden. Production runs in Stripe **live** mode.
 
 ## ⚠️ Pending owner actions (do these when you can)
 
@@ -70,7 +69,11 @@ custom domain is purchased and pointed at Vercel, update **all** of these:
         in production), or
       - Fold a best-effort daily pass into `/api/cron/release-funds` (opening
         reminders only; 1h/24h windows need sub-hour scheduling).
-      Apply migration `0010_creator_drop_loop.sql` before reminders work at all.
+      Apply migrations `0010_creator_drop_loop.sql`, `0011_invite_only_launch_fixes.sql`,
+      and `0012_invite_only_launch_review_fixes.sql` before reminders work at all.
+- [ ] **`NEXT_PUBLIC_DISCOVERY_MODE=invite_only`** is the production default. Set to
+      `marketplace` only when there is enough scheduled supply to make Explore useful.
+- [ ] **`CRON_SECRET` is required in production.** Cron routes fail closed without it.
 
 ## Email notifications (current behavior)
 

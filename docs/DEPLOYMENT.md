@@ -28,6 +28,8 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → `anon` `public` key | `eyJ…` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` secret | `eyJ…` |
 | `NEXT_PUBLIC_SITE_URL` | Your deployed URL (full, **with** scheme) | `https://popup-v1.vercel.app` |
+| `NEXT_PUBLIC_DISCOVERY_MODE` | Launch mode: `invite_only` (default) or `marketplace` | `invite_only` |
+| `CRON_SECRET` | Random secret for `/api/cron/*` routes (required in production) | `openssl rand -hex 32` |
 
 ### Required — payments (test now, live after Stripe approval)
 
@@ -44,7 +46,6 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | Variable | Where to get it | Example |
 | --- | --- | --- |
 | `NEXT_PUBLIC_APP_ENV` | Environment label for monitoring | `production` |
-| `CRON_SECRET` | Random string (`openssl rand -hex 32`); protects the payout cron | `a1b2c3…` |
 | `SENTRY_DSN` | Sentry → Project → Client Keys (DSN) | `https://…@o…ingest.sentry.io/…` |
 | `NEXT_PUBLIC_SENTRY_DSN` | Same DSN value (browser) | `https://…@o…ingest.sentry.io/…` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile → site key (secret goes in Supabase) | `0x4AAAA…` |
@@ -76,6 +77,8 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 [ ] NEXT_PUBLIC_SUPABASE_ANON_KEY
 [ ] SUPABASE_SERVICE_ROLE_KEY
 [ ] NEXT_PUBLIC_SITE_URL
+[ ] NEXT_PUBLIC_DISCOVERY_MODE=invite_only
+[ ] CRON_SECRET
 [ ] STRIPE_SECRET_KEY
 [ ] NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 [ ] STRIPE_WEBHOOK_SECRET
@@ -83,7 +86,6 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 [ ] RELEASE_DELAY_HOURS=72        # use 0 while testing
 # Recommended
 [ ] NEXT_PUBLIC_APP_ENV=production
-[ ] CRON_SECRET
 [ ] SENTRY_DSN
 [ ] NEXT_PUBLIC_SENTRY_DSN
 [ ] NEXT_PUBLIC_TURNSTILE_SITE_KEY
@@ -119,17 +121,23 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 4. Set `PLATFORM_FEE_BPS=900` (9%) and `RELEASE_DELAY_HOURS` (72 in prod; `0`
    locally for instant payouts when testing).
 
-## 3. Scheduled payouts (cron)
+## 3. Scheduled jobs (cron)
 
 `vercel.json` registers a **daily** cron hitting `/api/cron/release-funds`,
-which releases funds for orders past their hold window. Set `CRON_SECRET`;
-Vercel automatically sends it as a bearer token, and the route rejects
-unauthorized calls. To run it elsewhere, `GET /api/cron/release-funds?secret=<CRON_SECRET>`.
+which releases funds for orders past their hold window. **`CRON_SECRET` is
+required in production** — cron routes return 500 if it is missing and 401 on bad
+tokens. Set the same secret for both `/api/cron/release-funds` and
+`/api/cron/send-drop-reminders`. Vercel automatically sends it as a bearer token,
+and the route rejects unauthorized calls. To run it elsewhere,
+`GET /api/cron/release-funds?secret=<CRON_SECRET>`.
 
 > **Plan note:** Vercel's **Hobby** plan only allows **once-per-day** cron
 > schedules and will fail the deployment if the schedule is more frequent. The
-> default `0 5 * * *` (daily 05:00 UTC) works on Hobby. On **Pro** you can
-> increase the frequency (e.g. hourly `0 * * * *`) for faster payouts — with a
+> default `0 5 * * *` (daily 05:00 UTC) works on Hobby and runs **release-funds**
+> only. **`/api/cron/send-drop-reminders` is not wired in `vercel.json` on Hobby**
+> — drop reminders need an external scheduler (e.g. cron-job.org) or a **Pro**
+> cron if you want automated reminder delivery. On **Pro** you can increase
+> release-funds frequency (e.g. hourly `0 * * * *`) for faster payouts — with a
 > 72h hold, a daily run releases funds within ~72–96h, which is fine for MVP.
 
 ## 4. Error monitoring (Sentry)
@@ -176,8 +184,7 @@ These take the app from "deployed" to "ready for real users and real money."
       add the production `…/auth/callback` redirect.
 
 ### Secrets / config
-- [ ] Set **`CRON_SECRET`** in Vercel so `/api/cron/release-funds` isn't publicly
-      callable.
+- [ ] Set **`CRON_SECRET`** in Vercel (required — cron routes fail closed without it).
 - [ ] Set **Sentry** DSNs (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`) so errors are
       actually captured (no-ops until set).
 - [ ] Set **VAPID** + **Resend** keys if you want web-push / email notifications.

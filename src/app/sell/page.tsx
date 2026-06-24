@@ -22,15 +22,15 @@ export default function SellPage() {
     <div className="mx-auto max-w-5xl px-4 py-12">
       <section className="mx-auto max-w-2xl text-center">
         <h1 className="text-balance text-4xl font-extrabold tracking-tight sm:text-5xl">
-          Turn a moment into a marketplace.
+          Create an online pop-up shop in one link.
         </h1>
         <p className="mt-4 text-pretty text-muted-foreground sm:text-lg">
-          Open a pop-up shop for minutes, not forever. Go live, drop limited items, and let the
-          countdown do the work.
+          Schedule your drop, customize the page, share the link with your audience, and open when
+          the countdown hits zero.
         </p>
         <div className="mt-7 flex justify-center">
           <Button asChild size="lg" className="rounded-full px-8">
-            <Link href="/signup">Start a Drop</Link>
+            <Link href="/signup">Create shop</Link>
           </Button>
         </div>
       </section>
@@ -48,12 +48,12 @@ export default function SellPage() {
       </section>
 
       <section className="mt-14 rounded-2xl border border-border bg-card p-8 text-center">
-        <h2 className="text-2xl font-bold">Ready to open your first drop?</h2>
+        <h2 className="text-2xl font-bold">Ready to create your first shop?</h2>
         <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-          Create an account, add your products, and publish. It only takes a few minutes.
+          Create an account, add your products, and share your shop link when you&apos;re ready.
         </p>
         <Button asChild size="lg" className="mt-6 rounded-full px-8">
-          <Link href="/signup">Get started</Link>
+          <Link href="/signup">Create shop</Link>
         </Button>
       </section>
     </div>

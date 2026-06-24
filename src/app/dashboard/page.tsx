@@ -24,13 +24,16 @@ export default async function DashboardPage() {
     .in("shop_id", shops.length ? shops.map((s) => s.id) : ["00000000-0000-0000-0000-000000000000"]);
 
   const grossSales = (orders ?? []).reduce((sum, o) => sum + (o.amount_paid ?? 0), 0);
-  const activeCount = shops.filter(
+  const published = shops.filter((s) => s.status !== "draft");
+  const drafts = shops.filter((s) => s.status === "draft");
+
+  const activeCount = published.filter(
     (s) => deriveShopStatus(s.start_at, s.end_at) !== "ended",
   ).length;
 
-  const live = shops.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "open");
-  const upcoming = shops.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "scheduled");
-  const ended = shops.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "ended");
+  const live = published.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "open");
+  const upcoming = published.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "scheduled");
+  const ended = published.filter((s) => deriveShopStatus(s.start_at, s.end_at) === "ended");
 
   return (
     <div className="space-y-8">
@@ -43,7 +46,7 @@ export default async function DashboardPage() {
         </div>
         <Button asChild className="rounded-full">
           <Link href="/dashboard/shops/new">
-            <Plus className="size-4" /> Create Drop
+            <Plus className="size-4" /> Create shop
           </Link>
         </Button>
       </div>
@@ -92,6 +95,7 @@ export default async function DashboardPage() {
           <div className="space-y-8">
             <ShopSection title="Dropping Live" shops={live} />
             <ShopSection title="Upcoming" shops={upcoming} />
+            <ShopSection title="Drafts" shops={drafts} />
             <ShopSection title="Ended" shops={ended} />
           </div>
           <div>

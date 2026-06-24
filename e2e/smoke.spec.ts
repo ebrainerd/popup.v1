@@ -7,19 +7,18 @@ import { test, expect } from "@playwright/test";
  * docs/TESTING.md.
  */
 
-test("home renders the hero and drop feed sections", async ({ page }) => {
+test("home renders invite-only seller positioning", async ({ page }) => {
   const res = await page.goto("/");
   expect(res?.status()).toBe(200);
-  await expect(page.getByRole("heading", { name: /shops that open/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /upcoming drops/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /live now/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /online pop-up shops in one link/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /create a pop-up shop/i })).toBeVisible();
+  await expect(page.getByText(/got a creator's popup link/i)).toBeVisible();
 });
 
-test("explore page has filters and sort", async ({ page }) => {
+test("explore shows invite-only holding page", async ({ page }) => {
   await page.goto("/explore");
-  await expect(page.getByRole("link", { name: /live stream/i }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /opening soon/i }).first()).toBeVisible();
-  await expect(page.getByRole("link", { name: /popular/i }).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: /invite-link drops only/i })).toBeVisible();
+  await expect(page.getByRole("link", { name: /live stream/i })).toHaveCount(0);
 });
 
 test("login page renders", async ({ page }) => {

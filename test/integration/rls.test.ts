@@ -89,7 +89,7 @@ describe.skipIf(!enabled)("Row Level Security", () => {
   });
 
   it("shows published public shops to anonymous visitors", async () => {
-    const { data: shop } = await sellerClient
+    const { data: shop, error: shopErr } = await sellerClient
       .from("shops")
       .insert({
         seller_id: sellerId,
@@ -97,13 +97,125 @@ describe.skipIf(!enabled)("Row Level Security", () => {
         start_at: futureIso(1),
         end_at: futureIso(3),
         visibility: "public",
-        status: "scheduled",
+        status: "draft",
+      })
+      .select("id")
+      .single();
+    expect(shopErr).toBeNull();
+
+    await sellerClient
+      .from("products")
+      .insert({ shop_id: shop!.id, title: "Preview item", price: 500 });
+
+    await sellerClient
+      .from("shops")
+      .update({ status: "scheduled" })
+      .eq("id", shop!.id);
+
+    const asAnon = await anon.from("shops").select("id").eq("id", shop!.id).maybeSingle();
+    expect(asAnon.data?.id).toBe(shop!.id);
+  });
+
+  it("rejects direct authenticated insert as non-draft", async () => {
+    const { error } = await sellerClient.from("shops").insert({
+      seller_id: sellerId,
+      name: "Bad insert",
+      start_at: futureIso(1),
+      end_at: futureIso(3),
+      visibility: "public",
+      status: "scheduled",
+    });
+    expect(error).not.toBeNull();
+  });
+
+  it("rejects publishing a draft shop without products", async () => {
+    const { data: shop } = await sellerClient
+      .from("shops")
+      .insert({
+        seller_id: sellerId,
+        name: "Empty publish",
+        start_at: futureIso(1),
+        end_at: futureIso(3),
+        visibility: "public",
+        status: "draft",
       })
       .select("id")
       .single();
 
-    const asAnon = await anon.from("shops").select("id").eq("id", shop!.id).maybeSingle();
-    expect(asAnon.data?.id).toBe(shop!.id);
+    const { error } = await sellerClient
+      .from("shops")
+      .update({ status: "scheduled" })
+      .eq("id", shop!.id);
+    expect(error).not.toBeNull();
+  });
+
+  it("hides draft shop reminder counts from anonymous visitors", async () => {
+    const { data: shop } = await sellerClient
+      .from("shops")
+      .insert({
+        seller_id: sellerId,
+        name: "Draft reminder shop",
+        start_at: futureIso(1),
+        end_at: futureIso(3),
+        visibility: "public",
+        status: "draft",
+      })
+      .select("id")
+      .single();
+
+    await sellerClient.from("drop_reminders").insert({
+      shop_id: shop!.id,
+      user_id: buyerId,
+      email_enabled: true,
+    });
+
+    const { data: count } = await anon.rpc("drop_reminder_count", { target_shop: shop!.id });
+    expect(Number(count)).toBe(0);
+
+    const rows = await anon
+      .from("drop_reminders")
+      .select("id")
+      .eq("shop_id", shop!.id);
+    expect(rows.data ?? []).toHaveLength(0);
+  });
+
+  it("exposes aggregate reminder counts for published shops without leaking rows", async () => {
+    const { data: shop } = await sellerClient
+      .from("shops")
+      .insert({
+        seller_id: sellerId,
+        name: "Reminder shop",
+        start_at: futureIso(1),
+        end_at: futureIso(3),
+        visibility: "public",
+        status: "draft",
+      })
+      .select("id")
+      .single();
+
+    await sellerClient
+      .from("products")
+      .insert({ shop_id: shop!.id, title: "Drop item", price: 500 });
+
+    await sellerClient
+      .from("shops")
+      .update({ status: "scheduled" })
+      .eq("id", shop!.id);
+
+    await sellerClient.from("drop_reminders").insert({
+      shop_id: shop!.id,
+      user_id: buyerId,
+      email_enabled: true,
+    });
+
+    const { data: count } = await anon.rpc("drop_reminder_count", { target_shop: shop!.id });
+    expect(Number(count)).toBe(1);
+
+    const rows = await anon
+      .from("drop_reminders")
+      .select("id")
+      .eq("shop_id", shop!.id);
+    expect(rows.data ?? []).toHaveLength(0);
   });
 
   it("prevents a non-owner from adding products to someone else's shop", async () => {
@@ -115,10 +227,16 @@ describe.skipIf(!enabled)("Row Level Security", () => {
         start_at: pastIso(1),
         end_at: futureIso(2),
         visibility: "public",
-        status: "open",
+        status: "draft",
       })
       .select("id")
       .single();
+
+    await sellerClient
+      .from("products")
+      .insert({ shop_id: shop!.id, title: "Thing", price: 100 });
+
+    await sellerClient.from("shops").update({ status: "open" }).eq("id", shop!.id);
 
     const { error } = await buyerClient
       .from("products")
@@ -135,11 +253,14 @@ describe.skipIf(!enabled)("Row Level Security", () => {
         start_at: pastIso(1),
         end_at: futureIso(2),
         visibility: "public",
-        status: "open",
+        status: "draft",
       })
       .select("id")
       .single();
     const shopId = shop!.id;
+
+    await sellerClient.from("products").insert({ shop_id: shopId, title: "Chat item", price: 100 });
+    await sellerClient.from("shops").update({ status: "open" }).eq("id", shopId);
 
     const before = await buyerClient
       .from("chat_messages")
@@ -165,7 +286,7 @@ describe.skipIf(!enabled)("Row Level Security", () => {
         start_at: pastIso(1),
         end_at: futureIso(2),
         visibility: "public",
-        status: "open",
+        status: "draft",
       })
       .select("id")
       .single();
@@ -174,6 +295,8 @@ describe.skipIf(!enabled)("Row Level Security", () => {
       .insert({ shop_id: shop!.id, title: "Thing", price: 500 })
       .select("id")
       .single();
+
+    await sellerClient.from("shops").update({ status: "open" }).eq("id", shop!.id);
 
     const { data: order } = await buyerClient
       .from("orders")

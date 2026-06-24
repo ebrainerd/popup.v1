@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { verifyCronRequest } from "@/lib/cron-auth";
 import { releaseEligibleOrders, releaseExpiredHolds } from "@/lib/payouts";
 import { remindUnshippedOrders, nudgeAwaitingReceipt } from "@/lib/notifications";
 
@@ -11,15 +12,8 @@ export const dynamic = "force-dynamic";
  * or a `?secret=` query param.
  */
 export async function GET(request: NextRequest) {
-  const secret = process.env.CRON_SECRET;
-  if (secret) {
-    const auth = request.headers.get("authorization");
-    const fromQuery = request.nextUrl.searchParams.get("secret");
-    const provided = auth?.replace(/^Bearer\s+/i, "") ?? fromQuery;
-    if (provided !== secret) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-  }
+  const denied = verifyCronRequest(request);
+  if (denied) return denied;
 
   const released = await releaseEligibleOrders();
   const holdsReleased = await releaseExpiredHolds();

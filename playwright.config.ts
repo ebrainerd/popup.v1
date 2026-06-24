@@ -9,6 +9,7 @@ const placeholderEnv = {
   NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co",
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "placeholder-anon-key",
   NEXT_PUBLIC_SITE_URL: baseURL,
+  NEXT_PUBLIC_DISCOVERY_MODE: "invite_only",
 };
 
 export default defineConfig({

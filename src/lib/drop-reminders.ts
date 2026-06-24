@@ -15,19 +15,17 @@ const WINDOW_COLUMNS: Record<ReminderWindow, keyof DropReminder> = {
   opening: "opening_sent_at",
 };
 
-/** Active reminder count for a shop (public social proof). */
+/** Active reminder/waitlist count for a shop (public aggregate via RPC). */
 export async function getDropReminderCount(shopId: string): Promise<number> {
   const supabase = await createClient();
-  const { count, error } = await supabase
-    .from("drop_reminders")
-    .select("id", { count: "exact", head: true })
-    .eq("shop_id", shopId)
-    .is("cancelled_at", null);
+  const { data, error } = await supabase.rpc("drop_reminder_count", {
+    target_shop: shopId,
+  });
   if (error) {
     console.error("getDropReminderCount error", error.message);
     return 0;
   }
-  return count ?? 0;
+  return Number(data ?? 0);
 }
 
 /** Whether the current user has an active reminder for this shop. */
