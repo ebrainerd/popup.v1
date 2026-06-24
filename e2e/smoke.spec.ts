@@ -37,3 +37,11 @@ test("unknown shop returns the 404 page", async ({ page }) => {
   expect(res?.status()).toBe(404);
   await expect(page.getByText(/this shop has closed/i)).toBeVisible();
 });
+
+test("mobile nav exposes core links", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 812 });
+  await page.goto("/");
+  await page.getByRole("button", { name: /open menu/i }).click();
+  await expect(page.getByRole("link", { name: "How it works" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "About" })).toBeVisible();
+});

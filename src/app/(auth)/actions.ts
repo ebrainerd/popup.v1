@@ -38,7 +38,13 @@ export async function signInWithPassword(
     ...parsed.data,
     options: { captchaToken },
   });
-  if (error) return { error: error.message };
+  if (error) {
+    const message =
+      error.message.toLowerCase().includes("captcha") && !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+        ? "Log in is temporarily unavailable. Try Continue with Google, or contact support if this persists."
+        : error.message;
+    return { error: message };
+  }
 
   revalidatePath("/", "layout");
   redirect(safeRedirectPath(formData.get("redirectTo")));
@@ -63,7 +69,13 @@ export async function signUpWithPassword(
     password: parsed.data.password,
     options: { emailRedirectTo: `${getSiteUrl()}/auth/callback`, captchaToken },
   });
-  if (error) return { error: error.message };
+  if (error) {
+    const message =
+      error.message.toLowerCase().includes("captcha") && !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+        ? "Sign-up is temporarily unavailable. Try Continue with Google, or contact support if this persists."
+        : error.message;
+    return { error: message };
+  }
 
   // When email confirmation is required, there is no active session yet.
   if (!data.session) {

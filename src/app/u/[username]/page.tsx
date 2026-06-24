@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentUser } from "@/lib/auth";
+import { isInviteOnlyMode } from "@/lib/discovery";
 import { ShopCard } from "@/components/shop-card";
 import { FollowButton } from "@/components/follow-button";
 import { NotifyButton } from "@/components/notify-button";
@@ -38,21 +39,30 @@ export default async function ProfilePage({
 
   if (!profile) notFound();
 
+  const inviteOnly = isInviteOnlyMode();
+
   const { count: followerCount } = await supabase
     .from("shop_follows")
     .select("*", { count: "exact", head: true })
     .eq("seller_id", profile.id);
 
-  const { data: shops } = await supabase
+  let shopsQuery = supabase
     .from("shops")
     .select(
       "*, seller:profiles!shops_seller_id_fkey(id, username, display_name, avatar_url, rating_avg, rating_count)",
     )
     .eq("seller_id", profile.id)
-    .eq("visibility", "public")
     .neq("status", "draft")
     .order("start_at", { ascending: false })
     .limit(24);
+
+  // In marketplace mode only public shops appear on profiles; invite-only drops are
+  // link-shared but followers should still see a creator's scheduled/live shops.
+  if (!inviteOnly) {
+    shopsQuery = shopsQuery.eq("visibility", "public");
+  }
+
+  const { data: shops } = await shopsQuery;
 
   const user = await getCurrentUser();
   const isOwner = user?.id === profile.id;
@@ -108,16 +118,24 @@ export default async function ProfilePage({
         {isOwner && <ProfileBioForm key={profile.bio ?? ""} bio={profile.bio} />}
       </div>
 
-      <ShopSections shops={(shops ?? []) as unknown as ShopWithSeller[]} />
+      <ShopSections shops={(shops ?? []) as unknown as ShopWithSeller[]} inviteOnly={inviteOnly} />
     </div>
   );
 }
 
-function ShopSections({ shops }: { shops: ShopWithSeller[] }) {
+function ShopSections({
+  shops,
+  inviteOnly,
+}: {
+  shops: ShopWithSeller[];
+  inviteOnly: boolean;
+}) {
   if (shops.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-border p-10 text-center text-muted-foreground">
-        No public shops yet.
+        {inviteOnly
+          ? "No published drops yet. This creator shares link-only shops with their audience."
+          : "No public shops yet."}
       </p>
     );
   }

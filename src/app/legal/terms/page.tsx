@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { LegalTemplateNotice } from "@/components/legal-template-notice";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
@@ -8,11 +9,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
-      <div className="mb-6 rounded-md border border-accent/40 bg-accent/5 p-3 text-sm text-muted-foreground">
-        <strong>Template — review before launch.</strong> This is a starting point, not
-        legal advice. Have it reviewed by qualified counsel and tailored to your business
-        before relying on it.
-      </div>
+      <LegalTemplateNotice />
 
       <h1 className="text-3xl font-extrabold tracking-tight">Terms of Service</h1>
       <p className="mt-2 text-sm text-muted-foreground">Last updated: {new Date().getFullYear()}</p>
