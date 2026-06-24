@@ -20,6 +20,8 @@ import { PublishControls } from "@/components/publish-controls";
 import { CopyLink } from "@/components/copy-link";
 import { LaunchChecklist, DropHealthSummary } from "@/components/launch-checklist";
 import { DropReportCard } from "@/components/drop-report";
+import { DraftShopTracker } from "@/components/draft-shop-tracker";
+import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
 import { deriveShopStatus } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Manage shop" };
@@ -27,13 +29,19 @@ export const dynamic = "force-dynamic";
 
 export default async function ManageShopPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ created?: string }>;
 }) {
   const { id } = await params;
+  const { created } = await searchParams;
   const profile = (await getCurrentProfile())!;
   const shop = await getOwnedShopWithProducts(id, profile.id);
   if (!shop) notFound();
+
+  const isDraft = shop.status === "draft";
+  const justCreated = created === "1";
 
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const isOpen = status === "open";
@@ -49,6 +57,9 @@ export default async function ManageShopPage({
 
   return (
     <div className="space-y-8">
+      <DraftShopTracker shopId={shop.id} isDraft={isDraft} />
+      <CreatedShopCleanup created={justCreated} />
+
       <div>
         <Link
           href="/dashboard"
@@ -82,18 +93,36 @@ export default async function ManageShopPage({
         </div>
       </div>
 
+      {justCreated && isDraft && (
+        <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
+          <p className="font-medium">Shop created — add your products below.</p>
+          <p className="mt-1 text-muted-foreground">
+            This page has a stable URL, so you can refresh safely while you set up your drop.
+          </p>
+        </div>
+      )}
+
+      <PublishControls
+        shopId={shop.id}
+        isDraft={isDraft}
+        productCount={shop.products.length}
+      />
+
+      <Card id="products">
+        <CardHeader>
+          <CardTitle>Products</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProductManager shopId={shop.id} products={shop.products} />
+        </CardContent>
+      </Card>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <LaunchChecklist health={health} shopId={shop.id} />
         <DropHealthSummary health={health} />
       </div>
 
       {report && <DropReportCard report={report} shopId={shop.id} />}
-
-      <PublishControls
-        shopId={shop.id}
-        isDraft={shop.status === "draft"}
-        productCount={shop.products.length}
-      />
 
       <Card>
         <CardHeader>
@@ -110,25 +139,14 @@ export default async function ManageShopPage({
         </CardContent>
       </Card>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Products</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProductManager shopId={shop.id} products={shop.products} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Orders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SellerOrdersTable orders={orders} />
-          </CardContent>
-        </Card>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Orders</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <SellerOrdersTable orders={orders} />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

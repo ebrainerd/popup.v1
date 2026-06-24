@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { deriveShopStatus, toCents, computeEndShopTimes } from "@/lib/utils";
+import { resolveShopVisibility } from "@/lib/discovery";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
 
@@ -75,6 +76,7 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
   const d = parsed.data;
   const startIso = new Date(d.start_at).toISOString();
   const endIso = new Date(d.end_at).toISOString();
+  const visibility = resolveShopVisibility(d.visibility);
 
   const { data: shop, error } = await supabase
     .from("shops")
@@ -86,7 +88,7 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
       cover_url: d.cover_url || null,
       start_at: startIso,
       end_at: endIso,
-      visibility: d.visibility,
+      visibility,
       shipping_rate: toCents(d.shipping_rate),
       live_url: d.live_url || null,
       // New shops start as drafts: hidden from Explore/search until the seller
@@ -130,6 +132,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
   const d = parsed.data;
   const startIso = new Date(d.start_at).toISOString();
   const endIso = new Date(d.end_at).toISOString();
+  const visibility = resolveShopVisibility(d.visibility);
 
   // Editing must not auto-publish a draft; only refresh the schedule-derived
   // status for already-published shops.
@@ -150,7 +153,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
       cover_url: d.cover_url || null,
       start_at: startIso,
       end_at: endIso,
-      visibility: d.visibility,
+      visibility,
       shipping_rate: toCents(d.shipping_rate),
       live_url: d.live_url || null,
       status: nextStatus,

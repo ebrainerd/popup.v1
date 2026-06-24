@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -21,6 +21,30 @@ import { formatCurrency } from "@/lib/utils";
 
 const initialState: ActionState = { error: null };
 
+type ProductDraft = {
+  title: string;
+  description: string;
+  price: string;
+  quantity: string;
+};
+
+function productDraftKey(shopId: string) {
+  return `popup-product-draft:${shopId}`;
+}
+
+function loadProductDraft(shopId: string): ProductDraft {
+  if (typeof window === "undefined") {
+    return { title: "", description: "", price: "", quantity: "1" };
+  }
+  try {
+    const raw = sessionStorage.getItem(productDraftKey(shopId));
+    if (!raw) return { title: "", description: "", price: "", quantity: "1" };
+    return { title: "", description: "", price: "", quantity: "1", ...JSON.parse(raw) };
+  } catch {
+    return { title: "", description: "", price: "", quantity: "1" };
+  }
+}
+
 function AddButton() {
   const { pending } = useFormStatus();
   return (
@@ -39,14 +63,39 @@ export function ProductManager({
   products: Product[];
 }) {
   const [showForm, setShowForm] = useState(products.length === 0);
+  const [hydrated, setHydrated] = useState(false);
+  const [draft, setDraft] = useState<ProductDraft>({
+    title: "",
+    description: "",
+    price: "",
+    quantity: "1",
+  });
   const formRef = useRef<HTMLFormElement>(null);
   const [state, formAction] = useActionState(async (prev: ActionState, fd: FormData) => {
     const res = await createProduct(prev, fd);
     if (!res.error) {
       formRef.current?.reset();
+      sessionStorage.removeItem(productDraftKey(shopId));
+      setDraft({ title: "", description: "", price: "", quantity: "1" });
     }
     return res;
   }, initialState);
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setDraft(loadProductDraft(shopId));
+      setHydrated(true);
+    });
+  }, [shopId]);
+
+  useEffect(() => {
+    if (!hydrated || !showForm) return;
+    sessionStorage.setItem(productDraftKey(shopId), JSON.stringify(draft));
+  }, [draft, hydrated, showForm, shopId]);
+
+  function patch(partial: Partial<ProductDraft>) {
+    setDraft((prev) => ({ ...prev, ...partial }));
+  }
 
   return (
     <div className="space-y-4">
@@ -82,23 +131,57 @@ export function ProductManager({
 
           <div className="space-y-1.5">
             <Label htmlFor="title">Title</Label>
-            <Input id="title" name="title" required maxLength={140} placeholder="Hand-printed tote bag" />
+            <Input
+              id="title"
+              name="title"
+              required
+              maxLength={140}
+              placeholder="Hand-printed tote bag"
+              value={draft.title}
+              onChange={(e) => patch({ title: e.target.value })}
+            />
           </div>
 
           <div className="space-y-1.5">
             <Label htmlFor="description">Description</Label>
-            <Textarea id="description" name="description" rows={3} placeholder="Material, size, details…" />
+            <Textarea
+              id="description"
+              name="description"
+              rows={3}
+              placeholder="Material, size, details…"
+              value={draft.description}
+              onChange={(e) => patch({ description: e.target.value })}
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label htmlFor="price">Price (USD)</Label>
-              <Input id="price" name="price" type="number" min={0.5} step="0.01" required placeholder="24.00" />
+              <Input
+                id="price"
+                name="price"
+                type="number"
+                min={0.5}
+                step="0.01"
+                required
+                placeholder="24.00"
+                value={draft.price}
+                onChange={(e) => patch({ price: e.target.value })}
+              />
               <p className="text-xs text-muted-foreground">Minimum $0.50.</p>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="quantity">Quantity</Label>
-              <Input id="quantity" name="quantity" type="number" min={0} step={1} defaultValue={1} required />
+              <Input
+                id="quantity"
+                name="quantity"
+                type="number"
+                min={0}
+                step={1}
+                required
+                value={draft.quantity}
+                onChange={(e) => patch({ quantity: e.target.value })}
+              />
             </div>
           </div>
 

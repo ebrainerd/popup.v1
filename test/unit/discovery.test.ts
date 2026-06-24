@@ -1,5 +1,5 @@
 import { describe, expect, it, afterEach } from "vitest";
-import { getDiscoveryMode, isInviteOnlyMode, isMarketplaceMode } from "@/lib/discovery";
+import { getDiscoveryMode, isInviteOnlyMode, isMarketplaceMode, resolveShopVisibility } from "@/lib/discovery";
 
 describe("discovery mode", () => {
   const original = process.env.NEXT_PUBLIC_DISCOVERY_MODE;
@@ -20,5 +20,10 @@ describe("discovery mode", () => {
     process.env.NEXT_PUBLIC_DISCOVERY_MODE = "marketplace";
     expect(getDiscoveryMode()).toBe("marketplace");
     expect(isMarketplaceMode()).toBe(true);
+  });
+
+  it("forces link-only visibility in invite-only mode", () => {
+    process.env.NEXT_PUBLIC_DISCOVERY_MODE = "invite_only";
+    expect(resolveShopVisibility("public")).toBe("private");
   });
 });
