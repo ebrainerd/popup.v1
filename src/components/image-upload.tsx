@@ -4,6 +4,11 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Loader2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import {
+  IMAGE_UPLOAD_ACCEPT,
+  isAcceptableImageFile,
+  prepareImageForUpload,
+} from "@/lib/image-upload-client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -39,17 +44,19 @@ export function ImageUpload({
 
   async function onFile(file: File) {
     setError(null);
-    if (!file.type.startsWith("image/")) {
-      setError("Please choose an image file.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be under 5MB.");
+    if (!isAcceptableImageFile(file)) {
+      setError("Please choose an image file (JPEG, PNG, WebP, or HEIC).");
       return;
     }
 
     setUploading(true);
     try {
+      const prepared = await prepareImageForUpload(file);
+      if (prepared.size > 5 * 1024 * 1024) {
+        setError("Image must be under 5MB.");
+        return;
+      }
+
       const supabase = createClient();
       const {
         data: { user },
@@ -58,11 +65,11 @@ export function ImageUpload({
         setError("You must be logged in to upload.");
         return;
       }
-      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const ext = prepared.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
       const { error: uploadError } = await supabase.storage
         .from(bucket)
-        .upload(path, file, { cacheControl: "3600", upsert: false });
+        .upload(path, prepared, { cacheControl: "3600", upsert: false });
       if (uploadError) {
         setError(uploadError.message);
         return;
@@ -142,7 +149,7 @@ export function ImageUpload({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept={IMAGE_UPLOAD_ACCEPT}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
