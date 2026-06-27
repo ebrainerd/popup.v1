@@ -14,6 +14,7 @@ export function ShopQuickActions({
   hasLiveUrl,
   canGoLive = true,
   nativePublisherActive = false,
+  variant = "full",
 }: {
   shopId: string;
   isLive: boolean;
@@ -23,6 +24,8 @@ export function ShopQuickActions({
   /** When false, go-live is handled elsewhere (native publisher). */
   canGoLive?: boolean;
   nativePublisherActive?: boolean;
+  /** live-only: Go live button only (owner bar on shop page). */
+  variant?: "full" | "live-only";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -70,9 +73,16 @@ export function ShopQuickActions({
     });
   }
 
-  const showShopWindowControls = isOpen && !isEnded;
+  const showShopWindowControls = isOpen && !isEnded && variant === "full";
 
-  if (!showShopWindowControls && !canGoLive && !(nativePublisherActive && isLive) && !isEnded) {
+  if (
+    variant === "live-only" &&
+    !(canGoLive && isOpen)
+  ) {
+    return null;
+  }
+
+  if (!showShopWindowControls && !canGoLive && !(nativePublisherActive && isLive) && !isEnded && variant === "full") {
     return null;
   }
 

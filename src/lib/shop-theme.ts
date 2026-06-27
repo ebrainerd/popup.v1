@@ -317,3 +317,87 @@ export function previewPageBackground(theme: ShopTheme): string {
   }
   return `radial-gradient(ellipse 90% 55% at 50% -5%, color-mix(in srgb, ${theme.accent} 28%, transparent), ${visual.pageBackground})`;
 }
+
+/** Mix two hex colors (0–1 weight on color b). Used for contrast checks. */
+export function mixHexColors(hexA: string, hexB: string, weightB: number): string {
+  const a = hexToRgb(hexA);
+  const b = hexToRgb(hexB);
+  const w = Math.min(1, Math.max(0, weightB));
+  const mix = (i: 0 | 1 | 2) => Math.round(a[i] * (1 - w) + b[i] * w);
+  return rgbToHex(mix(0), mix(1), mix(2));
+}
+
+function hexToRgb(hex: string): [number, number, number] {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+function rgbToHex(r: number, g: number, b: number): string {
+  return `#${[r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** WCAG relative luminance for #rrggbb. */
+export function relativeLuminance(hex: string): number {
+  const channels = hexToRgb(hex).map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+}
+
+export function contrastRatio(hexA: string, hexB: string): number {
+  const l1 = relativeLuminance(hexA);
+  const l2 = relativeLuminance(hexB);
+  const lighter = Math.max(l1, l2);
+  const darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+/** Effective flat page color for contrast validation (conservative). */
+export function effectiveThemePageColor(theme: ShopTheme): string {
+  const visual = SHOP_PRESET_VISUAL[theme.preset];
+  if (theme.background === "none") return visual.pageBackground;
+  if (theme.background === "solid") {
+    return mixHexColors(visual.pageBackground, theme.accent, 0.1);
+  }
+  // Gradient wash — assume up to ~28% accent influence at the hero.
+  return mixHexColors(visual.pageBackground, theme.accent, 0.28);
+}
+
+export type ShopThemeContrastWarning = {
+  id: string;
+  message: string;
+};
+
+/** Returns readability warnings for theme editor (WCAG AA body text ≈ 4.5:1). */
+export function validateShopThemeContrast(theme: ShopTheme): ShopThemeContrastWarning[] {
+  const visual = SHOP_PRESET_VISUAL[theme.preset];
+  const pageColor = effectiveThemePageColor(theme);
+  const warnings: ShopThemeContrastWarning[] = [];
+
+  const bodyRatio = contrastRatio(visual.foreground, pageColor);
+  if (bodyRatio < 4.5) {
+    warnings.push({
+      id: "body-contrast",
+      message: `Body text contrast is ${bodyRatio.toFixed(1)}:1 on this background (need 4.5:1). Try a different preset or a less intense accent background.`,
+    });
+  }
+
+  const mutedRatio = contrastRatio(visual.mutedForeground, pageColor);
+  if (mutedRatio < 3) {
+    warnings.push({
+      id: "muted-contrast",
+      message: `Secondary text may be hard to read (${mutedRatio.toFixed(1)}:1). Consider Plain background or a softer accent.`,
+    });
+  }
+
+  const accentOnPage = contrastRatio(theme.accent, pageColor);
+  if (accentOnPage < 3) {
+    warnings.push({
+      id: "accent-contrast",
+      message: `Accent color may not stand out on this background (${accentOnPage.toFixed(1)}:1).`,
+    });
+  }
+
+  return warnings;
+}

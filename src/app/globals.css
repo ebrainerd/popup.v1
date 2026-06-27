@@ -276,18 +276,26 @@ body {
 --------------------------------------------------------------------------- */
 
 .shop-theme-root {
+  color: var(--shop-fg, var(--foreground));
   --primary: var(--shop-accent, #ff3b8b);
+  --primary-foreground: #ffffff;
   --ring: var(--shop-accent, #ff3b8b);
   --live: var(--shop-accent, #ff3b8b);
+  --accent: var(--shop-accent, #00e6c8);
+  --accent-foreground: var(--shop-fg, var(--foreground));
+  --success: var(--shop-accent, #00e6c8);
   --radius: var(--shop-radius, 1.25rem);
   --background: var(--shop-page-bg, var(--background));
   --foreground: var(--shop-fg, var(--foreground));
   --card: var(--shop-card-bg, var(--card));
   --card-foreground: var(--shop-fg, var(--card-foreground));
+  --input: var(--shop-border, var(--input));
   --muted: color-mix(in srgb, var(--shop-card-bg, var(--muted)) 85%, var(--shop-fg) 15%);
   --muted-foreground: var(--shop-muted, var(--muted-foreground));
   --border: var(--shop-border, var(--border));
   font-family: var(--shop-font, inherit);
+  min-height: 100%;
+  isolation: isolate;
 }
 
 .shop-theme-root h1,

@@ -11,6 +11,7 @@ import {
   SHOP_THEME_PRESETS,
   presetAccent,
   type ShopBackgroundStyle,
+  validateShopThemeContrast,
   type ShopTheme,
   type ShopThemePreset,
 } from "@/lib/shop-theme";
@@ -59,6 +60,8 @@ export function ShopThemeEditor({
       : p,
   );
 
+  const contrastWarnings = validateShopThemeContrast(theme);
+
   function patch(partial: Partial<ShopTheme>) {
     onChange({ ...theme, ...partial });
     setSaveMessage(null);
@@ -94,6 +97,13 @@ export function ShopThemeEditor({
             title="Color theme"
             description="Sets your page background, card style, and typography. Each theme looks distinctly different in the preview."
           />
+          {contrastWarnings.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-highlight/40 bg-highlight/10 px-3 py-2 text-sm">
+              {contrastWarnings.map((w) => (
+                <p key={w.id} className="text-foreground">{w.message}</p>
+              ))}
+            </div>
+          )}
           <div className="space-y-2">
             {SHOP_THEME_PRESETS.map((id) => {
               const preset = SHOP_THEME_PRESET_META[id];
