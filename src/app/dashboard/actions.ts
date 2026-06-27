@@ -625,6 +625,181 @@ export async function finishShopSetup(
   redirect(`/dashboard/shops/${shopId}?created=1`);
 }
 
+const saveDraftProductSchema = z.object({
+  id: z.string().uuid().optional(),
+  title: z.string().trim().min(1).max(140),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
+  sale_type: z.enum(["buy_now", "auction"]).default("buy_now"),
+  price: z.coerce.number().min(0).max(1_000_000).default(MIN_PRICE_USD),
+  quantity: z.coerce.number().int().min(0).max(1_000_000).default(1),
+  photo_urls: z.array(z.string().url()).max(MAX_PHOTOS).default([]),
+  shipping_rate: z.coerce.number().min(0).max(100000).default(0),
+  auction_starting_bid: z.coerce.number().min(0).optional(),
+  auction_min_increment: z.coerce.number().min(0).optional(),
+  auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+  auction_allow_prebids: z.boolean().optional(),
+  auction_sudden_death: z.boolean().optional(),
+});
+
+const saveShopDraftSchema = z
+  .object({
+    shopId: z.string().uuid().optional(),
+    name: z.string().trim().min(1, "Add a shop name before saving.").max(120),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
+    coverUrl: z.string().optional().or(z.literal("")),
+    startAt: z.string().min(1),
+    endAt: z.string().min(1),
+    visibility: z.enum(["public", "private"]),
+    youtubeUrl: z.string().url().optional().or(z.literal("")),
+    twitchUrl: z.string().url().optional().or(z.literal("")),
+    products: z.array(saveDraftProductSchema).default([]),
+  })
+  .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
+    message: "End time must be after start time.",
+    path: ["endAt"],
+  });
+
+function saveDraftProductRow(shopId: string, product: z.infer<typeof saveDraftProductSchema>) {
+  const isAuction = product.sale_type === "auction";
+  const buyNowCents = toCents(Math.max(product.price, MIN_PRICE_USD));
+  const startingCents = toCents(Math.max(product.auction_starting_bid ?? MIN_PRICE_USD, MIN_PRICE_USD));
+  return {
+    shop_id: shopId,
+    title: product.title,
+    description: product.description || null,
+    photo_url: product.photo_urls[0] ?? null,
+    photo_urls: product.photo_urls,
+    sale_type: product.sale_type,
+    price: isAuction ? startingCents : buyNowCents,
+    quantity: isAuction ? 1 : product.quantity,
+    shipping_rate: toCents(product.shipping_rate),
+    auction_starting_bid: isAuction ? startingCents : null,
+    auction_min_increment: isAuction ? toCents(product.auction_min_increment ?? 1) : null,
+    auction_duration_seconds: isAuction
+      ? product.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION
+      : null,
+    auction_allow_prebids: isAuction ? product.auction_allow_prebids !== false : true,
+    auction_sudden_death: isAuction ? Boolean(product.auction_sudden_death) : false,
+  };
+}
+
+async function syncDraftProducts(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  shopId: string,
+  products: z.infer<typeof saveDraftProductSchema>[],
+) {
+  const { data: existingProducts } = await supabase
+    .from("products")
+    .select("id")
+    .eq("shop_id", shopId);
+  const incomingIds = new Set(products.map((p) => p.id).filter(Boolean) as string[]);
+  const toDelete = (existingProducts ?? []).filter((p) => !incomingIds.has(p.id));
+
+  for (const productId of toDelete.map((p) => p.id)) {
+    const { data: blocked } = await supabase
+      .from("auction_runs")
+      .select("id")
+      .eq("product_id", productId)
+      .in("status", ["live", "awaiting_payment", "paid"])
+      .maybeSingle();
+    if (!blocked) {
+      await supabase.from("products").delete().eq("id", productId).eq("shop_id", shopId);
+    }
+  }
+
+  for (const product of products) {
+    const row = saveDraftProductRow(shopId, product);
+    if (product.id) {
+      const { error } = await supabase
+        .from("products")
+        .update(row)
+        .eq("id", product.id)
+        .eq("shop_id", shopId);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase.from("products").insert(row);
+      if (error) throw new Error(error.message);
+    }
+  }
+}
+
+/** Save wizard progress as a dashboard draft without finishing setup. */
+export async function saveShopDraft(
+  input: z.infer<typeof saveShopDraftSchema>,
+): Promise<ActionState & { shopId?: string }> {
+  const { supabase, user } = await requireUser();
+  const parsed = saveShopDraftSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid input.",
+      fieldErrors: Object.fromEntries(
+        parsed.error.issues.map((i) => [i.path.join(".") || "form", i.message]),
+      ),
+    };
+  }
+
+  const d = parsed.data;
+  const coverUrl = d.coverUrl && /^https?:\/\//.test(d.coverUrl) ? d.coverUrl : null;
+  const shopPayload = {
+    name: d.name,
+    slug: slugify(d.name),
+    description: d.description || null,
+    cover_url: coverUrl,
+    start_at: new Date(d.startAt).toISOString(),
+    end_at: new Date(d.endAt).toISOString(),
+    visibility: resolveShopVisibility(d.visibility),
+    shipping_rate: 0,
+    live_url: d.youtubeUrl || null,
+    twitch_url: d.twitchUrl || null,
+  };
+
+  let shopId = d.shopId;
+
+  try {
+    if (shopId) {
+      const { data: current } = await supabase
+        .from("shops")
+        .select("status")
+        .eq("id", shopId)
+        .eq("seller_id", user.id)
+        .maybeSingle();
+      if (!current) return { error: "Shop not found." };
+      if (current.status !== "draft") return { error: "Only draft shops can be saved here." };
+
+      const { error } = await supabase
+        .from("shops")
+        .update({ ...shopPayload, status: "draft" })
+        .eq("id", shopId)
+        .eq("seller_id", user.id);
+      if (error) return { error: error.message };
+    } else {
+      const { data: shop, error } = await supabase
+        .from("shops")
+        .insert({
+          seller_id: user.id,
+          ...shopPayload,
+          status: "draft",
+        })
+        .select("id")
+        .single();
+      if (error || !shop) return { error: error?.message ?? "Could not save draft." };
+      shopId = shop.id;
+    }
+
+    if (!shopId) return { error: "Could not save draft." };
+
+    await syncDraftProducts(supabase, shopId, d.products);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not save draft." };
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/dashboard/shops/${shopId}/setup`);
+  revalidatePath(`/shop/${shopId}`);
+  return { error: null, shopId };
+}
+
 export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase, user } = await requireUser();
 

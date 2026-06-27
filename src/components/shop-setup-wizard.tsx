@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { trackActiveDraftShop } from "@/components/continue-draft-shop";
 import { ArrowLeft, ArrowRight, Check, Radio, Zap } from "lucide-react";
-import { finishShopSetup } from "@/app/dashboard/actions";
+import { finishShopSetup, saveShopDraft } from "@/app/dashboard/actions";
+import { trackActiveDraftShop } from "@/components/continue-draft-shop";
 import { isInviteOnlyMode } from "@/lib/discovery";
 import { isoToLocalInput } from "@/lib/datetime";
 import {
@@ -14,10 +13,10 @@ import {
   clearWizardDraftStorage,
   defaultWizardDraft,
   getStepValidation,
-  loadWizardDraftFromStorage,
   markStepComplete,
-  saveWizardDraftToStorage,
   wizardDraftToFinishPayload,
+  wizardDraftToSavePayload,
+  wizardHasDraftContent,
   type ShopWizardDraft,
 } from "@/lib/shop-wizard";
 import { Input } from "@/components/ui/input";
@@ -27,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/image-upload";
 import { VisibilityPicker } from "@/components/visibility-picker";
 import { WizardProductManager } from "@/components/wizard-product-manager";
+import { WizardExitDialog } from "@/components/wizard-exit-dialog";
 import { cn } from "@/lib/utils";
 
 function nowLocal(): string {
@@ -46,38 +46,65 @@ export function ShopSetupWizard({
   const [draft, setDraft] = useState<ShopWizardDraft>(initialDraft ?? defaultWizardDraft());
   const [stepIndex, setStepIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [exitOpen, setExitOpen] = useState(false);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     queueMicrotask(() => {
-      const stored = loadWizardDraftFromStorage(shopId);
-      if (stored) {
-        setDraft(stored);
-      } else if (initialDraft) {
-        setDraft(initialDraft);
-      }
+      setDraft(initialDraft ?? defaultWizardDraft());
       setHydrated(true);
     });
-  }, [initialDraft, shopId]);
+  }, [initialDraft]);
 
   useEffect(() => {
-    if (!hydrated) return;
-    saveWizardDraftToStorage(draft);
-    if (shopId) trackActiveDraftShop(shopId, true);
-  }, [draft, hydrated, shopId]);
+    if (!hydrated || !shopId) return;
+    trackActiveDraftShop(shopId, true);
+  }, [hydrated, shopId]);
 
   const currentStep = WIZARD_STEPS[stepIndex];
   const isLastStep = stepIndex === WIZARD_STEPS.length - 1;
+  const canSaveDraft = Boolean(draft.name.trim());
 
   function patch(partial: Partial<ShopWizardDraft>) {
     setDraft((prev) => ({ ...prev, ...partial }));
     setError(null);
+    setSaveMessage(null);
   }
 
   function goToStep(index: number) {
     if (!canNavigateToStep(index, draft)) return;
     setStepIndex(index);
     setError(null);
+  }
+
+  function handleSaveDraft(exitAfter = false) {
+    if (!canSaveDraft) {
+      setError("Add a shop name before saving your draft.");
+      return;
+    }
+
+    setError(null);
+    setSaveMessage(null);
+    startTransition(async () => {
+      const res = await saveShopDraft(wizardDraftToSavePayload(draft));
+      if (res.error) {
+        setError(res.error);
+        return;
+      }
+
+      if (res.shopId) {
+        trackActiveDraftShop(res.shopId, true);
+        setDraft((prev) => ({ ...prev, shopId: res.shopId }));
+        if (!shopId) {
+          router.replace(`/dashboard/shops/${res.shopId}/setup`);
+        }
+        setSaveMessage("Draft saved.");
+        if (exitAfter) {
+          router.push("/dashboard");
+        }
+      }
+    });
   }
 
   function handleContinue() {
@@ -112,25 +139,48 @@ export function ShopSetupWizard({
     setStepIndex((i) => Math.max(0, i - 1));
   }
 
+  function requestExit() {
+    if (!wizardHasDraftContent(draft)) {
+      router.push("/dashboard");
+      return;
+    }
+    setExitOpen(true);
+  }
+
   if (!hydrated) {
     return <p className="text-sm text-muted-foreground">Loading setup…</p>;
   }
 
   return (
     <div className="mx-auto max-w-6xl">
-      <Link
-        href="/dashboard"
+      <button
+        type="button"
+        onClick={requestExit}
         className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="size-4" /> Back to dashboard
-      </Link>
+      </button>
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">{shopId ? "Continue shop setup" : "Create a shop"}</h1>
-        <p className="mt-1 text-muted-foreground">
-          Work through each section — your progress is saved locally until you finish setup.
-        </p>
+      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">{shopId ? "Continue shop setup" : "Create a shop"}</h1>
+          <p className="mt-1 text-muted-foreground">
+            Save a draft anytime to pick up later from your dashboard.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleSaveDraft(false)}
+          disabled={pending || !canSaveDraft}
+        >
+          {pending ? "Saving…" : "Save as draft"}
+        </Button>
       </div>
+
+      {saveMessage && (
+        <p className="mb-4 rounded-md bg-success/10 px-3 py-2 text-sm text-success">{saveMessage}</p>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
         <aside className="space-y-3">
@@ -339,6 +389,21 @@ export function ShopSetupWizard({
           </div>
         </section>
       </div>
+
+      <WizardExitDialog
+        open={exitOpen}
+        pending={pending}
+        canSave={canSaveDraft}
+        onCancel={() => setExitOpen(false)}
+        onSaveAndExit={() => {
+          setExitOpen(false);
+          handleSaveDraft(true);
+        }}
+        onExitWithoutSaving={() => {
+          setExitOpen(false);
+          router.push("/dashboard");
+        }}
+      />
     </div>
   );
 }
