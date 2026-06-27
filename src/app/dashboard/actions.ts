@@ -10,6 +10,7 @@ import {
   DEFAULT_AUCTION_DURATION,
   MIN_INCREMENT_CENTS,
 } from "@/lib/auction-bidding";
+import { shopThemeToJson } from "@/lib/shop-theme";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
 
@@ -499,6 +500,17 @@ const finishProductSchema = z
     }
   });
 
+const shopThemeSchema = z.object({
+  preset: z.enum(["default", "gallery", "dark_room", "market_stall", "broadcast"]),
+  layout: z.enum(["classic", "broadcast", "countdown", "catalog"]),
+  accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  background: z.enum(["solid", "gradient", "none"]),
+  productGridColumns: z.union([z.literal(2), z.literal(3)]),
+  showChat: z.boolean(),
+  showSellerBio: z.boolean(),
+  showReminderCta: z.boolean(),
+});
+
 const finishShopSetupSchema = z
   .object({
     shopId: z.string().uuid().optional(),
@@ -511,6 +523,7 @@ const finishShopSetupSchema = z
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(finishProductSchema).min(1, "Add at least one product."),
+    theme: shopThemeSchema,
   })
   .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
     message: "End time must be after start time.",
@@ -569,6 +582,7 @@ export async function finishShopSetup(
     shipping_rate: 0,
     live_url: d.youtubeUrl || null,
     twitch_url: d.twitchUrl || null,
+    shop_theme: shopThemeToJson(d.theme),
   };
 
   let shopId = d.shopId;
@@ -674,8 +688,9 @@ const saveShopDraftSchema = z
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(saveDraftProductSchema).default([]),
     completedSteps: z
-      .array(z.enum(["details", "products", "live", "schedule"]))
+      .array(z.enum(["details", "products", "layout", "live", "schedule"]))
       .default([]),
+    theme: shopThemeSchema,
   })
   .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
     message: "End time must be after start time.",
@@ -775,6 +790,7 @@ export async function saveShopDraft(
     live_url: d.youtubeUrl || null,
     twitch_url: d.twitchUrl || null,
     wizard_completed_steps: d.completedSteps,
+    shop_theme: shopThemeToJson(d.theme),
   };
 
   let shopId = d.shopId;
@@ -1020,6 +1036,7 @@ export async function duplicateShop(shopId: string): Promise<void> {
       shipping_rate: source.shipping_rate,
       live_url: source.live_url,
       twitch_url: source.twitch_url,
+      shop_theme: source.shop_theme,
       status: "draft",
     })
     .select("id")

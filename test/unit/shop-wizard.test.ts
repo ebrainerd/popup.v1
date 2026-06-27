@@ -31,7 +31,7 @@ describe("shop wizard", () => {
     expect(canNavigateToStep(2, withDetails)).toBe(false);
   });
 
-  it("does not infer live or schedule from default draft values", () => {
+  it("does not infer layout, live, or schedule from default draft values", () => {
     const completed = inferCompletedSteps({
       ...defaultWizardDraft(),
       name: "Summer drop",

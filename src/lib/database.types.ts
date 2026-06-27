@@ -86,6 +86,7 @@ export interface Database {
           peak_viewers: number;
           featured_at: string | null;
           wizard_completed_steps: string[];
+          shop_theme: unknown;
           created_at: string;
           updated_at: string;
         };
@@ -107,6 +108,7 @@ export interface Database {
           peak_viewers?: number;
           featured_at?: string | null;
           wizard_completed_steps?: string[];
+          shop_theme?: unknown;
           created_at?: string;
           updated_at?: string;
         };
