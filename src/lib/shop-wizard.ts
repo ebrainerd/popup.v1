@@ -135,7 +135,11 @@ export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDr
     products: products.map(productToWizardDraft),
     completedSteps: [],
   };
-  return { ...base, completedSteps: inferCompletedSteps(base) };
+  const persisted = parseWizardCompletedSteps(shop.wizard_completed_steps);
+  return {
+    ...base,
+    completedSteps: persisted.length > 0 ? persisted : inferCompletedSteps(base),
+  };
 }
 
 function isValidOptionalUrl(value: string): boolean {
@@ -215,10 +219,18 @@ export function markStepComplete(draft: ShopWizardDraft, stepId: WizardStepId): 
 export function inferCompletedSteps(draft: ShopWizardDraft): WizardStepId[] {
   const completed: WizardStepId[] = [];
   for (const step of WIZARD_STEPS) {
+    if (step.id === "live" || step.id === "schedule") continue;
     if (getStepValidation(step.id, draft).valid) completed.push(step.id);
     else break;
   }
   return completed;
+}
+
+const WIZARD_STEP_IDS = new Set<WizardStepId>(WIZARD_STEPS.map((s) => s.id));
+
+export function parseWizardCompletedSteps(raw: string[] | null | undefined): WizardStepId[] {
+  if (!raw?.length) return [];
+  return raw.filter((step): step is WizardStepId => WIZARD_STEP_IDS.has(step as WizardStepId));
 }
 
 export function maxReachableStepIndex(draft: ShopWizardDraft): number {
@@ -273,6 +285,7 @@ function buildWizardPersistPayload(
     startAt: localInputToIso(startLocal),
     endAt: localInputToIso(endLocal),
     products: mapWizardProducts(draft, Boolean(options?.draftMode)),
+    completedSteps: draft.completedSteps,
   };
 }
 

@@ -31,8 +31,8 @@ describe("shop wizard", () => {
     expect(canNavigateToStep(2, withDetails)).toBe(false);
   });
 
-  it("infers completed steps for prefilled drafts", () => {
-    const draft = inferCompletedSteps({
+  it("does not infer live or schedule from default draft values", () => {
+    const completed = inferCompletedSteps({
       ...defaultWizardDraft(),
       name: "Summer drop",
       products: [
@@ -55,8 +55,7 @@ describe("shop wizard", () => {
         },
       ],
     });
-    expect(draft).toContain("details");
-    expect(draft).toContain("products");
+    expect(completed).toEqual(["details", "products"]);
   });
 
   it("filters untitled products from save payloads", () => {
@@ -99,11 +98,12 @@ describe("shop wizard", () => {
           },
         },
       ],
-      completedSteps: [],
+      completedSteps: ["details"],
     });
 
     expect(payload.products).toHaveLength(1);
     expect(payload.products[0]?.title).toBe("Sticker");
+    expect(payload.completedSteps).toEqual(["details"]);
   });
 
   it("detects when a wizard has draftable content", () => {

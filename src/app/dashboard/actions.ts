@@ -673,6 +673,9 @@ const saveShopDraftSchema = z
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(saveDraftProductSchema).default([]),
+    completedSteps: z
+      .array(z.enum(["details", "products", "live", "schedule"]))
+      .default([]),
   })
   .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
     message: "End time must be after start time.",
@@ -771,6 +774,7 @@ export async function saveShopDraft(
     shipping_rate: 0,
     live_url: d.youtubeUrl || null,
     twitch_url: d.twitchUrl || null,
+    wizard_completed_steps: d.completedSteps,
   };
 
   let shopId = d.shopId;
