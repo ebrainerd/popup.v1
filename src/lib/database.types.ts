@@ -81,6 +81,7 @@ export interface Database {
           shipping_rate: number;
           is_live: boolean;
           live_url: string | null;
+          twitch_url: string | null;
           status: ShopStatusColumn;
           peak_viewers: number;
           featured_at: string | null;
@@ -100,6 +101,7 @@ export interface Database {
           shipping_rate?: number;
           is_live?: boolean;
           live_url?: string | null;
+          twitch_url?: string | null;
           status?: ShopStatusColumn;
           peak_viewers?: number;
           featured_at?: string | null;

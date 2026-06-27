@@ -11,7 +11,7 @@ export function ContinueDraftShop() {
 
   useEffect(() => {
     const id = sessionStorage.getItem(ACTIVE_DRAFT_KEY);
-    if (id) router.replace(`/dashboard/shops/${id}`);
+    if (id) router.replace(`/dashboard/shops/${id}/setup`);
   }, [router]);
 
   return null;

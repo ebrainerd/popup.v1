@@ -421,6 +421,206 @@ function productInsertFromParsed(d: z.infer<typeof productSchema>, photoUrls: st
   };
 }
 
+const finishProductSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    title: z.string().trim().min(1).max(140),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
+    sale_type: z.enum(["buy_now", "auction"]),
+    price: z.coerce.number().min(0).max(1_000_000),
+    quantity: z.coerce.number().int().min(0).max(1_000_000),
+    photo_urls: z.array(z.string().url()).max(MAX_PHOTOS),
+    auction_starting_bid: z.coerce.number().min(0).optional(),
+    auction_min_increment: z.coerce.number().min(0).optional(),
+    auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_allow_prebids: z.boolean().optional(),
+    auction_sudden_death: z.boolean().optional(),
+  })
+  .superRefine((d, ctx) => {
+    if (d.sale_type === "buy_now") {
+      if (d.price < MIN_PRICE_USD) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Price must be at least $0.50.",
+          path: ["price"],
+        });
+      }
+      return;
+    }
+    if (d.quantity !== 1) {
+      ctx.addIssue({ code: "custom", message: "Auction items must have quantity 1.", path: ["quantity"] });
+    }
+    const start = d.auction_starting_bid ?? 0;
+    const inc = d.auction_min_increment ?? 0;
+    if (start < MIN_PRICE_USD) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Starting bid must be at least $0.50.",
+        path: ["auction_starting_bid"],
+      });
+    }
+    if (inc < MIN_INCREMENT_CENTS / 100) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Minimum increment must be at least $0.50.",
+        path: ["auction_min_increment"],
+      });
+    }
+    if (!d.auction_duration_seconds || d.auction_duration_seconds < 1) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Choose an auction duration.",
+        path: ["auction_duration_seconds"],
+      });
+    }
+  });
+
+const finishShopSetupSchema = z
+  .object({
+    shopId: z.string().uuid().optional(),
+    name: z.string().trim().min(1, "Name is required.").max(120),
+    description: z.string().trim().max(2000).optional().or(z.literal("")),
+    coverUrl: z.string().url().optional().or(z.literal("")),
+    startAt: z.string().min(1, "Start time is required."),
+    endAt: z.string().min(1, "End time is required."),
+    visibility: z.enum(["public", "private"]),
+    shippingRate: z.coerce.number().min(0).max(100000),
+    youtubeUrl: z.string().url().optional().or(z.literal("")),
+    twitchUrl: z.string().url().optional().or(z.literal("")),
+    products: z.array(finishProductSchema).min(1, "Add at least one product."),
+  })
+  .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
+    message: "End time must be after start time.",
+    path: ["endAt"],
+  });
+
+function finishProductInsert(
+  shopId: string,
+  product: z.infer<typeof finishProductSchema>,
+) {
+  const parsed = productSchema.safeParse({
+    shop_id: shopId,
+    title: product.title,
+    description: product.description ?? "",
+    sale_type: product.sale_type,
+    price: product.sale_type === "buy_now" ? product.price : product.auction_starting_bid ?? 0,
+    quantity: product.sale_type === "auction" ? 1 : product.quantity,
+    auction_starting_bid: product.auction_starting_bid,
+    auction_min_increment: product.auction_min_increment,
+    auction_duration_seconds: product.auction_duration_seconds,
+    auction_allow_prebids: product.auction_allow_prebids,
+    auction_sudden_death: product.auction_sudden_death,
+  });
+  if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? "Invalid product.");
+  return productInsertFromParsed(parsed.data, product.photo_urls);
+}
+
+/** Create or update a draft shop and products after the setup wizard finishes. */
+export async function finishShopSetup(
+  input: z.infer<typeof finishShopSetupSchema>,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const parsed = finishShopSetupSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      error: parsed.error.issues[0]?.message ?? "Invalid input.",
+      fieldErrors: Object.fromEntries(
+        parsed.error.issues.map((i) => [i.path.join(".") || "form", i.message]),
+      ),
+    };
+  }
+
+  const d = parsed.data;
+  const startIso = new Date(d.startAt).toISOString();
+  const endIso = new Date(d.endAt).toISOString();
+  const visibility = resolveShopVisibility(d.visibility);
+  const shopPayload = {
+    name: d.name,
+    slug: slugify(d.name),
+    description: d.description || null,
+    cover_url: d.coverUrl || null,
+    start_at: startIso,
+    end_at: endIso,
+    visibility,
+    shipping_rate: toCents(d.shippingRate),
+    live_url: d.youtubeUrl || null,
+    twitch_url: d.twitchUrl || null,
+  };
+
+  let shopId = d.shopId;
+
+  if (shopId) {
+    const { data: current } = await supabase
+      .from("shops")
+      .select("status")
+      .eq("id", shopId)
+      .eq("seller_id", user.id)
+      .maybeSingle();
+    if (!current) return { error: "Shop not found." };
+    if (current.status !== "draft") return { error: "Only draft shops can be edited in setup." };
+
+    const { error } = await supabase
+      .from("shops")
+      .update({ ...shopPayload, status: "draft" })
+      .eq("id", shopId)
+      .eq("seller_id", user.id);
+    if (error) return { error: error.message };
+  } else {
+    const { data: shop, error } = await supabase
+      .from("shops")
+      .insert({
+        seller_id: user.id,
+        ...shopPayload,
+        status: "draft",
+      })
+      .select("id")
+      .single();
+    if (error || !shop) return { error: error?.message ?? "Could not create shop." };
+    shopId = shop.id;
+  }
+
+  if (!shopId) return { error: "Could not save shop." };
+
+  const { data: existingProducts } = await supabase
+    .from("products")
+    .select("id")
+    .eq("shop_id", shopId);
+  const incomingIds = new Set(d.products.map((p) => p.id).filter(Boolean) as string[]);
+  const toDelete = (existingProducts ?? []).filter((p) => !incomingIds.has(p.id));
+
+  for (const productId of toDelete.map((p) => p.id)) {
+    const { data: blocked } = await supabase
+      .from("auction_runs")
+      .select("id")
+      .eq("product_id", productId)
+      .in("status", ["live", "awaiting_payment", "paid"])
+      .maybeSingle();
+    if (!blocked) {
+      await supabase.from("products").delete().eq("id", productId).eq("shop_id", shopId);
+    }
+  }
+
+  for (const product of d.products) {
+    const row = finishProductInsert(shopId, product);
+    if (product.id) {
+      const { error } = await supabase
+        .from("products")
+        .update(row)
+        .eq("id", product.id)
+        .eq("shop_id", shopId);
+      if (error) return { error: error.message };
+    } else {
+      const { error } = await supabase.from("products").insert(row);
+      if (error) return { error: error.message };
+    }
+  }
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+  redirect(`/dashboard/shops/${shopId}?created=1`);
+}
+
 export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase, user } = await requireUser();
 
@@ -613,6 +813,7 @@ export async function duplicateShop(shopId: string): Promise<void> {
       visibility: source.visibility,
       shipping_rate: source.shipping_rate,
       live_url: source.live_url,
+      twitch_url: source.twitch_url,
       status: "draft",
     })
     .select("id")
@@ -642,5 +843,5 @@ export async function duplicateShop(shopId: string): Promise<void> {
   }
 
   revalidatePath("/dashboard");
-  redirect(`/dashboard/shops/${copy.id}?duplicated=1`);
+  redirect(`/dashboard/shops/${copy.id}/setup`);
 }

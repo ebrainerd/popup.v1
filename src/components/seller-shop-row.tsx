@@ -48,9 +48,9 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
           <ExternalLink className="size-4" />
         </Link>
         <Link
-          href={`/dashboard/shops/${shop.id}`}
+          href={isDraft ? `/dashboard/shops/${shop.id}/setup` : `/dashboard/shops/${shop.id}`}
           className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label="Manage shop"
+          aria-label={isDraft ? "Continue shop setup" : "Manage shop"}
         >
           <Settings className="size-4" />
         </Link>
