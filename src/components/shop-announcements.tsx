@@ -6,17 +6,20 @@ import { postAnnouncement } from "@/app/shop/announcement-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { ShopAnnouncement } from "@/lib/database.types";
+import { cn } from "@/lib/utils";
 
 export function ShopAnnouncements({
   shopId,
   initialAnnouncements,
   isOwner,
   isScheduled,
+  className,
 }: {
   shopId: string;
   initialAnnouncements: ShopAnnouncement[];
   isOwner: boolean;
   isScheduled: boolean;
+  className?: string;
 }) {
   const [announcements, setAnnouncements] = useState(initialAnnouncements);
   const [text, setText] = useState("");
@@ -51,7 +54,12 @@ export function ShopAnnouncements({
   }
 
   return (
-    <div className="flex h-[28rem] flex-col rounded-xl border border-border bg-card lg:h-[32rem]">
+    <div
+      className={cn(
+        "flex flex-col rounded-xl border border-border bg-card",
+        className ?? "h-[28rem] lg:h-[32rem]",
+      )}
+    >
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
         <Megaphone className="size-4 text-accent" />
         <span className="text-sm font-semibold">Waiting room</span>

@@ -103,19 +103,21 @@ export function ShopPageView({
       )}
 
       <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={isOwner}>
-        <StreamSlot
+        <StreamChatRow
           shop={shop}
+          theme={theme}
           layout={layout}
           isOpen={isOpen}
           isScheduled={isScheduled}
           isOwner={isOwner}
-          initialIsLive={shop.is_live}
           streamProvider={streamProvider}
           nativeEnabled={nativeLiveEnabled}
           embed={embed}
           profileId={profileId}
           hasLiveReminder={hasLiveReminder}
           liveReminderCount={liveReminderCount}
+          initialMessages={initialMessages}
+          announcements={announcements}
         />
 
         {isOwner && isOpen && !isDraftPreview && (
@@ -199,13 +201,8 @@ export function ShopPageView({
         <MainContent
           shop={shop}
           theme={theme}
-          layout={layout}
           isOpen={isOpen}
           isScheduled={isScheduled}
-          isOwner={isOwner}
-          embed={embed}
-          initialMessages={initialMessages}
-          announcements={announcements}
           profileId={profileId}
         />
       </ShopRoom>
@@ -337,17 +334,21 @@ function ShopHeader({
   );
 }
 
-function MainContent({
+function StreamChatRow({
   shop,
   theme,
   layout,
   isOpen,
   isScheduled,
   isOwner,
+  streamProvider,
+  nativeEnabled,
   embed,
+  profileId,
+  hasLiveReminder,
+  liveReminderCount,
   initialMessages,
   announcements,
-  profileId,
 }: {
   shop: ShopWithDetails;
   theme: ShopTheme;
@@ -355,12 +356,78 @@ function MainContent({
   isOpen: boolean;
   isScheduled: boolean;
   isOwner: boolean;
+  streamProvider: StreamProvider;
+  nativeEnabled: boolean;
   embed: LiveEmbedInfo | null;
+  profileId?: string;
+  hasLiveReminder: boolean;
+  liveReminderCount: number;
   initialMessages: ChatMessage[];
   announcements: Announcement[];
+}) {
+  const chatFillClass = "h-full min-h-[16rem] lg:min-h-0";
+
+  const chatPanel =
+    theme.showChat &&
+    (isScheduled ? (
+      <ShopAnnouncements
+        shopId={shop.id}
+        initialAnnouncements={announcements}
+        isOwner={isOwner}
+        isScheduled
+        className={chatFillClass}
+      />
+    ) : (
+      <ShopChat
+        initialMessages={initialMessages}
+        isOpen={isOpen}
+        startAt={shop.start_at}
+        endAt={shop.end_at}
+        className={chatFillClass}
+      />
+    ));
+
+  return (
+    <div
+      className={cn(
+        "mb-6 grid gap-4",
+        chatPanel && "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch",
+      )}
+    >
+      <StreamSlot
+        shop={shop}
+        layout={layout}
+        isOpen={isOpen}
+        isScheduled={isScheduled}
+        isOwner={isOwner}
+        initialIsLive={shop.is_live}
+        streamProvider={streamProvider}
+        nativeEnabled={nativeEnabled}
+        embed={embed}
+        profileId={profileId}
+        hasLiveReminder={hasLiveReminder}
+        liveReminderCount={liveReminderCount}
+        className="h-full"
+      />
+      {chatPanel && <aside className="flex min-h-0 flex-col">{chatPanel}</aside>}
+    </div>
+  );
+}
+
+function MainContent({
+  shop,
+  theme,
+  isOpen,
+  isScheduled,
+  profileId,
+}: {
+  shop: ShopWithDetails;
+  theme: ShopTheme;
+  isOpen: boolean;
+  isScheduled: boolean;
   profileId?: string;
 }) {
-  const productsSection = (
+  return (
     <section>
       <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
         <Package className="size-5" />
@@ -376,67 +443,5 @@ function MainContent({
         gridColumns={theme.productGridColumns}
       />
     </section>
-  );
-
-  const chatAside =
-    theme.showChat &&
-    (isScheduled ? (
-      <ShopAnnouncements
-        shopId={shop.id}
-        initialAnnouncements={announcements}
-        isOwner={isOwner}
-        isScheduled
-      />
-    ) : (
-      <ShopChat
-        initialMessages={initialMessages}
-        isOpen={isOpen}
-        startAt={shop.start_at}
-        endAt={shop.end_at}
-      />
-    ));
-
-  const catalogLive =
-    layout === "catalog" && embed?.embeddable && isOpen ? (
-      <div className="mb-4 overflow-hidden rounded-xl">
-        <LiveEmbedPlayer embed={embed} />
-      </div>
-    ) : null;
-
-  if (layout === "broadcast") {
-    return (
-      <div className="space-y-6">
-        {productsSection}
-        {chatAside && <aside>{chatAside}</aside>}
-      </div>
-    );
-  }
-
-  if (layout === "countdown") {
-    return (
-      <div className={cn("grid gap-6", chatAside && "lg:grid-cols-[1fr_320px]")}>
-        <div className={cn(isScheduled && "opacity-90")}>{productsSection}</div>
-        {chatAside && <aside>{chatAside}</aside>}
-      </div>
-    );
-  }
-
-  if (layout === "catalog") {
-    return (
-      <div className="space-y-6">
-        {productsSection}
-        <div className={cn("grid gap-6", chatAside && "lg:grid-cols-[1fr_360px]")}>
-          <div>{catalogLive}</div>
-          {chatAside && <aside>{chatAside}</aside>}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      {productsSection}
-      {chatAside && <aside>{chatAside}</aside>}
-    </div>
   );
 }
