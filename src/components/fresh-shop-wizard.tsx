@@ -1,14 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { ACTIVE_DRAFT_KEY } from "@/components/continue-draft-shop";
-import { clearWizardDraftStorage } from "@/lib/shop-wizard";
+import { clearActiveDraftShop } from "@/components/continue-draft-shop";
 
-/** Start a blank wizard on /new — no stale banner or fields from past sessions. */
+/** Ensure Create Shop always opens a blank wizard. */
 export function FreshShopWizard() {
   useEffect(() => {
-    if (sessionStorage.getItem(ACTIVE_DRAFT_KEY)) return;
-    clearWizardDraftStorage();
+    clearActiveDraftShop();
   }, []);
 
   return null;

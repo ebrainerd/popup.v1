@@ -5,6 +5,8 @@ import {
   getStepValidation,
   inferCompletedSteps,
   markStepComplete,
+  wizardDraftToSavePayload,
+  wizardHasDraftContent,
 } from "@/lib/shop-wizard";
 
 describe("shop wizard", () => {
@@ -55,5 +57,59 @@ describe("shop wizard", () => {
     });
     expect(draft).toContain("details");
     expect(draft).toContain("products");
+  });
+
+  it("filters untitled products from save payloads", () => {
+    const payload = wizardDraftToSavePayload({
+      ...defaultWizardDraft(),
+      name: "Summer drop",
+      products: [
+        {
+          clientId: "p1",
+          title: "Sticker",
+          description: "",
+          price: "5.00",
+          quantity: "1",
+          shippingRate: "0.00",
+          photo_urls: [],
+          auctionFields: {
+            saleType: "buy_now",
+            startingBid: "",
+            minIncrement: "1.00",
+            durationSeconds: 60,
+            allowPrebids: true,
+            suddenDeath: false,
+          },
+        },
+        {
+          clientId: "p2",
+          title: "",
+          description: "",
+          price: "",
+          quantity: "1",
+          shippingRate: "0.00",
+          photo_urls: [],
+          auctionFields: {
+            saleType: "buy_now",
+            startingBid: "",
+            minIncrement: "1.00",
+            durationSeconds: 60,
+            allowPrebids: true,
+            suddenDeath: false,
+          },
+        },
+      ],
+      completedSteps: [],
+    });
+
+    expect(payload.products).toHaveLength(1);
+    expect(payload.products[0]?.title).toBe("Sticker");
+  });
+
+  it("detects when a wizard has draftable content", () => {
+    expect(wizardHasDraftContent(defaultWizardDraft())).toBe(false);
+    expect(
+      wizardHasDraftContent({ ...defaultWizardDraft(), name: "My drop" }),
+    ).toBe(true);
   });
 });

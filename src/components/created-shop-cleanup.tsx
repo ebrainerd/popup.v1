@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { clearActiveDraftShop } from "@/components/continue-draft-shop";
 import { clearWizardDraftStorage } from "@/lib/shop-wizard";
 
 const NEW_SHOP_FORM_KEY = "popup-new-shop-form";
@@ -18,6 +19,7 @@ export function CreatedShopCleanup({
     sessionStorage.removeItem(NEW_SHOP_FORM_KEY);
     clearWizardDraftStorage();
     if (shopId) clearWizardDraftStorage(shopId);
+    clearActiveDraftShop();
   }, [created, shopId]);
 
   return null;

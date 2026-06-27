@@ -237,6 +237,31 @@ export function canNavigateToStep(targetIndex: number, draft: ShopWizardDraft): 
 }
 
 export function wizardDraftToFinishPayload(draft: ShopWizardDraft) {
+  return buildWizardPersistPayload(draft);
+}
+
+export function wizardDraftToSavePayload(draft: ShopWizardDraft) {
+  return buildWizardPersistPayload(draft, { draftMode: true });
+}
+
+function buildWizardPersistPayload(
+  draft: ShopWizardDraft,
+  options?: { draftMode?: boolean },
+) {
+  const defaults = defaultWizardDraft();
+  const startLocal =
+    draft.startLocal &&
+    draft.endLocal &&
+    new Date(draft.endLocal) > new Date(draft.startLocal)
+      ? draft.startLocal
+      : defaults.startLocal;
+  const endLocal =
+    draft.startLocal &&
+    draft.endLocal &&
+    new Date(draft.endLocal) > new Date(draft.startLocal)
+      ? draft.endLocal
+      : defaults.endLocal;
+
   return {
     shopId: draft.shopId,
     name: draft.name.trim(),
@@ -245,24 +270,45 @@ export function wizardDraftToFinishPayload(draft: ShopWizardDraft) {
     coverUrl: draft.coverUrl.trim(),
     youtubeUrl: draft.youtubeUrl.trim(),
     twitchUrl: draft.twitchUrl.trim(),
-    startAt: localInputToIso(draft.startLocal),
-    endAt: localInputToIso(draft.endLocal),
-    products: draft.products.map((p) => ({
-      id: p.dbId,
-      title: p.title.trim(),
-      description: p.description.trim(),
-      photo_urls: p.photo_urls,
-      sale_type: p.auctionFields.saleType,
-      price: parseFloat(p.price) || 0,
-      quantity: parseInt(p.quantity, 10) || 0,
-      shipping_rate: parseFloat(p.shippingRate) || 0,
-      auction_starting_bid: parseFloat(p.auctionFields.startingBid) || 0,
-      auction_min_increment: parseFloat(p.auctionFields.minIncrement) || 1,
-      auction_duration_seconds: p.auctionFields.durationSeconds,
-      auction_allow_prebids: p.auctionFields.allowPrebids,
-      auction_sudden_death: p.auctionFields.suddenDeath,
-    })),
+    startAt: localInputToIso(startLocal),
+    endAt: localInputToIso(endLocal),
+    products: mapWizardProducts(draft, Boolean(options?.draftMode)),
   };
+}
+
+function mapWizardProducts(draft: ShopWizardDraft, draftMode: boolean) {
+  const items = draftMode
+    ? draft.products.filter((p) => p.title.trim())
+    : draft.products;
+
+  return items.map((p) => ({
+    id: p.dbId,
+    title: p.title.trim(),
+    description: p.description.trim(),
+    photo_urls: p.photo_urls,
+    sale_type: p.auctionFields.saleType,
+    price: draftMode ? parseFloat(p.price) || 0.5 : parseFloat(p.price) || 0,
+    quantity: parseInt(p.quantity, 10) || 0,
+    shipping_rate: parseFloat(p.shippingRate) || 0,
+    auction_starting_bid: draftMode
+      ? parseFloat(p.auctionFields.startingBid) || 0.5
+      : parseFloat(p.auctionFields.startingBid) || 0,
+    auction_min_increment: parseFloat(p.auctionFields.minIncrement) || 1,
+    auction_duration_seconds: p.auctionFields.durationSeconds || 60,
+    auction_allow_prebids: p.auctionFields.allowPrebids,
+    auction_sudden_death: p.auctionFields.suddenDeath,
+  }));
+}
+
+export function wizardHasDraftContent(draft: ShopWizardDraft): boolean {
+  return Boolean(
+    draft.name.trim() ||
+      draft.description.trim() ||
+      draft.coverUrl.trim() ||
+      draft.youtubeUrl.trim() ||
+      draft.twitchUrl.trim() ||
+      draft.products.some((p) => p.title.trim()),
+  );
 }
 
 export function loadWizardDraftFromStorage(shopId?: string): ShopWizardDraft | null {
