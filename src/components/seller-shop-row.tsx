@@ -38,7 +38,7 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
         <Link
           href={`/shop/${shop.id}`}
           className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
-          aria-label="View public shop"
+          aria-label={isDraft ? "Preview draft shop" : "View public shop"}
         >
           <ExternalLink className="size-4" />
         </Link>

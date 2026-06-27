@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Palette } from "lucide-react";
+import { ArrowLeft, Eye, Palette } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
 import { getSellerOrders } from "@/lib/orders";
@@ -95,7 +95,16 @@ export default async function ManageShopPage({
             {isDraft && window.schedule === "scheduled" && (
               <p className="text-xs text-muted-foreground">Won&apos;t open until you publish</p>
             )}
-            <CopyLink path={`/shop/${shop.id}`} label="Share shop link" />
+            {isDraft ? (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/shop/${shop.id}`}>
+                  <Eye className="size-4" />
+                  Preview shop
+                </Link>
+              </Button>
+            ) : (
+              <CopyLink path={`/shop/${shop.id}`} label="Share shop link" />
+            )}
           </div>
         </div>
       </div>

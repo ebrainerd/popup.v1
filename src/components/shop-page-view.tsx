@@ -23,6 +23,7 @@ import { ProductsGridLive } from "@/components/products-grid-live";
 import { FlashControls } from "@/components/flash-controls";
 import { AuctionControls } from "@/components/auction-controls";
 import { AuctionLivePanel } from "@/components/auction-live-panel";
+import { DraftPreviewBanner } from "@/components/draft-preview-banner";
 import { cn } from "@/lib/utils";
 
 type Announcement = Awaited<
@@ -36,6 +37,8 @@ export function ShopPageView({
   theme: rawTheme,
   isOpen,
   isScheduled,
+  isDraftPreview,
+  draftPreviewScheduleLabel,
   isOwner,
   seller,
   profileId,
@@ -59,6 +62,8 @@ export function ShopPageView({
   theme: unknown;
   isOpen: boolean;
   isScheduled: boolean;
+  isDraftPreview: boolean;
+  draftPreviewScheduleLabel: string;
   isOwner: boolean;
   seller: ShopWithDetails["seller"];
   profileId?: string;
@@ -87,7 +92,11 @@ export function ShopPageView({
     <div className="mx-auto max-w-6xl px-4 py-6">
       {checkoutCanceled && <ReleaseHoldOnCancel shopId={shop.id} />}
 
-      {isScheduled && (
+      {isDraftPreview && (
+        <DraftPreviewBanner shopId={shop.id} scheduleLabel={draftPreviewScheduleLabel} />
+      )}
+
+      {isScheduled && !isDraftPreview && (
         <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
       )}
 
@@ -120,9 +129,10 @@ export function ShopPageView({
           reminderDeliveryConfigured={reminderDeliveryConfigured}
           profileId={profileId}
           layout={layout}
+          isDraftPreview={isDraftPreview}
         />
 
-        {isScheduled && seller && layout !== "countdown" && (
+        {isScheduled && seller && layout !== "countdown" && !isDraftPreview && (
           <div className="mb-8 grid gap-4 lg:grid-cols-2">
             <ShareDropCard
               shopId={shop.id}
@@ -200,6 +210,7 @@ function ShopHeader({
   reminderDeliveryConfigured,
   profileId,
   layout,
+  isDraftPreview,
 }: {
   shop: ShopWithDetails;
   theme: ShopTheme;
@@ -213,6 +224,7 @@ function ShopHeader({
   reminderDeliveryConfigured: boolean;
   profileId?: string;
   layout: ShopTheme["layout"];
+  isDraftPreview: boolean;
 }) {
   const compact = layout === "broadcast" || layout === "countdown";
 
@@ -268,7 +280,7 @@ function ShopHeader({
         <div className="flex items-center gap-2">
           {isOpen && <ViewerCount />}
           {layout !== "countdown" && (
-            <Countdown startAt={shop.start_at} endAt={shop.end_at} />
+            <Countdown startAt={shop.start_at} endAt={shop.end_at} draft={isDraftPreview} />
           )}
         </div>
         {isScheduled && !isOwner && theme.showReminderCta && (
@@ -297,12 +309,12 @@ function ShopHeader({
           />
         )}
         {isOwner && (
-          <Link
-            href={`/dashboard/shops/${shop.id}`}
-            className="text-sm font-medium text-primary hover:underline"
-          >
-            Manage this shop →
-          </Link>
+        <Link
+          href={`/dashboard/shops/${shop.id}`}
+          className="text-sm font-medium text-primary hover:underline"
+        >
+          {isDraftPreview ? "Back to manage shop →" : "Manage this shop →"}
+        </Link>
         )}
       </div>
     </div>
