@@ -4,7 +4,7 @@ import { ExternalLink, Settings } from "lucide-react";
 import type { Shop } from "@/lib/database.types";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
-import { deriveShopStatus, formatCurrency } from "@/lib/utils";
+import { deriveShopStatus } from "@/lib/utils";
 
 export function SellerShopRow({ shop }: { shop: Shop }) {
   const status = deriveShopStatus(shop.start_at, shop.end_at);
@@ -30,12 +30,6 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <Countdown startAt={shop.start_at} endAt={shop.end_at} compact />
-          <span>·</span>
-          <span>
-            {shop.shipping_rate > 0
-              ? `${formatCurrency(shop.shipping_rate)} shipping`
-              : "Free shipping"}
-          </span>
         </div>
       </div>
 

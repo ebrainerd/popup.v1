@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Star, Package, Truck } from "lucide-react";
+import { Star, Package } from "lucide-react";
 import {
   getShopWithDetails,
   getChatMessages,
@@ -14,7 +14,7 @@ import { getSiteUrl } from "@/lib/env";
 import { isReminderDeliveryConfigured } from "@/lib/reminder-delivery";
 import { getDropReminderCount, getUserDropReminder } from "@/lib/drop-reminders";
 import { parseLiveEmbed } from "@/lib/embeds";
-import { deriveShopStatus, formatCurrency } from "@/lib/utils";
+import { deriveShopStatus } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
 import { FollowButton } from "@/components/follow-button";
@@ -339,12 +339,6 @@ export default async function ShopPage({
           </aside>
         </div>
 
-        <p className="mt-8 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <Truck className="size-4" />
-          {shop.shipping_rate > 0
-            ? `Flat ${formatCurrency(shop.shipping_rate)} shipping included at checkout.`
-            : "Free shipping included."}
-        </p>
       </ShopRoom>
     </div>
   );

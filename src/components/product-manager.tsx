@@ -32,6 +32,7 @@ type ProductDraft = {
   description: string;
   price: string;
   quantity: string;
+  shippingRate: string;
 };
 
 function productDraftKey(shopId: string) {
@@ -40,14 +41,14 @@ function productDraftKey(shopId: string) {
 
 function loadProductDraft(shopId: string): ProductDraft {
   if (typeof window === "undefined") {
-    return { title: "", description: "", price: "", quantity: "1" };
+    return { title: "", description: "", price: "", quantity: "1", shippingRate: "0.00" };
   }
   try {
     const raw = sessionStorage.getItem(productDraftKey(shopId));
-    if (!raw) return { title: "", description: "", price: "", quantity: "1" };
-    return { title: "", description: "", price: "", quantity: "1", ...JSON.parse(raw) };
+    if (!raw) return { title: "", description: "", price: "", quantity: "1", shippingRate: "0.00" };
+    return { title: "", description: "", price: "", quantity: "1", shippingRate: "0.00", ...JSON.parse(raw) };
   } catch {
-    return { title: "", description: "", price: "", quantity: "1" };
+    return { title: "", description: "", price: "", quantity: "1", shippingRate: "0.00" };
   }
 }
 
@@ -75,6 +76,7 @@ export function ProductManager({
     description: "",
     price: "",
     quantity: "1",
+    shippingRate: "0.00",
   });
   const [auctionFields, setAuctionFields] = useState<AuctionFieldState>(defaultAuctionFields());
   const formRef = useRef<HTMLFormElement>(null);
@@ -83,7 +85,7 @@ export function ProductManager({
     if (!res.error) {
       formRef.current?.reset();
       sessionStorage.removeItem(productDraftKey(shopId));
-      setDraft({ title: "", description: "", price: "", quantity: "1" });
+      setDraft({ title: "", description: "", price: "", quantity: "1", shippingRate: "0.00" });
       setAuctionFields(defaultAuctionFields());
     }
     return res;
@@ -214,6 +216,22 @@ export function ProductManager({
             )}
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="shipping_rate">Shipping rate (USD)</Label>
+            <Input
+              id="shipping_rate"
+              name="shipping_rate"
+              type="number"
+              min={0}
+              step="0.01"
+              value={draft.shippingRate}
+              onChange={(e) => patch({ shippingRate: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Flat shipping added at checkout for this item.
+            </p>
+          </div>
+
           {state.error && (
             <p className="rounded-md bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
           )}
@@ -248,6 +266,7 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
     description: product.description ?? "",
     price: (product.price / 100).toFixed(2),
     quantity: String(product.quantity),
+    shippingRate: ((product.shipping_rate ?? 0) / 100).toFixed(2),
     photo_urls: initialPhotos,
   });
 
@@ -262,6 +281,7 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
         photo_urls: fields.photo_urls,
         price: parseFloat(fields.price) || 0,
         quantity: parseInt(fields.quantity) || 0,
+        shipping_rate: parseFloat(fields.shippingRate) || 0,
       });
       if (res.ok) {
         setEditing(false);
@@ -309,6 +329,14 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
             placeholder="Qty"
           />
         </div>
+        <Input
+          type="number"
+          min={0}
+          step="0.01"
+          value={fields.shippingRate}
+          onChange={(e) => setFields({ ...fields, shippingRate: e.target.value })}
+          placeholder="Shipping (USD)"
+        />
         {error && <p className="text-xs text-live">{error}</p>}
         <div className="flex gap-2">
           <Button size="sm" onClick={save} disabled={pending || !fields.title.trim()}>
@@ -339,6 +367,10 @@ function ProductRow({ product, shopId }: { product: Product; shopId: string }) {
           {product.sale_type === "auction"
             ? `Auction · starting ${formatCurrency(product.auction_starting_bid ?? product.price)}`
             : `${formatCurrency(product.price)} · ${product.quantity} in stock`}
+          {" · "}
+          {(product.shipping_rate ?? 0) > 0
+            ? `${formatCurrency(product.shipping_rate)} shipping`
+            : "Free shipping"}
         </p>
       </div>
       <Button variant="ghost" size="icon" onClick={() => setEditing(true)} aria-label="Edit product">

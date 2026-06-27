@@ -21,7 +21,7 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
   const { data: product } = await supabase
     .from("products")
     .select(
-      "id, title, price, discount_price, quantity, is_flash_only, flash_expires_at, shop_id",
+      "id, title, price, discount_price, quantity, shipping_rate, is_flash_only, flash_expires_at, shop_id",
     )
     .eq("id", productId)
     .maybeSingle();
@@ -30,7 +30,7 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id, name, seller_id, shipping_rate, start_at, end_at")
+    .select("id, name, seller_id, start_at, end_at")
     .eq("id", product.shop_id)
     .maybeSingle();
   if (!shop) return { ok: false, error: "Shop not found." };
@@ -54,7 +54,7 @@ export async function createCheckoutSession(productId: string): Promise<Checkout
     product.discount_price != null && product.discount_price < product.price
       ? product.discount_price
       : product.price;
-  const shipping = shop.shipping_rate ?? 0;
+  const shipping = product.shipping_rate ?? 0;
   const total = unitAmount + shipping;
   // Stripe rejects charges under $0.50 — fail clearly (covers legacy items).
   if (total < 50) {
@@ -230,7 +230,7 @@ export async function createAuctionCheckoutSession(auctionId: string): Promise<C
 
   const { data: product } = await supabase
     .from("products")
-    .select("id, title, shop_id, quantity")
+    .select("id, title, shop_id, quantity, shipping_rate")
     .eq("id", run.product_id)
     .maybeSingle();
   if (!product) return { ok: false, error: "Product not found." };
@@ -240,7 +240,7 @@ export async function createAuctionCheckoutSession(auctionId: string): Promise<C
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id, name, seller_id, shipping_rate, start_at, end_at")
+    .select("id, name, seller_id, start_at, end_at")
     .eq("id", product.shop_id)
     .maybeSingle();
   if (!shop) return { ok: false, error: "Shop not found." };
@@ -265,7 +265,7 @@ export async function createAuctionCheckoutSession(auctionId: string): Promise<C
     .maybeSingle();
 
   const unitAmount = run.current_bid;
-  const shipping = shop.shipping_rate ?? 0;
+  const shipping = product.shipping_rate ?? 0;
   const total = unitAmount + shipping;
   if (total < 50) {
     return { ok: false, error: "Winning bid total is below the $0.50 minimum." };
