@@ -35,6 +35,34 @@ Startup (these are service-start steps, intentionally NOT in the update script):
    `.env.local` keeps working after restarts.
 4. `npm run dev` (Next.js dev server on http://localhost:3000).
 
+### Non-obvious gotcha: injected Cloud secrets override `.env.local`
+
+On a Cursor Cloud VM the agent environment injects the project's **hosted**
+Supabase/Stripe secrets as real environment variables (`NEXT_PUBLIC_SUPABASE_URL`,
+`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SITE_URL`,
+`STRIPE_SECRET_KEY`; see `CLOUD_AGENT_INJECTED_SECRET_NAMES`). Next.js does **not**
+let `.env.local` override variables that already exist in the real environment, so
+`npm run dev` will talk to the **hosted** backend even though `.env.local` points at
+the local stack. Pages still render, but authenticated flows break in confusing
+ways — e.g. signup/login fail because the hosted project has Turnstile **captcha**
+enabled (surfaced in the UI as "Sign-up is temporarily unavailable"), while a direct
+`curl` to the local GoTrue at `http://127.0.0.1:54321/auth/v1/signup` succeeds.
+
+To test auth or any write flow against the **local** stack, start the dev server with
+explicit local overrides (real env vars beat `.env.local`, so pass them inline):
+
+```bash
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<ANON_KEY from `supabase status`> \
+SUPABASE_SERVICE_ROLE_KEY=<SERVICE_ROLE_KEY from `supabase status`> \
+NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
+NEXT_PUBLIC_TURNSTILE_SITE_KEY= STRIPE_SECRET_KEY= \
+npm run dev
+```
+
+Local email signups are auto-confirmed and have no captcha, so signup logs you
+straight into the dashboard.
+
 ### Non-obvious gotcha: table grants on the local stack
 
 The SQL migrations enable Row Level Security and define policies, but they
