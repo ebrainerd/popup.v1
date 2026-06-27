@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
 import { getSellerOrders } from "@/lib/orders";
@@ -83,11 +83,6 @@ export default async function ManageShopPage({
           </div>
           <div className="flex items-center gap-2">
             <Countdown startAt={shop.start_at} endAt={shop.end_at} />
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/shop/${shop.id}`}>
-                <ExternalLink className="size-4" /> Customize your drop page
-              </Link>
-            </Button>
             <CopyLink path={`/shop/${shop.id}`} label="Share shop link" />
           </div>
         </div>
