@@ -2,13 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { Gavel, Play, X, RotateCcw } from "lucide-react";
-import { useShopRoom } from "@/components/shop-room";
+import { useShopRoom, useShopEvent } from "@/components/shop-room";
 import {
   queueAuction,
   startAuction,
   cancelAuction,
 } from "@/app/shop/auction-actions";
-import { ROOM_EVENTS, type AuctionStartedBroadcast } from "@/lib/realtime";
+import { ROOM_EVENTS, type AuctionStartedBroadcast, type FlashItemBroadcast } from "@/lib/realtime";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/database.types";
@@ -25,13 +25,22 @@ export function AuctionControls({
   runs: AuctionRunWithProduct[];
 }) {
   const { emit } = useShopRoom();
+  const [productList, setProductList] = useState(products);
   const [runs, setRuns] = useState(initialRuns);
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  useShopEvent(ROOM_EVENTS.flashItem, (payload) => {
+    const item = payload as FlashItemBroadcast;
+    if (item.sale_type !== "auction") return;
+    setProductList((prev) =>
+      prev.some((p) => p.id === item.id) ? prev : [...prev, item as Product],
+    );
+  });
+
   const auctionProducts = useMemo(
-    () => products.filter((p) => p.sale_type === "auction"),
-    [products],
+    () => productList.filter((p) => p.sale_type === "auction"),
+    [productList],
   );
 
   const activeRun = runs.find((r) =>

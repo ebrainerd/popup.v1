@@ -60,7 +60,19 @@ export function ProductsGridLive({
 
   useShopEvent(ROOM_EVENTS.flashItem, (payload) => {
     const item = payload as FlashItemBroadcast;
-    setProducts((prev) => (prev.some((p) => p.id === item.id) ? prev : [...prev, item as Product]));
+    setProducts((prev) =>
+      prev.some((p) => p.id === item.id)
+        ? prev
+        : [
+            ...prev,
+            {
+              ...item,
+              photo_urls: item.photo_urls ?? (item.photo_url ? [item.photo_url] : []),
+              shipping_rate: item.shipping_rate ?? 0,
+              created_at: item.created_at ?? new Date().toISOString(),
+            } as Product,
+          ],
+    );
     celebrate();
   });
 

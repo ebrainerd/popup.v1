@@ -10,8 +10,23 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUpload } from "@/components/image-upload";
+import {
+  SaleTypePicker,
+  AuctionFields,
+  defaultAuctionFields,
+  type AuctionFieldState,
+} from "@/components/auction-product-fields";
 import type { Product } from "@/lib/database.types";
 import { formatCurrency } from "@/lib/utils";
+
+const emptyItem = () => ({
+  title: "",
+  description: "",
+  price: "",
+  quantity: "1",
+  photo_url: "",
+  auction: defaultAuctionFields(),
+});
 
 export function FlashControls({ products }: { products: Product[] }) {
   const { shopId, emit } = useShopRoom();
@@ -23,13 +38,11 @@ export function FlashControls({ products }: { products: Product[] }) {
   const [discount, setDiscount] = useState("");
 
   const [showItem, setShowItem] = useState(false);
-  const [item, setItem] = useState({
-    title: "",
-    description: "",
-    price: "",
-    quantity: "1",
-    photo_url: "",
-  });
+  const [item, setItem] = useState(emptyItem);
+
+  function patchAuction(patch: Partial<AuctionFieldState>) {
+    setItem((it) => ({ ...it, auction: { ...it.auction, ...patch } }));
+  }
 
   function applyDiscount() {
     setError(null);
@@ -58,20 +71,33 @@ export function FlashControls({ products }: { products: Product[] }) {
 
   function addFlashItem() {
     setError(null);
+    const isAuction = item.auction.saleType === "auction";
     startTransition(async () => {
       const res = await createFlashItem(shopId, {
         title: item.title,
         description: item.description,
-        price: parseFloat(item.price) || 0,
-        quantity: parseInt(item.quantity) || 0,
+        sale_type: item.auction.saleType,
+        price: isAuction
+          ? parseFloat(item.auction.startingBid) || 0
+          : parseFloat(item.price) || 0,
+        quantity: isAuction ? 1 : parseInt(item.quantity) || 0,
         photo_url: item.photo_url,
+        auction_starting_bid: isAuction
+          ? parseFloat(item.auction.startingBid) || undefined
+          : undefined,
+        auction_min_increment: isAuction
+          ? parseFloat(item.auction.minIncrement) || undefined
+          : undefined,
+        auction_duration_seconds: isAuction ? item.auction.durationSeconds : undefined,
+        auction_allow_prebids: isAuction ? item.auction.allowPrebids : undefined,
+        auction_sudden_death: isAuction ? item.auction.suddenDeath : undefined,
       });
       if (!res.ok) {
         setError(res.error);
         return;
       }
       emit(ROOM_EVENTS.flashItem, res.product);
-      setItem({ title: "", description: "", price: "", quantity: "1", photo_url: "" });
+      setItem(emptyItem());
       setShowItem(false);
     });
   }
@@ -79,6 +105,8 @@ export function FlashControls({ products }: { products: Product[] }) {
   const activeDiscounts = products.filter(
     (p) => p.discount_price != null && p.discount_price < p.price,
   );
+
+  const isAuction = item.auction.saleType === "auction";
 
   return (
     <div className="rounded-xl border border-border bg-card p-4">
@@ -171,31 +199,42 @@ export function FlashControls({ products }: { products: Product[] }) {
                 placeholder="What makes this flash item special?"
               />
             </div>
-            <div className="flex items-end gap-2">
-              <div className="w-28 space-y-1">
-                <Label className="text-xs">Price</Label>
-                <Input
-                  type="number"
-                  min={0.5}
-                  step="0.01"
-                  value={item.price}
-                  onChange={(e) => setItem({ ...item, price: e.target.value })}
-                />
+
+            <SaleTypePicker
+              value={item.auction.saleType}
+              onChange={(saleType) => patchAuction({ saleType })}
+            />
+
+            {isAuction ? (
+              <AuctionFields state={item.auction} onChange={patchAuction} />
+            ) : (
+              <div className="flex items-end gap-2">
+                <div className="w-28 space-y-1">
+                  <Label className="text-xs">Price</Label>
+                  <Input
+                    type="number"
+                    min={0.5}
+                    step="0.01"
+                    value={item.price}
+                    onChange={(e) => setItem({ ...item, price: e.target.value })}
+                  />
+                </div>
+                <div className="w-24 space-y-1">
+                  <Label className="text-xs">Qty</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={item.quantity}
+                    onChange={(e) => setItem({ ...item, quantity: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="w-24 space-y-1">
-                <Label className="text-xs">Qty</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={item.quantity}
-                  onChange={(e) => setItem({ ...item, quantity: e.target.value })}
-                />
-              </div>
-            </div>
+            )}
+
             <div className="flex gap-2">
               <Button onClick={addFlashItem} disabled={pending || !item.title}>
-                Drop it
+                {isAuction ? "Drop auction" : "Drop it"}
               </Button>
               <Button variant="ghost" onClick={() => setShowItem(false)}>
                 Cancel
