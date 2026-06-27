@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Rocket } from "lucide-react";
 import { publishShop, unpublishShop } from "@/app/dashboard/actions";
@@ -49,16 +50,24 @@ export function PublishControls({
               <p className="text-sm text-muted-foreground">
                 {canPublish
                   ? inviteOnly
-                    ? "Share your shop link when you're ready for buyers to join."
-                    : "It's hidden from Explore and search until you publish."
-                  : "Add at least one product, then publish so buyers can check out."}
+                    ? "Preview your shop, then publish when you're ready for buyers."
+                    : "Preview your shop — it's hidden from Explore and search until you publish."
+                  : "Add at least one product, then preview and publish so buyers can check out."}
               </p>
             </div>
           </div>
-          <Button onClick={publish} disabled={pending || !canPublish} className="rounded-full">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button asChild variant="outline" disabled={pending}>
+              <Link href={`/shop/${shopId}`}>
+                <Eye className="size-4" />
+                Preview shop
+              </Link>
+            </Button>
+            <Button onClick={publish} disabled={pending || !canPublish} className="rounded-full">
             <Rocket className="size-4" />
             {pending ? "Publishing…" : "Publish drop"}
-          </Button>
+            </Button>
+          </div>
         </div>
         {error && <p className="mt-2 text-sm text-live">{error}</p>}
       </div>

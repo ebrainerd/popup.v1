@@ -13,7 +13,7 @@ import { getDropReminderCount, getUserDropReminder } from "@/lib/drop-reminders"
 import { getLiveReminderCount, getUserLiveReminder } from "@/lib/live-reminders";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
-import { deriveShopStatus } from "@/lib/utils";
+import { derivePublishedShopWindow } from "@/lib/utils";
 import { ShopThemeShell } from "@/components/shop-theme-shell";
 import { ShopPageView } from "@/components/shop-page-view";
 import { getShopAuctionRuns, getLiveAuctionPanelState } from "@/lib/auctions";
@@ -69,11 +69,20 @@ export default async function ShopPage({
   const profile = await getCurrentProfile();
   const shop = await getShopWithDetails(id, profile?.id);
   if (!shop) notFound();
-  const status = deriveShopStatus(shop.start_at, shop.end_at);
-  const isOpen = status === "open";
-  const isScheduled = status === "scheduled";
+
   const seller = shop.seller;
   const isOwner = profile?.id === shop.seller_id;
+  const window = derivePublishedShopWindow(shop);
+  const isDraftPreview = window.isDraft && isOwner;
+  const isOpen = window.isOpen;
+  const isScheduled = isDraftPreview || window.isScheduled;
+
+  const draftPreviewScheduleLabel =
+    window.schedule === "open"
+      ? "Your planned window has started — publish when you're ready."
+      : window.schedule === "ended"
+        ? "Your planned window has ended — update the schedule in Shop details."
+        : "This is how buyers will see your drop when you publish and it opens.";
 
   let isFollowing = false;
   let hasReminder = false;
@@ -138,6 +147,8 @@ export default async function ShopPage({
         theme={shop.shop_theme}
         isOpen={isOpen}
         isScheduled={isScheduled}
+        isDraftPreview={isDraftPreview}
+        draftPreviewScheduleLabel={draftPreviewScheduleLabel}
         isOwner={Boolean(isOwner)}
         seller={seller}
         profileId={profile?.id}

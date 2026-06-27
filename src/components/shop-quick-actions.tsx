@@ -70,16 +70,22 @@ export function ShopQuickActions({
     });
   }
 
+  const showShopWindowControls = isOpen && !isEnded;
+
+  if (!showShopWindowControls && !canGoLive && !(nativePublisherActive && isLive) && !isEnded) {
+    return null;
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        {canGoLive && (
+        {canGoLive && isOpen && (
           <Button
             variant={live ? "destructive" : "default"}
             size="sm"
             onClick={onToggleLive}
-            disabled={pending || !hasLiveUrl || !isOpen || isEnded}
-            title={!hasLiveUrl ? "Add a live stream URL first" : !isOpen ? "Shop must be open" : ""}
+            disabled={pending || !hasLiveUrl || isEnded}
+            title={!hasLiveUrl ? "Add a live stream URL first" : ""}
           >
             {live ? <Check className="size-4" /> : <Radio className="size-4" />}
             {live ? "End live" : "Go live"}
@@ -90,34 +96,38 @@ export function ShopQuickActions({
           <span className="text-sm text-muted-foreground">Video controls are above.</span>
         )}
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onExtend(15)}
-            disabled={pending || !isOpen || isEnded}
-          >
-            <Clock className="size-4" /> +15m
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onExtend(60)}
-            disabled={pending || !isOpen || isEnded}
-          >
-            +1h
-          </Button>
-        </div>
+        {showShopWindowControls && (
+          <>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onExtend(15)}
+                disabled={pending}
+              >
+                <Clock className="size-4" /> +15m
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onExtend(60)}
+                disabled={pending}
+              >
+                +1h
+              </Button>
+            </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-live"
-          disabled={pending || isEnded}
-          onClick={onEndShop}
-        >
-          <CircleStop className="size-4" /> End shop
-        </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-live"
+              disabled={pending}
+              onClick={onEndShop}
+            >
+              <CircleStop className="size-4" /> End shop
+            </Button>
+          </>
+        )}
       </div>
       {error && <p className="text-sm text-live">{error}</p>}
       {isEnded && (

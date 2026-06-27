@@ -13,6 +13,7 @@ import { startNativeLive, endNativeLive, acceptNativeLiveTos } from "@/app/dashb
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { broadcastLiveState } from "@/lib/live-broadcast-client";
+import { AudioLevelMeter } from "@/components/audio-level-meter";
 
 type PublisherState = "idle" | "preview" | "connecting" | "live" | "error";
 
@@ -322,25 +323,28 @@ export function NativeLivePublisher({
       </div>
 
       {state === "preview" && (
-        <div className="flex flex-wrap gap-2">
-          {cameras.length > 1 && (
-            <select
-              className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-              value={cameraId}
-              onChange={(e) => void switchCamera(e.target.value)}
-            >
-              <option value="">Default camera</option>
-              {cameras.map((c) => (
-                <option key={c.deviceId} value={c.deviceId}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          )}
-          <Button type="button" variant="outline" size="sm" onClick={toggleMute}>
-            {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
-            {muted ? "Unmute" : "Mute"}
-          </Button>
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {cameras.length > 1 && (
+              <select
+                className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+                value={cameraId}
+                onChange={(e) => void switchCamera(e.target.value)}
+              >
+                <option value="">Default camera</option>
+                {cameras.map((c) => (
+                  <option key={c.deviceId} value={c.deviceId}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            <Button type="button" variant="outline" size="sm" onClick={toggleMute}>
+              {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+              {muted ? "Unmute" : "Mute"}
+            </Button>
+          </div>
+          <AudioLevelMeter stream={previewStream} muted={muted} />
         </div>
       )}
 
@@ -379,7 +383,7 @@ export function NativeLivePublisher({
               onClick={() => void startPreview()}
               disabled={pending || isEnded}
             >
-              <Video className="size-4" /> Test camera
+              <Video className="size-4" /> Test camera & mic
             </Button>
             <Button
               type="button"
