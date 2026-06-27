@@ -298,3 +298,64 @@ body {
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Per-shop themes — scoped to .shop-theme-root on public shop pages
+--------------------------------------------------------------------------- */
+
+.shop-theme-root {
+  --primary: var(--shop-accent, #ff3b8b);
+  --ring: var(--shop-accent, #ff3b8b);
+  --live: var(--shop-accent, #ff3b8b);
+  --radius: var(--shop-radius, 1.25rem);
+}
+
+.shop-bg-gradient {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, color-mix(in srgb, var(--shop-accent) 18%, transparent), transparent),
+    var(--background);
+}
+
+.shop-bg-solid {
+  background: color-mix(in srgb, var(--shop-accent) 6%, var(--background));
+}
+
+.shop-bg-none {
+  background: var(--background);
+}
+
+.shop-theme-gallery {
+  --card: color-mix(in srgb, var(--background) 92%, #f5f0ea);
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.shop-theme-gallery h1,
+.shop-theme-gallery h2 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.shop-theme-dark_room {
+  --card: #12121a;
+  --muted: #1a1a24;
+  --border: #2a2a38;
+}
+
+.shop-theme-market_stall {
+  --card: color-mix(in srgb, var(--background) 88%, #fef3c7);
+}
+
+.shop-theme-broadcast h1 {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.shop-layout-countdown .shop-theme-root,
+.shop-theme-root.shop-layout-countdown {
+  /* layout class may be on same element */
+}
+
+.shop-grid-cols-3 .products-grid {
+  /* applied via component classes */
+}
+

@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Star, Package } from "lucide-react";
 import {
   getShopWithDetails,
   getChatMessages,
@@ -15,22 +12,8 @@ import { isReminderDeliveryConfigured } from "@/lib/reminder-delivery";
 import { getDropReminderCount, getUserDropReminder } from "@/lib/drop-reminders";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { deriveShopStatus } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
-import { Countdown } from "@/components/countdown";
-import { FollowButton } from "@/components/follow-button";
-import { RemindMeButton } from "@/components/remind-me-button";
-import { ShareDropCard } from "@/components/share-drop-card";
-import { WaitingRoomBanner } from "@/components/waiting-room-banner";
-import { ShopAnnouncements } from "@/components/shop-announcements";
-import { LiveEmbed } from "@/components/live-embed";
-import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
-import { ShopRoom } from "@/components/shop-room";
-import { ViewerCount } from "@/components/viewer-count";
-import { ShopChat } from "@/components/shop-chat";
-import { ProductsGridLive } from "@/components/products-grid-live";
-import { FlashControls } from "@/components/flash-controls";
-import { AuctionControls } from "@/components/auction-controls";
-import { AuctionLivePanel } from "@/components/auction-live-panel";
+import { ShopThemeShell } from "@/components/shop-theme-shell";
+import { ShopPageView } from "@/components/shop-page-view";
 import { getShopAuctionRuns, getLiveAuctionPanelState } from "@/lib/auctions";
 import type { ChatSender } from "@/lib/realtime";
 
@@ -117,12 +100,12 @@ export default async function ShopPage({
         : null;
   const [initialMessages, announcements, reminderCount, auctionRuns, auctionPanel] =
     await Promise.all([
-    getChatMessages(shop.id),
-    getShopAnnouncements(shop.id),
-    getDropReminderCount(shop.id),
-    getShopAuctionRuns(shop.id),
-    getLiveAuctionPanelState(shop.id, profile?.id ?? null),
-  ]);
+      getChatMessages(shop.id),
+      getShopAnnouncements(shop.id),
+      getDropReminderCount(shop.id),
+      getShopAuctionRuns(shop.id),
+      getLiveAuctionPanelState(shop.id, profile?.id ?? null),
+    ]);
 
   const currentUser: ChatSender | null = profile
     ? {
@@ -133,213 +116,28 @@ export default async function ShopPage({
       }
     : null;
 
-  const allSoldOut =
-    isOpen && shop.products.length > 0 && shop.products.every((p) => p.quantity === 0);
-
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6">
-      {checkout === "canceled" && <ReleaseHoldOnCancel shopId={shop.id} />}
-
-      {isScheduled && (
-        <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
-      )}
-
-      {embed?.embeddable ? (
-        <div className="mb-6">
-          <LiveEmbed embed={embed} />
-        </div>
-      ) : (
-        <div className="relative mb-6 aspect-[16/6] w-full overflow-hidden rounded-2xl bg-muted">
-          {shop.cover_url ? (
-            <Image src={shop.cover_url} alt={shop.name} fill className="object-cover" priority />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20" />
-          )}
-          <div className="absolute left-4 top-4 flex gap-2">
-            {isOpen ? (
-              <Badge variant="success">Open now</Badge>
-            ) : isScheduled ? (
-              <Badge variant="accent">Opening soon</Badge>
-            ) : (
-              <Badge variant="muted">Ended</Badge>
-            )}
-          </div>
-          {isScheduled && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-              <div className="text-center text-white">
-                <p className="text-sm font-medium uppercase tracking-widest opacity-90">
-                  Drop opens in
-                </p>
-                <div className="mt-2 text-2xl font-bold">
-                  <Countdown startAt={shop.start_at} endAt={shop.end_at} />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={Boolean(isOwner)}>
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-extrabold tracking-tight">{shop.name}</h1>
-            {seller && (
-              <Link
-                href={`/u/${seller.username}`}
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                {seller.avatar_url ? (
-                  <Image
-                    src={seller.avatar_url}
-                    alt={seller.username}
-                    width={24}
-                    height={24}
-                    className="h-6 w-6 rounded-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                    {(seller.display_name || seller.username).charAt(0).toUpperCase()}
-                  </span>
-                )}
-                <span>@{seller.username}</span>
-                {seller.rating_count > 0 && (
-                  <span className="flex items-center gap-1">
-                    <Star className="size-3.5 fill-current text-primary" />
-                    {Number(seller.rating_avg ?? 0).toFixed(1)} ({seller.rating_count})
-                  </span>
-                )}
-              </Link>
-            )}
-            {shop.description && (
-              <p className="max-w-2xl text-pretty text-muted-foreground">{shop.description}</p>
-            )}
-          </div>
-
-          <div className="flex flex-col items-start gap-3 sm:items-end">
-            <div className="flex items-center gap-2">
-              {isOpen && <ViewerCount />}
-              <Countdown startAt={shop.start_at} endAt={shop.end_at} />
-            </div>
-            {isScheduled && !isOwner && (
-              <div className="flex flex-wrap items-center gap-2">
-                <RemindMeButton
-                  shopId={shop.id}
-                  initialSubscribed={hasReminder}
-                  isAuthed={Boolean(profile)}
-                  reminderCount={reminderCount}
-                  deliveryConfigured={isReminderDeliveryConfigured()}
-                />
-                {seller && (
-                  <FollowButton
-                    sellerId={seller.id}
-                    initialFollowing={isFollowing}
-                    isAuthed={Boolean(profile)}
-                  />
-                )}
-              </div>
-            )}
-            {isOpen && seller && !isOwner && (
-              <FollowButton
-                sellerId={seller.id}
-                initialFollowing={isFollowing}
-                isAuthed={Boolean(profile)}
-              />
-            )}
-            {isOwner && (
-              <Link
-                href={`/dashboard/shops/${shop.id}`}
-                className="text-sm font-medium text-primary hover:underline"
-              >
-                Manage this shop →
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {isScheduled && seller && (
-          <div className="mb-8 grid gap-4 lg:grid-cols-2">
-            <ShareDropCard
-              shopId={shop.id}
-              shopName={shop.name}
-              sellerHandle={seller.username}
-              startAt={shop.start_at}
-            />
-          </div>
-        )}
-
-        {allSoldOut && !isOwner && seller && (
-          <div className="mb-8 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center">
-            <p className="font-medium">Sold out!</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Follow @{seller.username} and set a reminder for their next drop.
-            </p>
-            <div className="mt-4 flex justify-center gap-2">
-              <FollowButton
-                sellerId={seller.id}
-                initialFollowing={isFollowing}
-                isAuthed={Boolean(profile)}
-              />
-            </div>
-          </div>
-        )}
-
-        {embed && !embed.embeddable && (
-          <div className="mb-8">
-            <LiveEmbed embed={embed} />
-          </div>
-        )}
-
-        {isOwner && isOpen && (
-          <div className="mb-8 space-y-4">
-            <AuctionControls shopId={shop.id} products={shop.products} runs={auctionRuns} />
-            <FlashControls products={shop.products} />
-          </div>
-        )}
-
-        <AuctionLivePanel
-          shopId={shop.id}
-          initial={auctionPanel}
-          isAuthed={Boolean(profile)}
-          isOwner={Boolean(isOwner)}
-          userId={profile?.id ?? null}
-        />
-
-        <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-          <section>
-            <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
-              <Package className="size-5" />
-              {isScheduled ? "Product preview" : "Products"}
-            </h2>
-            <ProductsGridLive
-              shopId={shop.id}
-              initialProducts={shop.products}
-              isOpen={isOpen}
-              isAuthed={Boolean(profile)}
-              startAt={shop.start_at}
-              endAt={shop.end_at}
-            />
-          </section>
-
-          <aside>
-            {isScheduled ? (
-              <ShopAnnouncements
-                shopId={shop.id}
-                initialAnnouncements={announcements}
-                isOwner={Boolean(isOwner)}
-                isScheduled
-              />
-            ) : (
-              <ShopChat
-                initialMessages={initialMessages}
-                isOpen={isOpen}
-                startAt={shop.start_at}
-                endAt={shop.end_at}
-              />
-            )}
-          </aside>
-        </div>
-
-      </ShopRoom>
-    </div>
+    <ShopThemeShell theme={shop.shop_theme}>
+      <ShopPageView
+        shop={shop}
+        theme={shop.shop_theme}
+        isOpen={isOpen}
+        isScheduled={isScheduled}
+        isOwner={Boolean(isOwner)}
+        seller={seller}
+        profileId={profile?.id}
+        isFollowing={isFollowing}
+        hasReminder={hasReminder}
+        reminderCount={reminderCount}
+        reminderDeliveryConfigured={isReminderDeliveryConfigured()}
+        embed={embed}
+        initialMessages={initialMessages}
+        announcements={announcements}
+        auctionRuns={auctionRuns}
+        auctionPanel={auctionPanel}
+        currentUser={currentUser}
+        checkoutCanceled={checkout === "canceled"}
+      />
+    </ShopThemeShell>
   );
 }

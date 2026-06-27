@@ -20,6 +20,7 @@ const baseShop: ShopWithDetails = {
   peak_viewers: 0,
   featured_at: null,
   wizard_completed_steps: [],
+  shop_theme: {},
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
   seller: null,

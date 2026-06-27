@@ -3,10 +3,12 @@ import type { AuctionFieldState } from "@/components/auction-product-fields";
 import { defaultAuctionFields } from "@/components/auction-product-fields";
 import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
 import { parseLiveEmbed } from "@/lib/embeds";
+import { defaultShopTheme, parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
 
 export const WIZARD_STEPS = [
   { id: "details", label: "Shop details", shortLabel: "Details" },
   { id: "products", label: "Products", shortLabel: "Products" },
+  { id: "layout", label: "Layout & theme", shortLabel: "Layout" },
   { id: "live", label: "Live stream", shortLabel: "Live" },
   { id: "schedule", label: "Schedule", shortLabel: "Schedule" },
 ] as const;
@@ -37,6 +39,7 @@ export type ShopWizardDraft = {
   endLocal: string;
   products: WizardProductDraft[];
   completedSteps: WizardStepId[];
+  theme: ShopTheme;
 };
 
 export function wizardStorageKey(shopId?: string): string {
@@ -59,6 +62,7 @@ export function defaultWizardDraft(): ShopWizardDraft {
     endLocal: plusHoursLocal(3),
     products: [],
     completedSteps: [],
+    theme: defaultShopTheme(),
   };
 }
 
@@ -134,6 +138,7 @@ export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDr
     endLocal: isoToLocalInput(shop.end_at),
     products: products.map(productToWizardDraft),
     completedSteps: [],
+    theme: parseShopTheme(shop.shop_theme),
   };
   const persisted = parseWizardCompletedSteps(shop.wizard_completed_steps);
   return {
@@ -185,6 +190,8 @@ export function getStepValidation(
         return { valid: false, message: "Complete each product's required fields." };
       }
       return { valid: true };
+    case "layout":
+      return { valid: true };
     case "live":
       if (!isValidOptionalUrl(draft.youtubeUrl)) {
         return { valid: false, message: "Enter a valid YouTube URL or leave it blank." };
@@ -219,7 +226,7 @@ export function markStepComplete(draft: ShopWizardDraft, stepId: WizardStepId): 
 export function inferCompletedSteps(draft: ShopWizardDraft): WizardStepId[] {
   const completed: WizardStepId[] = [];
   for (const step of WIZARD_STEPS) {
-    if (step.id === "live" || step.id === "schedule") continue;
+    if (step.id === "layout" || step.id === "live" || step.id === "schedule") continue;
     if (getStepValidation(step.id, draft).valid) completed.push(step.id);
     else break;
   }
@@ -286,6 +293,7 @@ function buildWizardPersistPayload(
     endAt: localInputToIso(endLocal),
     products: mapWizardProducts(draft, Boolean(options?.draftMode)),
     completedSteps: draft.completedSteps,
+    theme: draft.theme,
   };
 }
 

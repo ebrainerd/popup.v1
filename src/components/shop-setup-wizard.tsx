@@ -28,6 +28,7 @@ import { VisibilityPicker } from "@/components/visibility-picker";
 import { WizardProductManager } from "@/components/wizard-product-manager";
 import { WizardExitDialog } from "@/components/wizard-exit-dialog";
 import { DeleteDraftButton } from "@/components/delete-draft-button";
+import { WizardThemeStep } from "@/components/wizard-theme-step";
 import { cn } from "@/lib/utils";
 
 function nowLocal(): string {
@@ -298,6 +299,16 @@ export function ShopSetupWizard({
             <WizardProductManager
               products={draft.products}
               onProductsChange={(products) => patch({ products })}
+            />
+          )}
+
+          {currentStep.id === "layout" && (
+            <WizardThemeStep
+              theme={draft.theme}
+              shopName={draft.name}
+              coverUrl={draft.coverUrl}
+              products={draft.products}
+              onChange={(theme) => patch({ theme })}
             />
           )}
 

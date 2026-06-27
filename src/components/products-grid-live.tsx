@@ -29,6 +29,7 @@ export function ProductsGridLive({
   isAuthed,
   startAt,
   endAt,
+  gridColumns = 2,
 }: {
   shopId: string;
   initialProducts: Product[];
@@ -36,6 +37,7 @@ export function ProductsGridLive({
   isAuthed: boolean;
   startAt: string;
   endAt: string;
+  gridColumns?: 2 | 3;
 }) {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -74,7 +76,12 @@ export function ProductsGridLive({
 
   return (
     <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-4",
+          gridColumns === 3 ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-2",
+        )}
+      >
         {products.map((product) => (
           <ProductCard
             key={product.id}
