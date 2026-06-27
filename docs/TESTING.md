@@ -53,6 +53,10 @@ Without those env vars the suite is skipped automatically.
 
 ## Full checkout flow (manual / staging)
 
+See also **`docs/MANUAL_TESTING.md`** for feature-specific manual checklists (native
+live streaming, etc.). Add a new section there whenever you ship user-facing work
+that automated tests don't fully cover.
+
 The end-to-end purchase flow requires Stripe test mode + a seeded shop, so it's
 verified manually (or in a dedicated staging job) rather than in PR CI:
 
