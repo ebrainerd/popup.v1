@@ -161,6 +161,62 @@ export async function notifyFollowersOfLive(shopId: string): Promise<void> {
   }
 }
 
+/**
+ * Notify buyers who opted in on the shop page for a live-stream alert.
+ */
+export async function notifyLiveReminders(shopId: string): Promise<void> {
+  try {
+    const supabase = createServiceRoleClient();
+    const { data: shop } = await supabase
+      .from("shops")
+      .select("id, name, seller:profiles!shops_seller_id_fkey(username, display_name)")
+      .eq("id", shopId)
+      .maybeSingle();
+    if (!shop) return;
+
+    const { data: reminders } = await supabase
+      .from("live_reminders")
+      .select("id, user_id")
+      .eq("shop_id", shopId)
+      .is("cancelled_at", null)
+      .is("notified_at", null);
+    if (!reminders?.length) return;
+
+    const userIds = reminders.map((r) => r.user_id);
+    const seller = (shop as unknown as {
+      seller: { username: string; display_name: string | null } | null;
+    }).seller;
+    const sellerName = seller?.display_name || seller?.username || "A seller";
+    const url = `${getSiteUrl()}/shop/${shopId}`;
+
+    await Promise.allSettled([
+      sendPushToUsers(userIds, {
+        title: `${sellerName} is live! 🔴`,
+        body: `${shop.name} just went live. Tap to watch.`,
+        url,
+      }),
+      sendEmailToUsers(
+        userIds,
+        `${sellerName} is live on PopUp`,
+        `<p><strong>${sellerName}</strong> just went live with <strong>${shop.name}</strong>.</p>
+         <p><a href="${url}">Watch now →</a></p>`,
+      ),
+    ]);
+
+    const notifiedAt = new Date().toISOString();
+    await supabase
+      .from("live_reminders")
+      .update({ notified_at: notifiedAt })
+      .in(
+        "id",
+        reminders.map((r) => r.id),
+      );
+  } catch (err) {
+    console.error("notifyLiveReminders failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { shopId } });
+  }
+}
+
 function formatMoney(cents: number): string {
   return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
 }

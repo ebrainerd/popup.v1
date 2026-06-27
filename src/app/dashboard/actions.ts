@@ -11,6 +11,8 @@ import {
   MIN_INCREMENT_CENTS,
 } from "@/lib/auction-bidding";
 import { shopThemeToJson } from "@/lib/shop-theme";
+import { isNativeLiveEnabled, shopLiveKitRoomName } from "@/lib/live-stream";
+import type { StreamProvider } from "@/lib/database.types";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
 
@@ -28,6 +30,17 @@ function slugify(name: string): string {
 
 function computeStatus(startAt: string, endAt: string): "scheduled" | "open" | "ended" {
   return deriveShopStatus(startAt, endAt);
+}
+
+function streamProviderFromWizard(
+  streamSource: "native" | "external",
+  youtubeUrl: string,
+  twitchUrl: string,
+): StreamProvider {
+  if (streamSource === "native") return "native";
+  if (twitchUrl.trim()) return "twitch";
+  if (youtubeUrl.trim()) return "youtube";
+  return "youtube";
 }
 
 const shopSchema = z
@@ -246,9 +259,31 @@ export async function unpublishShop(shopId: string): Promise<ActionState> {
   return { ...initialOk };
 }
 
-/** Toggle a shop's live state (and optionally update the live URL). */
+/** Toggle a shop's live state (external streams). Native live uses startNativeLive/endNativeLive. */
 export async function toggleLive(shopId: string, isLive: boolean): Promise<ActionState> {
   const { supabase, user } = await requireUser();
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("stream_provider, live_url, twitch_url")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+
+  const provider = shop.stream_provider ?? "native";
+  if (provider === "native" && isNativeLiveEnabled()) {
+    return {
+      error: isLive
+        ? "Use the Go live button in live controls for PopUp Live."
+        : "Use End live in live controls for PopUp Live.",
+    };
+  }
+
+  if (isLive && !shop.live_url?.trim() && !shop.twitch_url?.trim()) {
+    return { error: "Add a YouTube or Twitch stream URL first." };
+  }
+
   const { error } = await supabase
     .from("shops")
     .update({ is_live: isLive })
@@ -256,14 +291,86 @@ export async function toggleLive(shopId: string, isLive: boolean): Promise<Actio
     .eq("seller_id", user.id);
   if (error) return { error: error.message };
 
-  // Notify followers when going live (no-op if notifications aren't configured).
   if (isLive) {
-    const { notifyFollowersOfLive } = await import("@/lib/notifications");
-    await notifyFollowersOfLive(shopId);
+    const { notifyFollowersOfLive, notifyLiveReminders } = await import("@/lib/notifications");
+    await Promise.allSettled([notifyFollowersOfLive(shopId), notifyLiveReminders(shopId)]);
   }
 
   revalidatePath(`/dashboard/shops/${shopId}`);
   revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
+}
+
+/** Mark seller go-live via PopUp Live (sets DB state; client publishes to LiveKit). */
+export async function startNativeLive(shopId: string): Promise<ActionState> {
+  if (!isNativeLiveEnabled()) return { error: "Native live streaming is not enabled." };
+
+  const { supabase, user } = await requireUser();
+  const now = new Date().toISOString();
+  const roomId = shopLiveKitRoomName(shopId);
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("start_at, end_at, stream_provider")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+  if (deriveShopStatus(shop.start_at, shop.end_at) !== "open") {
+    return { error: "Shop must be open to go live." };
+  }
+
+  const { error } = await supabase
+    .from("shops")
+    .update({
+      is_live: true,
+      stream_provider: "native",
+      stream_room_id: roomId,
+      native_live_started_at: now,
+      native_live_ended_at: null,
+    })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  const { notifyFollowersOfLive, notifyLiveReminders } = await import("@/lib/notifications");
+  await Promise.allSettled([notifyFollowersOfLive(shopId), notifyLiveReminders(shopId)]);
+
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
+}
+
+/** End PopUp Live stream (client disconnects from LiveKit separately). */
+export async function endNativeLive(shopId: string): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const now = new Date().toISOString();
+
+  const { error } = await supabase
+    .from("shops")
+    .update({
+      is_live: false,
+      native_live_ended_at: now,
+    })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
+}
+
+/** One-time ToS acknowledgment before first native go-live. */
+export async function acceptNativeLiveTos(shopId: string): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from("shops")
+    .update({ native_live_tos_accepted_at: new Date().toISOString() })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath(`/dashboard/shops/${shopId}`);
   return { ...initialOk };
 }
 
@@ -522,6 +629,7 @@ const finishShopSetupSchema = z
     startAt: z.string().min(1, "Start time is required."),
     endAt: z.string().min(1, "End time is required."),
     visibility: z.enum(["public", "private"]),
+    streamSource: z.enum(["native", "external"]).default("native"),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(finishProductSchema).min(1, "Add at least one product."),
@@ -582,8 +690,13 @@ export async function finishShopSetup(
     end_at: endIso,
     visibility,
     shipping_rate: 0,
-    live_url: d.youtubeUrl || null,
-    twitch_url: d.twitchUrl || null,
+    stream_provider: streamProviderFromWizard(
+      d.streamSource,
+      d.youtubeUrl ?? "",
+      d.twitchUrl ?? "",
+    ),
+    live_url: d.streamSource === "external" ? d.youtubeUrl || null : null,
+    twitch_url: d.streamSource === "external" ? d.twitchUrl || null : null,
     shop_theme: shopThemeToJson(d.theme),
   };
 
@@ -686,6 +799,7 @@ const saveShopDraftSchema = z
     startAt: z.string().min(1),
     endAt: z.string().min(1),
     visibility: z.enum(["public", "private"]),
+    streamSource: z.enum(["native", "external"]).default("native"),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(saveDraftProductSchema).default([]),
@@ -789,8 +903,13 @@ export async function saveShopDraft(
     end_at: new Date(d.endAt).toISOString(),
     visibility: resolveShopVisibility(d.visibility),
     shipping_rate: 0,
-    live_url: d.youtubeUrl || null,
-    twitch_url: d.twitchUrl || null,
+    stream_provider: streamProviderFromWizard(
+      d.streamSource,
+      d.youtubeUrl ?? "",
+      d.twitchUrl ?? "",
+    ),
+    live_url: d.streamSource === "external" ? d.youtubeUrl || null : null,
+    twitch_url: d.streamSource === "external" ? d.twitchUrl || null : null,
     wizard_completed_steps: d.completedSteps,
     shop_theme: shopThemeToJson(d.theme),
   };

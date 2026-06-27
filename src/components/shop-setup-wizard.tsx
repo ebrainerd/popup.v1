@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Radio, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Zap } from "lucide-react";
 import { finishShopSetup, saveShopDraft } from "@/app/dashboard/actions";
 import { trackActiveDraftShop } from "@/components/continue-draft-shop";
 import { isInviteOnlyMode } from "@/lib/discovery";
@@ -29,6 +29,8 @@ import { WizardProductManager } from "@/components/wizard-product-manager";
 import { WizardExitDialog } from "@/components/wizard-exit-dialog";
 import { DeleteDraftButton } from "@/components/delete-draft-button";
 import { WizardThemeStep } from "@/components/wizard-theme-step";
+import { StreamSourcePicker } from "@/components/stream-source-picker";
+import { getPublicLiveKitUrl } from "@/lib/live-stream";
 import { cn } from "@/lib/utils";
 
 function nowLocal(): string {
@@ -44,6 +46,7 @@ export function ShopSetupWizard({
 }) {
   const router = useRouter();
   const inviteOnly = isInviteOnlyMode();
+  const nativeLiveEnabled = Boolean(getPublicLiveKitUrl());
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState<ShopWizardDraft>(initialDraft ?? defaultWizardDraft());
   const [stepIndex, setStepIndex] = useState(0);
@@ -339,35 +342,47 @@ export function ShopSetupWizard({
                 </p>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="youtube_url">YouTube stream URL (optional)</Label>
-                <Input
-                  id="youtube_url"
-                  type="url"
-                  value={draft.youtubeUrl}
-                  onChange={(e) => patch({ youtubeUrl: e.target.value })}
-                  placeholder="https://youtube.com/watch?v=…"
-                />
-              </div>
+              <StreamSourcePicker
+                value={draft.streamSource}
+                onChange={(streamSource) =>
+                  patch({
+                    streamSource,
+                    ...(streamSource === "native" ? { youtubeUrl: "", twitchUrl: "" } : {}),
+                  })
+                }
+                nativeEnabled={nativeLiveEnabled}
+              />
 
-              <div className="space-y-1.5">
-                <Label htmlFor="twitch_url">Twitch stream URL (optional)</Label>
-                <Input
-                  id="twitch_url"
-                  type="url"
-                  value={draft.twitchUrl}
-                  onChange={(e) => patch({ twitchUrl: e.target.value })}
-                  placeholder="https://twitch.tv/yourchannel"
-                />
-              </div>
+              {draft.streamSource === "external" && (
+                <>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="youtube_url">YouTube stream URL (optional)</Label>
+                    <Input
+                      id="youtube_url"
+                      type="url"
+                      value={draft.youtubeUrl}
+                      onChange={(e) => patch({ youtubeUrl: e.target.value })}
+                      placeholder="https://youtube.com/watch?v=…"
+                    />
+                  </div>
 
-              <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-                <p className="flex items-start gap-2">
-                  <Radio className="mt-0.5 size-4 shrink-0 text-primary" />
-                  When your shop is open, you can go live natively in the app — no external link
-                  required. Add YouTube or Twitch links here if you prefer to stream there instead.
-                </p>
-              </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="twitch_url">Twitch stream URL (optional)</Label>
+                    <Input
+                      id="twitch_url"
+                      type="url"
+                      value={draft.twitchUrl}
+                      onChange={(e) => patch({ twitchUrl: e.target.value })}
+                      placeholder="https://twitch.tv/yourchannel"
+                    />
+                  </div>
+                </>
+              )}
+
+              <p className="text-sm text-muted-foreground">
+                You can go live anytime while your shop is open. Test your camera from manage shop
+                before the drop starts.
+              </p>
             </div>
           )}
 

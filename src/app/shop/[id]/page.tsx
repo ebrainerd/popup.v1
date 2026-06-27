@@ -10,7 +10,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/env";
 import { isReminderDeliveryConfigured } from "@/lib/reminder-delivery";
 import { getDropReminderCount, getUserDropReminder } from "@/lib/drop-reminders";
+import { getLiveReminderCount, getUserLiveReminder } from "@/lib/live-reminders";
 import { parseLiveEmbed } from "@/lib/embeds";
+import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
 import { deriveShopStatus } from "@/lib/utils";
 import { ShopThemeShell } from "@/components/shop-theme-shell";
 import { ShopPageView } from "@/components/shop-page-view";
@@ -75,9 +77,10 @@ export default async function ShopPage({
 
   let isFollowing = false;
   let hasReminder = false;
+  let hasLiveReminder = false;
   if (profile && seller && !isOwner) {
     const supabase = await createClient();
-    const [{ data: follow }, reminder] = await Promise.all([
+    const [{ data: follow }, reminder, liveReminder] = await Promise.all([
       supabase
         .from("shop_follows")
         .select("follower_id")
@@ -85,24 +88,36 @@ export default async function ShopPage({
         .eq("follower_id", profile.id)
         .maybeSingle(),
       getUserDropReminder(shop.id, profile.id),
+      getUserLiveReminder(shop.id, profile.id),
     ]);
     isFollowing = Boolean(follow);
     hasReminder = Boolean(reminder);
+    hasLiveReminder = Boolean(liveReminder);
   } else if (profile) {
-    hasReminder = Boolean(await getUserDropReminder(shop.id, profile.id));
+    const [reminder, liveReminder] = await Promise.all([
+      getUserDropReminder(shop.id, profile.id),
+      getUserLiveReminder(shop.id, profile.id),
+    ]);
+    hasReminder = Boolean(reminder);
+    hasLiveReminder = Boolean(liveReminder);
   }
 
+  const streamProvider = effectiveStreamProvider(shop);
+  const nativeLiveEnabled = isNativeLiveEnabled();
   const embed =
-    isOpen && shop.live_url
-      ? parseLiveEmbed(shop.live_url)
-      : isOpen && shop.twitch_url
+    isOpen && shop.is_live && streamProvider !== "native"
+      ? shop.twitch_url
         ? parseLiveEmbed(shop.twitch_url)
-        : null;
-  const [initialMessages, announcements, reminderCount, auctionRuns, auctionPanel] =
+        : shop.live_url
+          ? parseLiveEmbed(shop.live_url)
+          : null
+      : null;
+  const [initialMessages, announcements, reminderCount, liveReminderCount, auctionRuns, auctionPanel] =
     await Promise.all([
       getChatMessages(shop.id),
       getShopAnnouncements(shop.id),
       getDropReminderCount(shop.id),
+      getLiveReminderCount(shop.id),
       getShopAuctionRuns(shop.id),
       getLiveAuctionPanelState(shop.id, profile?.id ?? null),
     ]);
@@ -131,6 +146,10 @@ export default async function ShopPage({
         reminderCount={reminderCount}
         reminderDeliveryConfigured={isReminderDeliveryConfigured()}
         embed={embed}
+        streamProvider={streamProvider}
+        nativeLiveEnabled={nativeLiveEnabled}
+        hasLiveReminder={hasLiveReminder}
+        liveReminderCount={liveReminderCount}
         initialMessages={initialMessages}
         announcements={announcements}
         auctionRuns={auctionRuns}

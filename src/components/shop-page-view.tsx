@@ -1,13 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Star, Package } from "lucide-react";
-import type { Shop } from "@/lib/database.types";
+import type { StreamProvider } from "@/lib/database.types";
 import type { ShopWithDetails } from "@/lib/shops";
 type AuctionPanelState = Awaited<ReturnType<typeof import("@/lib/auctions").getLiveAuctionPanelState>>;
 import type { ChatSender } from "@/lib/realtime";
 import type { LiveEmbed as LiveEmbedInfo } from "@/lib/embeds";
 import { parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
-import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
 import { FollowButton } from "@/components/follow-button";
 import { RemindMeButton } from "@/components/remind-me-button";
@@ -17,6 +16,7 @@ import { ShopAnnouncements } from "@/components/shop-announcements";
 import { LiveEmbed as LiveEmbedPlayer } from "@/components/live-embed";
 import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
 import { ShopRoom } from "@/components/shop-room";
+import { StreamSlot } from "@/components/stream-slot";
 import { ViewerCount } from "@/components/viewer-count";
 import { ShopChat } from "@/components/shop-chat";
 import { ProductsGridLive } from "@/components/products-grid-live";
@@ -44,6 +44,10 @@ export function ShopPageView({
   reminderCount,
   reminderDeliveryConfigured,
   embed,
+  streamProvider,
+  nativeLiveEnabled,
+  hasLiveReminder,
+  liveReminderCount,
   initialMessages,
   announcements,
   auctionRuns,
@@ -63,6 +67,10 @@ export function ShopPageView({
   reminderCount: number;
   reminderDeliveryConfigured: boolean;
   embed: LiveEmbedInfo | null;
+  streamProvider: StreamProvider;
+  nativeLiveEnabled: boolean;
+  hasLiveReminder: boolean;
+  liveReminderCount: number;
   initialMessages: ChatMessage[];
   announcements: Announcement[];
   auctionRuns: AuctionRun[];
@@ -72,9 +80,6 @@ export function ShopPageView({
 }) {
   const theme = parseShopTheme(rawTheme);
   const layout = theme.layout;
-  const showTopLive =
-    Boolean(embed?.embeddable) && isOpen && layout !== "catalog";
-  const showCoverHero = !showTopLive;
   const allSoldOut =
     isOpen && shop.products.length > 0 && shop.products.every((p) => p.quantity === 0);
 
@@ -86,22 +91,22 @@ export function ShopPageView({
         <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
       )}
 
-      {showTopLive && embed && (
-        <div className={cn("mb-6", layout === "broadcast" && "mb-4")}>
-          <LiveEmbedPlayer embed={embed} />
-        </div>
-      )}
-
-      {showCoverHero && (
-        <CoverHero
+      <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={isOwner}>
+        <StreamSlot
           shop={shop}
+          layout={layout}
           isOpen={isOpen}
           isScheduled={isScheduled}
-          layout={layout}
+          isOwner={isOwner}
+          initialIsLive={shop.is_live}
+          streamProvider={streamProvider}
+          nativeEnabled={nativeLiveEnabled}
+          embed={embed}
+          profileId={profileId}
+          hasLiveReminder={hasLiveReminder}
+          liveReminderCount={liveReminderCount}
         />
-      )}
 
-      <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={isOwner}>
         <ShopHeader
           shop={shop}
           theme={theme}
@@ -178,67 +183,6 @@ export function ShopPageView({
           profileId={profileId}
         />
       </ShopRoom>
-    </div>
-  );
-}
-
-function CoverHero({
-  shop,
-  isOpen,
-  isScheduled,
-  layout,
-}: {
-  shop: Shop;
-  isOpen: boolean;
-  isScheduled: boolean;
-  layout: ShopTheme["layout"];
-}) {
-  const countdownFocus = layout === "countdown" && isScheduled;
-
-  return (
-    <div
-      className={cn(
-        "relative mb-6 w-full overflow-hidden bg-muted",
-        layout === "broadcast" ? "aspect-video rounded-xl" : "aspect-[16/6] rounded-2xl",
-        countdownFocus && "aspect-[16/9] ring-2 ring-[var(--shop-accent)]/50",
-      )}
-    >
-      {shop.cover_url ? (
-        <Image src={shop.cover_url} alt={shop.name} fill className="object-cover" priority />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-[var(--shop-accent)]/20 to-accent/20" />
-      )}
-      <div className="absolute left-4 top-4 flex gap-2">
-        {isOpen ? (
-          <Badge variant="success">Open now</Badge>
-        ) : isScheduled ? (
-          <Badge variant="accent">Opening soon</Badge>
-        ) : (
-          <Badge variant="muted">Ended</Badge>
-        )}
-      </div>
-      {isScheduled && (
-        <div
-          className={cn(
-            "absolute inset-0 flex items-center justify-center bg-black/30",
-            countdownFocus && "bg-black/50",
-          )}
-        >
-          <div className="text-center text-white">
-            <p
-              className={cn(
-                "font-medium uppercase tracking-widest opacity-90",
-                countdownFocus ? "text-base" : "text-sm",
-              )}
-            >
-              Drop opens in
-            </p>
-            <div className={cn("mt-2 font-bold", countdownFocus ? "text-4xl" : "text-2xl")}>
-              <Countdown startAt={shop.start_at} endAt={shop.end_at} />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

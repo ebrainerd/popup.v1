@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Countdown } from "@/components/countdown";
 import { ShopForm } from "@/components/shop-form";
 import { ProductManager } from "@/components/product-manager";
-import { ShopQuickActions } from "@/components/shop-quick-actions";
+import { LiveControlsCard } from "@/components/live-controls-card";
 import { PublishControls } from "@/components/publish-controls";
 import { CopyLink } from "@/components/copy-link";
 import { LaunchChecklist, DropHealthSummary } from "@/components/launch-checklist";
@@ -23,6 +23,7 @@ import { DropReportCard } from "@/components/drop-report";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
 import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
 import { deriveShopStatus } from "@/lib/utils";
+import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
 
 export const metadata: Metadata = { title: "Manage shop" };
 export const dynamic = "force-dynamic";
@@ -54,6 +55,8 @@ export default async function ManageShopPage({
 
   const health = computeDropHealth(shop, profile, reminderCount);
   const report = isEnded ? await getDropReport(shop.id, profile.id) : null;
+  const streamProvider = effectiveStreamProvider(shop);
+  const nativeLiveEnabled = isNativeLiveEnabled();
 
   return (
     <div className="space-y-8">
@@ -153,12 +156,17 @@ export default async function ManageShopPage({
           <CardTitle>Live controls</CardTitle>
         </CardHeader>
         <CardContent>
-          <ShopQuickActions
+          <LiveControlsCard
             shopId={shop.id}
             isLive={shop.is_live}
             isOpen={isOpen}
+            isScheduled={status === "scheduled"}
             isEnded={isEnded}
-            hasLiveUrl={Boolean(shop.live_url)}
+            streamProvider={streamProvider}
+            liveUrl={shop.live_url}
+            twitchUrl={shop.twitch_url}
+            needsTosAcceptance={!shop.native_live_tos_accepted_at}
+            nativeEnabled={nativeLiveEnabled}
           />
         </CardContent>
       </Card>
