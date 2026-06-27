@@ -18,7 +18,8 @@ import { ProductManager } from "@/components/product-manager";
 import { LiveControlsCard } from "@/components/live-controls-card";
 import { PublishControls } from "@/components/publish-controls";
 import { CopyLink } from "@/components/copy-link";
-import { LaunchChecklist, DropHealthSummary } from "@/components/launch-checklist";
+import { LaunchChecklist } from "@/components/launch-checklist";
+import { CollapsibleSection } from "@/components/collapsible-section";
 import { DropReportCard } from "@/components/drop-report";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
 import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
@@ -27,6 +28,13 @@ import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream"
 
 export const metadata: Metadata = { title: "Manage shop" };
 export const dynamic = "force-dynamic";
+
+function checklistDone(
+  health: ReturnType<typeof computeDropHealth>,
+  id: string,
+): boolean {
+  return health.items.find((item) => item.id === id)?.done ?? false;
+}
 
 export default async function ManageShopPage({
   params,
@@ -57,8 +65,12 @@ export default async function ManageShopPage({
 
   const liveControlsEnded = window.isEnded || (isDraft && window.schedule === "ended");
 
+  const detailsDone = checklistDone(health, "details");
+  const productsDone = checklistDone(health, "products");
+  const liveDone = checklistDone(health, "live");
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <DraftShopTracker shopId={shop.id} isDraft={isDraft} />
       <CreatedShopCleanup created={justCreated} shopId={shop.id} />
 
@@ -109,18 +121,7 @@ export default async function ManageShopPage({
         </div>
       </div>
 
-      {justCreated && isDraft && (
-        <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-          <p className="font-medium">Shop setup complete — review your drop below.</p>
-          <p className="mt-1 text-muted-foreground">
-            Preview your shop, publish when you&apos;re ready, or{" "}
-            <Link href={`/dashboard/shops/${shop.id}/setup`} className="text-primary hover:underline">
-              return to setup
-            </Link>{" "}
-            to make changes.
-          </p>
-        </div>
-      )}
+      <LaunchChecklist health={health} shopId={shop.id} isDraft={isDraft} />
 
       {isDraft && !justCreated && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
@@ -143,60 +144,53 @@ export default async function ManageShopPage({
         productCount={shop.products.length}
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <LaunchChecklist health={health} shopId={shop.id} />
-        <DropHealthSummary health={health} />
-      </div>
-
-      <Card id="shop-details">
-        <CardHeader>
-          <CardTitle>Shop details</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Name, schedule, and cover photo. Stream source and camera test are in{" "}
-            <a href="#live-controls" className="text-primary hover:underline">
-              Live controls
-            </a>{" "}
-            below.
-          </p>
-        </CardHeader>
-        <CardContent>
+      <div className="space-y-4">
+        <CollapsibleSection
+          id="shop-details"
+          title="Shop details"
+          description="Name, schedule, and cover photo."
+          defaultOpen={!detailsDone}
+          complete={detailsDone}
+        >
           <ShopForm shop={shop} />
-        </CardContent>
-      </Card>
+        </CollapsibleSection>
 
-      <Card id="products">
-        <CardHeader>
-          <CardTitle>Products</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <CollapsibleSection
+          id="products"
+          title="Products"
+          description={`${shop.products.length} product${shop.products.length === 1 ? "" : "s"} added.`}
+          defaultOpen={!productsDone}
+          complete={productsDone}
+        >
           <ProductManager shopId={shop.id} products={shop.products} />
-        </CardContent>
-      </Card>
+        </CollapsibleSection>
 
-      <Card>
-        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="size-5" /> Shop appearance
-            </CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Theme, layout, and what buyers see on your drop page.
-            </p>
-          </div>
-          <Button asChild variant="outline" size="sm">
-            <Link href={`/dashboard/shops/${shop.id}/customize`}>Customize appearance</Link>
-          </Button>
-        </CardHeader>
-      </Card>
-
-      <Card id="live-controls">
-        <CardHeader>
-          <CardTitle>Live controls</CardTitle>
+        <CollapsibleSection
+          title="Shop appearance"
+          description="Theme, layout, and what buyers see on your drop page."
+          defaultOpen={false}
+          action={
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/dashboard/shops/${shop.id}/customize`}>
+                <Palette className="size-4" />
+                Customize
+              </Link>
+            </Button>
+          }
+        >
           <p className="text-sm text-muted-foreground">
-            Choose your stream source, test your camera, and go live when your shop is open.
+            Open the theme editor to change colors, layout, and which sections buyers see on your
+            drop page.
           </p>
-        </CardHeader>
-        <CardContent>
+        </CollapsibleSection>
+
+        <CollapsibleSection
+          id="live-controls"
+          title="Live controls"
+          description="Stream source, camera test, and go live when your shop is open."
+          defaultOpen={!liveDone && nativeLiveEnabled}
+          complete={liveDone}
+        >
           <LiveControlsCard
             shopId={shop.id}
             isLive={shop.is_live}
@@ -208,8 +202,8 @@ export default async function ManageShopPage({
             needsTosAcceptance={!shop.native_live_tos_accepted_at}
             nativeEnabled={nativeLiveEnabled}
           />
-        </CardContent>
-      </Card>
+        </CollapsibleSection>
+      </div>
 
       {report && <DropReportCard report={report} shopId={shop.id} />}
 
