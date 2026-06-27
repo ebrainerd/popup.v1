@@ -65,6 +65,7 @@ export function ShopSetupWizard({
   }, [hydrated, shopId]);
 
   const currentStep = WIZARD_STEPS[stepIndex];
+  const isThemeStep = currentStep.id === "layout";
   const isLastStep = stepIndex === WIZARD_STEPS.length - 1;
   const canSaveDraft = Boolean(draft.name.trim());
 
@@ -154,7 +155,7 @@ export function ShopSetupWizard({
   }
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className={cn("mx-auto", isThemeStep ? "max-w-[1400px]" : "max-w-6xl")}>
       <button
         type="button"
         onClick={requestExit}
@@ -193,9 +194,9 @@ export function ShopSetupWizard({
         <p className="mb-4 rounded-md bg-success/10 px-3 py-2 text-sm text-success">{saveMessage}</p>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-[240px_minmax(0,1fr)]">
-        <aside className="space-y-3">
-          <nav className="hidden lg:block">
+      <div className={cn("gap-6", isThemeStep ? "flex flex-col" : "grid lg:grid-cols-[240px_minmax(0,1fr)]")}>
+        <aside className={cn("space-y-3", isThemeStep && "lg:order-none")}>
+          <nav className={cn(isThemeStep ? "hidden" : "hidden lg:block")}>
             <ol className="space-y-1">
               {WIZARD_STEPS.map((step, index) => {
                 const reachable = canNavigateToStep(index, draft);
@@ -232,7 +233,7 @@ export function ShopSetupWizard({
             </ol>
           </nav>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 lg:hidden">
+          <div className={cn("flex gap-2 overflow-x-auto pb-1", !isThemeStep && "lg:hidden")}>
             {WIZARD_STEPS.map((step, index) => {
               const reachable = canNavigateToStep(index, draft);
               const active = index === stepIndex;
@@ -256,12 +257,21 @@ export function ShopSetupWizard({
           </div>
         </aside>
 
-        <section className="rounded-2xl border border-border bg-card/40 p-6 sm:p-8">
-          <div className="mb-6">
+        <section
+          className={cn(
+            isThemeStep ? "min-w-0" : "rounded-2xl border border-border bg-card/40 p-6 sm:p-8",
+          )}
+        >
+          <div className={cn("mb-6", isThemeStep && "px-1")}>
             <p className="text-sm font-medium text-primary">
               Step {stepIndex + 1} of {WIZARD_STEPS.length}
             </p>
             <h2 className="mt-1 text-xl font-bold">{currentStep.label}</h2>
+            {isThemeStep && (
+              <p className="mt-1 text-sm text-muted-foreground">
+                Pick a look and layout — preview updates as you go.
+              </p>
+            )}
           </div>
 
           {currentStep.id === "details" && (
@@ -399,7 +409,7 @@ export function ShopSetupWizard({
             <p className="mt-4 rounded-md bg-live/10 px-3 py-2 text-sm text-live">{error}</p>
           )}
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6">
+          <div className={cn("mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-6", isThemeStep && "px-1")}>
             <Button type="button" variant="ghost" onClick={handleBack} disabled={stepIndex === 0 || pending}>
               Back
             </Button>

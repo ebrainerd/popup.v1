@@ -501,7 +501,9 @@ const finishProductSchema = z
   });
 
 const shopThemeSchema = z.object({
-  preset: z.enum(["default", "gallery", "dark_room", "market_stall", "broadcast"]),
+  preset: z
+    .enum(["default", "gallery", "dark_room", "market_stall", "broadcast"])
+    .transform((v) => (v === "broadcast" ? "default" : v)),
   layout: z.enum(["classic", "broadcast", "countdown", "catalog"]),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   background: z.enum(["solid", "gradient", "none"]),
@@ -838,6 +840,40 @@ export async function saveShopDraft(
   revalidatePath(`/dashboard/shops/${shopId}/setup`);
   revalidatePath(`/shop/${shopId}`);
   return { error: null, shopId };
+}
+
+/** Update shop appearance (theme/layout) from the manage page. */
+export async function updateShopTheme(
+  shopId: string,
+  theme: z.infer<typeof shopThemeSchema>,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const parsed = shopThemeSchema.safeParse(theme);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid theme settings." };
+  }
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+
+  const { error } = await supabase
+    .from("shops")
+    .update({ shop_theme: shopThemeToJson(parsed.data) })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/dashboard/shops/${shopId}/customize`);
+  revalidatePath(`/dashboard/shops/${shopId}/setup`);
+  revalidatePath(`/shop/${shopId}`);
+  return { ...initialOk };
 }
 
 export async function createProduct(_prev: ActionState, formData: FormData): Promise<ActionState> {
