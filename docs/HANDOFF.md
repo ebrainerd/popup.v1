@@ -115,9 +115,9 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
 
 ## Known future work / ideas
 
-- **Native in-app live streaming** (currently embeds only) — implementation plan in
-  `docs/NATIVE_LIVE_STREAMING.md` (LiveKit Cloud, hybrid YouTube/Twitch fallback).
-  Awaiting owner answers to §13 clarification questions before Phase 1.
+- **Native in-app live streaming** — implementation plan in
+  `docs/NATIVE_LIVE_STREAMING.md` (LiveKit Cloud). Owner decisions locked §13;
+  **Phase 0 blocked** on owner providing `LIVEKIT_*` env vars.
 - Scale hardening (Realtime connection limits, Explore caching, load testing).
 - Carrier tracking API for real delivery ETAs (Shippo/EasyPost/AfterShip).
 - Wire drop-reminder cron (see pending items above).
