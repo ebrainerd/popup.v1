@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 import { broadcastLiveState } from "@/lib/live-broadcast-client";
 import { AudioLevelMeter } from "@/components/audio-level-meter";
 
-type PublisherState = "idle" | "preview" | "connecting" | "live" | "error";
+export type PublisherState = "idle" | "preview" | "connecting" | "live" | "error";
 
 type MediaDevice = { deviceId: string; label: string };
 
@@ -50,6 +50,8 @@ export function NativeLivePublisher({
   canGoLive,
   isEnded,
   embedded = false,
+  slotMode = false,
+  onStateChange,
 }: {
   shopId: string;
   initialIsLive: boolean;
@@ -59,6 +61,9 @@ export function NativeLivePublisher({
   isEnded: boolean;
   /** Compact layout for the public shop page owner bar. */
   embedded?: boolean;
+  /** Fills the shop stream column; cover shows through when idle. */
+  slotMode?: boolean;
+  onStateChange?: (state: PublisherState) => void;
 }) {
   const router = useRouter();
   const roomRef = useRef<Room | null>(null);
@@ -82,6 +87,10 @@ export function NativeLivePublisher({
       setState("live");
     }
   }, [initialIsLive]);
+
+  useEffect(() => {
+    onStateChange?.(state);
+  }, [state, onStateChange]);
 
   const stopPreview = useCallback(() => {
     previewStreamRef.current?.getTracks().forEach((t) => t.stop());
@@ -284,13 +293,138 @@ export function NativeLivePublisher({
   const timer = formatLiveTimer(liveSeconds);
   const showVideo =
     state === "preview" || state === "connecting" || state === "live";
-  const embeddedIdle = embedded && state === "idle";
+  const compact = embedded || slotMode;
+  const embeddedIdle = compact && state === "idle" && !slotMode;
+
+  const controlButtons = (
+    <div className={cn("flex flex-wrap gap-2", slotMode && "justify-end")}>
+      {state === "live" ? (
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          onClick={handleEndLive}
+          disabled={pending}
+        >
+          End live
+        </Button>
+      ) : state === "preview" ? (
+        <>
+          <Button type="button" variant="outline" size="sm" onClick={stopPreview}>
+            Stop preview
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleGoLive}
+            disabled={pending || !canGoLive || isEnded}
+            title={!canGoLive ? "Publish and open your shop first" : undefined}
+          >
+            <Radio className="size-4" /> Go live
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => void startPreview()}
+            disabled={pending || isEnded}
+          >
+            <Video className="size-4" /> Test camera & mic
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            onClick={handleGoLive}
+            disabled={pending || !canGoLive || isEnded || state === "connecting"}
+          >
+            {state === "connecting" ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Radio className="size-4" />
+            )}
+            Go live
+          </Button>
+        </>
+      )}
+    </div>
+  );
+
+  const previewControls =
+    state === "preview" ? (
+      <div className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {cameras.length > 1 && (
+            <select
+              className="rounded-md border border-border bg-background px-2 py-1 text-sm"
+              value={cameraId}
+              onChange={(e) => void switchCamera(e.target.value)}
+            >
+              <option value="">Default camera</option>
+              {cameras.map((c) => (
+                <option key={c.deviceId} value={c.deviceId}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          )}
+          <Button type="button" variant="outline" size="sm" onClick={toggleMute}>
+            {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+            {muted ? "Unmute" : "Mute"}
+          </Button>
+        </div>
+        <AudioLevelMeter stream={previewStream} muted={muted} />
+      </div>
+    ) : null;
+
+  if (slotMode) {
+    return (
+      <div className="absolute inset-0 z-10 flex flex-col">
+        <div className="relative min-h-0 flex-1">
+          <video
+            ref={videoRef}
+            muted
+            playsInline
+            autoPlay
+            className={cn("absolute inset-0 h-full w-full object-cover", !showVideo && "hidden")}
+          />
+          {state === "preview" && (
+            <div className="absolute left-3 top-3 rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white">
+              Preview — only you can see this
+            </div>
+          )}
+          {state === "live" && (
+            <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-sm font-medium text-white">
+              <Radio className="size-3 text-live animate-live-pulse" />
+              LIVE · {timer}
+            </div>
+          )}
+          {state === "connecting" && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
+              <Loader2 className="size-6 animate-spin" />
+              <span className="ml-2 text-sm">Starting live…</span>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-2 bg-gradient-to-t from-black/85 via-black/60 to-transparent px-3 pb-3 pt-8">
+          {previewControls}
+          {controlButtons}
+          {error && <p className="text-sm text-live">{error}</p>}
+        </div>
+
+        {showTos && <TosModal onCancel={() => setShowTos(false)} onAccept={handleAcceptTos} />}
+      </div>
+    );
+  }
 
   return (
     <div
       className={cn(
         "space-y-3",
-        embedded ? "" : "rounded-lg border border-border bg-muted/30 p-4",
+        compact ? "" : "rounded-lg border border-border bg-muted/30 p-4",
       )}
     >
       {!embeddedIdle && (
@@ -342,85 +476,9 @@ export function NativeLivePublisher({
         </p>
       )}
 
-      {state === "preview" && (
-        <div className="space-y-3">
-          <div className="flex flex-wrap gap-2">
-            {cameras.length > 1 && (
-              <select
-                className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-                value={cameraId}
-                onChange={(e) => void switchCamera(e.target.value)}
-              >
-                <option value="">Default camera</option>
-                {cameras.map((c) => (
-                  <option key={c.deviceId} value={c.deviceId}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            )}
-            <Button type="button" variant="outline" size="sm" onClick={toggleMute}>
-              {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
-              {muted ? "Unmute" : "Mute"}
-            </Button>
-          </div>
-          <AudioLevelMeter stream={previewStream} muted={muted} />
-        </div>
-      )}
+      {previewControls}
 
-      <div className="flex flex-wrap gap-2">
-        {state === "live" ? (
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            onClick={handleEndLive}
-            disabled={pending}
-          >
-            End live
-          </Button>
-        ) : state === "preview" ? (
-          <>
-            <Button type="button" variant="outline" size="sm" onClick={stopPreview}>
-              Stop preview
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleGoLive}
-              disabled={pending || !canGoLive || isEnded}
-              title={!canGoLive ? "Publish and open your shop first" : undefined}
-            >
-              <Radio className="size-4" /> Go live
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void startPreview()}
-              disabled={pending || isEnded}
-            >
-              <Video className="size-4" /> Test camera & mic
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleGoLive}
-              disabled={pending || !canGoLive || isEnded || state === "connecting"}
-            >
-              {state === "connecting" ? (
-                <Loader2 className="size-4 animate-spin" />
-              ) : (
-                <Radio className="size-4" />
-              )}
-              Go live
-            </Button>
-          </>
-        )}
-      </div>
+      {controlButtons}
 
       <p className="text-xs text-muted-foreground">
         {state === "live"
@@ -436,23 +494,33 @@ export function NativeLivePublisher({
 
       {error && <p className={cn("text-sm text-live")}>{error}</p>}
 
-      {showTos && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
-            <h3 className="text-lg font-semibold">Before you go live</h3>
-            <p className="mt-2 text-sm text-muted-foreground">
-              You are responsible for the content you stream. Make sure you have the rights to show
-              anything on camera, and follow PopUp&apos;s terms of service.
-            </p>
-            <div className="mt-6 flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowTos(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAcceptTos}>I understand — go live</Button>
-            </div>
-          </div>
+      {showTos && <TosModal onCancel={() => setShowTos(false)} onAccept={handleAcceptTos} />}
+    </div>
+  );
+}
+
+function TosModal({
+  onCancel,
+  onAccept,
+}: {
+  onCancel: () => void;
+  onAccept: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 shadow-lg">
+        <h3 className="text-lg font-semibold">Before you go live</h3>
+        <p className="mt-2 text-sm text-muted-foreground">
+          You are responsible for the content you stream. Make sure you have the rights to show
+          anything on camera, and follow PopUp&apos;s terms of service.
+        </p>
+        <div className="mt-6 flex justify-end gap-2">
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button onClick={onAccept}>I understand — go live</Button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

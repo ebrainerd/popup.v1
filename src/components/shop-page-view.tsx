@@ -26,6 +26,7 @@ import { AuctionLivePanel } from "@/components/auction-live-panel";
 import { DraftPreviewBanner } from "@/components/draft-preview-banner";
 import { OwnerShopLiveBar } from "@/components/owner-shop-live-bar";
 import { OwnerSellingTools } from "@/components/owner-selling-tools";
+import { effectiveStreamProvider } from "@/lib/live-stream";
 import { cn } from "@/lib/utils";
 
 type Announcement = Awaited<
@@ -87,6 +88,13 @@ export function ShopPageView({
 }) {
   const theme = parseShopTheme(rawTheme);
   const layout = theme.layout;
+  const isNativeStream =
+    nativeLiveEnabled &&
+    effectiveStreamProvider({
+      stream_provider: streamProvider,
+      live_url: shop.live_url,
+      twitch_url: shop.twitch_url,
+    }) === "native";
   const allSoldOut =
     isOpen && shop.products.length > 0 && shop.products.every((p) => p.quantity === 0);
 
@@ -110,8 +118,10 @@ export function ShopPageView({
           isOpen={isOpen}
           isScheduled={isScheduled}
           isOwner={isOwner}
+          isDraftPreview={isDraftPreview}
           streamProvider={streamProvider}
           nativeEnabled={nativeLiveEnabled}
+          needsTosAcceptance={!shop.native_live_tos_accepted_at}
           embed={embed}
           profileId={profileId}
           hasLiveReminder={hasLiveReminder}
@@ -120,7 +130,7 @@ export function ShopPageView({
           announcements={announcements}
         />
 
-        {isOwner && isOpen && !isDraftPreview && (
+        {isOwner && isOpen && !isDraftPreview && !isNativeStream && (
           <OwnerShopLiveBar
             shopId={shop.id}
             isLive={shop.is_live}
@@ -341,8 +351,10 @@ function StreamChatRow({
   isOpen,
   isScheduled,
   isOwner,
+  isDraftPreview,
   streamProvider,
   nativeEnabled,
+  needsTosAcceptance,
   embed,
   profileId,
   hasLiveReminder,
@@ -356,8 +368,10 @@ function StreamChatRow({
   isOpen: boolean;
   isScheduled: boolean;
   isOwner: boolean;
+  isDraftPreview: boolean;
   streamProvider: StreamProvider;
   nativeEnabled: boolean;
+  needsTosAcceptance: boolean;
   embed: LiveEmbedInfo | null;
   profileId?: string;
   hasLiveReminder: boolean;
@@ -400,9 +414,11 @@ function StreamChatRow({
         isOpen={isOpen}
         isScheduled={isScheduled}
         isOwner={isOwner}
+        isDraftPreview={isDraftPreview}
         initialIsLive={shop.is_live}
         streamProvider={streamProvider}
         nativeEnabled={nativeEnabled}
+        needsTosAcceptance={needsTosAcceptance}
         embed={embed}
         profileId={profileId}
         hasLiveReminder={hasLiveReminder}

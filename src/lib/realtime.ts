@@ -59,11 +59,20 @@ export type FlashItemBroadcast = {
   title: string;
   description: string | null;
   photo_url: string | null;
+  photo_urls?: string[];
   price: number;
   quantity: number;
   discount_price: number | null;
   is_flash_only: boolean;
   flash_expires_at: string | null;
+  sale_type: "buy_now" | "auction";
+  auction_starting_bid: number | null;
+  auction_min_increment: number | null;
+  auction_duration_seconds: number | null;
+  auction_allow_prebids: boolean;
+  auction_sudden_death: boolean;
+  shipping_rate?: number;
+  created_at?: string;
 };
 
 export type LiveBroadcast = {
