@@ -109,7 +109,12 @@ export default async function ShopPage({
     hasReminder = Boolean(await getUserDropReminder(shop.id, profile.id));
   }
 
-  const embed = isOpen && shop.live_url ? parseLiveEmbed(shop.live_url) : null;
+  const embed =
+    isOpen && shop.live_url
+      ? parseLiveEmbed(shop.live_url)
+      : isOpen && shop.twitch_url
+        ? parseLiveEmbed(shop.twitch_url)
+        : null;
   const [initialMessages, announcements, reminderCount, auctionRuns, auctionPanel] =
     await Promise.all([
     getChatMessages(shop.id),

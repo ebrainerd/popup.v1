@@ -34,7 +34,7 @@ export function computeDropHealth(
   const availableUnits = shop.products.reduce((sum, p) => sum + p.quantity, 0);
   const hasDetails = Boolean(shop.name.trim() && shop.description?.trim());
   const hasCover = Boolean(shop.cover_url);
-  const hasLiveUrl = Boolean(shop.live_url);
+  const hasLiveUrl = Boolean(shop.live_url || shop.twitch_url);
   const isPublished = shop.status !== "draft";
   const hasProducts = productCount > 0;
   const payoutsConnected = seller.stripe_onboarded || !process.env.STRIPE_SECRET_KEY;

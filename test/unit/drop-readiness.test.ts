@@ -15,6 +15,7 @@ const baseShop: ShopWithDetails = {
   shipping_rate: 0,
   is_live: false,
   live_url: null,
+  twitch_url: null,
   status: "draft",
   peak_viewers: 0,
   featured_at: null,

@@ -58,7 +58,7 @@ export default async function ManageShopPage({
   return (
     <div className="space-y-8">
       <DraftShopTracker shopId={shop.id} isDraft={isDraft} />
-      <CreatedShopCleanup created={justCreated} />
+      <CreatedShopCleanup created={justCreated} shopId={shop.id} />
 
       <div>
         <Link
@@ -95,10 +95,23 @@ export default async function ManageShopPage({
 
       {justCreated && isDraft && (
         <div className="rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-sm">
-          <p className="font-medium">Shop created — add your products below.</p>
+          <p className="font-medium">Shop setup complete — review your drop below.</p>
           <p className="mt-1 text-muted-foreground">
-            This page has a stable URL, so you can refresh safely while you set up your drop.
+            Preview your shop, publish when you&apos;re ready, or{" "}
+            <Link href={`/dashboard/shops/${shop.id}/setup`} className="text-primary hover:underline">
+              return to setup
+            </Link>{" "}
+            to make changes.
           </p>
+        </div>
+      )}
+
+      {isDraft && !justCreated && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
+          <p className="text-muted-foreground">This drop is still in setup.</p>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/shops/${shop.id}/setup`}>Continue setup</Link>
+          </Button>
         </div>
       )}
 
