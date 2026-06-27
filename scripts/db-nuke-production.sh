@@ -37,6 +37,17 @@ if [ -n "${SUPABASE_DB_URL:-}" ]; then
   echo "Target: remote database via SUPABASE_DB_URL"
 elif [ -f supabase/.temp/project-ref ]; then
   echo "Target: linked Supabase project ref $(cat supabase/.temp/project-ref)"
+elif [ -n "${NEXT_PUBLIC_SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
+  echo "Target: ${NEXT_PUBLIC_SUPABASE_URL} (via service-role API)"
+  echo ""
+  echo "Using service-role API (no Supabase CLI link required)."
+  read -r -p "Type ${CONFIRM_PHRASE} to continue: " confirm
+  if [ "${confirm}" != "${CONFIRM_PHRASE}" ]; then
+    echo "Aborted."
+    exit 0
+  fi
+  I_CONFIRM_NUKE_PRODUCTION=1 node scripts/nuke-production-via-api.mjs
+  exit $?
 else
   echo "error: no linked project and SUPABASE_DB_URL is not set." >&2
   echo "" >&2
