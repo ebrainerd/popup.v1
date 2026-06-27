@@ -17,7 +17,6 @@ import { ShopForm } from "@/components/shop-form";
 import { ProductManager } from "@/components/product-manager";
 import { LiveControlsCard } from "@/components/live-controls-card";
 import { PublishControls } from "@/components/publish-controls";
-import { CopyLink } from "@/components/copy-link";
 import { LaunchChecklist } from "@/components/launch-checklist";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { DropReportCard } from "@/components/drop-report";
@@ -107,15 +106,13 @@ export default async function ManageShopPage({
             {isDraft && window.schedule === "scheduled" && (
               <p className="text-xs text-muted-foreground">Won&apos;t open until you publish</p>
             )}
-            {isDraft ? (
+            {isDraft && (
               <Button asChild variant="outline" size="sm">
                 <Link href={`/shop/${shop.id}`}>
                   <Eye className="size-4" />
                   Preview shop
                 </Link>
               </Button>
-            ) : (
-              <CopyLink path={`/shop/${shop.id}`} label="Share shop link" />
             )}
           </div>
         </div>
