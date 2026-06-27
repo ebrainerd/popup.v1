@@ -60,6 +60,8 @@ Record pass/fail and any notes in your PR or handoff comment.
 | 16 | Deny camera permission, click **Go live** | Clear error message; no crash |
 | 17 | **End shop** while live | Shop ends; `is_live` cleared; buyers see ended state |
 
+**Note:** Camera/mic require `Permissions-Policy: camera=(self), microphone=(self)` in `next.config.ts`. If blocked at the HTTP header level, Chrome will not show a permission prompt.
+
 ---
 
 ## Template for new features

@@ -8,6 +8,30 @@ import { cn } from "@/lib/utils";
 
 type MediaDevice = { deviceId: string; label: string };
 
+function mediaAccessErrorMessage(err: unknown): string {
+  if (err instanceof DOMException) {
+    switch (err.name) {
+      case "NotAllowedError":
+        return "Camera or microphone access was blocked. Click the lock icon in your browser’s address bar and allow camera + microphone for this site, then try again.";
+      case "NotFoundError":
+        return "No camera or microphone was found. Connect a device and try again.";
+      case "NotReadableError":
+        return "Your camera or microphone is in use by another app. Close other apps (Zoom, FaceTime, etc.) and try again.";
+      case "SecurityError":
+        return "Camera access requires a secure connection (HTTPS). Open this site via https:// and try again.";
+      default:
+        break;
+    }
+  }
+  if (typeof window !== "undefined" && !window.isSecureContext) {
+    return "Camera access requires HTTPS. Open this site via a secure URL and try again.";
+  }
+  if (typeof navigator !== "undefined" && !navigator.mediaDevices?.getUserMedia) {
+    return "This browser does not support camera access here. Try Chrome or Firefox on desktop.";
+  }
+  return "Could not access camera or microphone. Check browser permissions and try again.";
+}
+
 export function CameraTestPanel({ disabled }: { disabled?: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -26,8 +50,12 @@ export function CameraTestPanel({ disabled }: { disabled?: boolean }) {
 
   useEffect(() => () => stop(), [stop]);
 
-  async function startTest() {
+  const startTest = useCallback(async () => {
     setError(null);
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError(mediaAccessErrorMessage(null));
+      return;
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: cameraId ? { deviceId: { exact: cameraId } } : true,
@@ -48,10 +76,11 @@ export function CameraTestPanel({ disabled }: { disabled?: boolean }) {
           .map((d) => ({ deviceId: d.deviceId, label: d.label || "Camera" })),
       );
       setTesting(true);
-    } catch {
-      setError("Could not access camera or microphone. Check browser permissions.");
+    } catch (err) {
+      console.error("CameraTestPanel getUserMedia failed", err);
+      setError(mediaAccessErrorMessage(err));
     }
-  }
+  }, [cameraId, muted]);
 
   function toggleMute() {
     const next = !muted;
@@ -59,6 +88,29 @@ export function CameraTestPanel({ disabled }: { disabled?: boolean }) {
     streamRef.current?.getAudioTracks().forEach((t) => {
       t.enabled = !next;
     });
+  }
+
+  async function switchCamera(nextId: string) {
+    setCameraId(nextId);
+    stop();
+    // Re-request with updated device id on next tick after state would apply.
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: nextId ? { deviceId: { exact: nextId } } : true,
+        audio: true,
+      });
+      streamRef.current = stream;
+      stream.getAudioTracks().forEach((t) => {
+        t.enabled = !muted;
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+      setTesting(true);
+    } catch (err) {
+      setError(mediaAccessErrorMessage(err));
+    }
   }
 
   return (
@@ -70,7 +122,7 @@ export function CameraTestPanel({ disabled }: { disabled?: boolean }) {
             Stop test
           </Button>
         ) : (
-          <Button type="button" variant="outline" size="sm" onClick={startTest} disabled={disabled}>
+          <Button type="button" variant="outline" size="sm" onClick={() => void startTest()} disabled={disabled}>
             <Video className="size-4" /> Test camera
           </Button>
         )}
@@ -86,11 +138,7 @@ export function CameraTestPanel({ disabled }: { disabled?: boolean }) {
               <select
                 className="rounded-md border border-border bg-background px-2 py-1 text-sm"
                 value={cameraId}
-                onChange={(e) => {
-                  setCameraId(e.target.value);
-                  stop();
-                  void startTest();
-                }}
+                onChange={(e) => void switchCamera(e.target.value)}
               >
                 <option value="">Default camera</option>
                 {cameras.map((c) => (
