@@ -1,16 +1,16 @@
 "use client";
 
 import type { StreamProvider } from "@/lib/database.types";
-import { effectiveStreamProvider, usesNativeStream } from "@/lib/live-stream";
+import { effectiveStreamProvider } from "@/lib/live-stream";
 import { CameraTestPanel } from "@/components/camera-test-panel";
 import { NativeLivePublisher } from "@/components/native-live-publisher";
 import { ShopQuickActions } from "@/components/shop-quick-actions";
+import { StreamSourceSettings } from "@/components/stream-source-settings";
 
 export function LiveControlsCard({
   shopId,
   isLive,
   isOpen,
-  isScheduled,
   isEnded,
   streamProvider,
   liveUrl,
@@ -21,7 +21,6 @@ export function LiveControlsCard({
   shopId: string;
   isLive: boolean;
   isOpen: boolean;
-  isScheduled: boolean;
   isEnded: boolean;
   streamProvider: StreamProvider;
   liveUrl: string | null;
@@ -34,23 +33,39 @@ export function LiveControlsCard({
     live_url: liveUrl,
     twitch_url: twitchUrl,
   });
-  const isNative = usesNativeStream(provider);
-  const canTestCamera = !isEnded && (isOpen || isScheduled);
+  const isNative = provider === "native" && nativeEnabled;
+  const canTestCamera = !isEnded && isNative;
   const showMobileBanner =
     typeof navigator !== "undefined" &&
     /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) &&
-    isNative &&
-    nativeEnabled;
+    isNative;
 
   return (
     <div className="space-y-4">
+      <StreamSourceSettings
+        shopId={shopId}
+        streamProvider={streamProvider}
+        liveUrl={liveUrl}
+        twitchUrl={twitchUrl}
+        nativeEnabled={nativeEnabled}
+        isLive={isLive}
+      />
+
+      {isNative && !isEnded && (
+        <p className="text-sm text-muted-foreground">
+          Use <strong className="font-medium text-foreground">Test camera</strong> below anytime
+          before your drop — buyers won&apos;t see it. When your shop is open, click{" "}
+          <strong className="font-medium text-foreground">Go live</strong> to broadcast.
+        </p>
+      )}
+
       {showMobileBanner && (
         <p className="rounded-md border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
           For the best go-live experience, use desktop Chrome. Mobile support is improving.
         </p>
       )}
 
-      {isNative && canTestCamera && <CameraTestPanel disabled={isEnded} />}
+      {canTestCamera && <CameraTestPanel disabled={isEnded} />}
 
       {isNative && (
         <NativeLivePublisher
@@ -59,6 +74,12 @@ export function LiveControlsCard({
           needsTosAcceptance={needsTosAcceptance}
           disabled={!isOpen || isEnded}
         />
+      )}
+
+      {!isOpen && !isEnded && isNative && (
+        <p className="text-xs text-muted-foreground">
+          Go live unlocks when your shop opens. You can still test your camera above.
+        </p>
       )}
 
       <ShopQuickActions

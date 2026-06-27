@@ -5,6 +5,7 @@ import {
   parseStreamProviderFromUrls,
   providerToStreamChoice,
   shopLiveKitRoomName,
+  getStreamSourceLabel,
 } from "@/lib/live-stream";
 
 describe("live-stream", () => {
@@ -32,6 +33,11 @@ describe("live-stream", () => {
     expect(providerToStreamChoice("native", false)).toBe("native");
     expect(providerToStreamChoice("youtube", false)).toBe("external");
     expect(providerToStreamChoice("none", true)).toBe("external");
+  });
+
+  it("labels stream sources for display", () => {
+    expect(getStreamSourceLabel("native")).toBe("PopUp Live (in-app)");
+    expect(getStreamSourceLabel("youtube")).toBe("YouTube");
   });
 
   it("allows go-live for native when LiveKit env is configured", () => {

@@ -16,6 +16,25 @@ export function providerToStreamChoice(
   return "native";
 }
 
+export function getStreamSourceLabel(provider: StreamProvider): string {
+  switch (provider) {
+    case "native":
+      return "PopUp Live (in-app)";
+    case "youtube":
+      return "YouTube";
+    case "twitch":
+      return "Twitch";
+    default:
+      return "Not configured";
+  }
+}
+
+/** Client-safe check (public env only). Server should use isNativeLiveEnabled(). */
+export function isNativeLiveClientEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_NATIVE_LIVE_ENABLED === "false") return false;
+  return Boolean(process.env.NEXT_PUBLIC_LIVEKIT_URL?.trim());
+}
+
 /** Whether native PopUp Live is enabled (env + feature flag). */
 export function isNativeLiveEnabled(): boolean {
   if (process.env.NATIVE_LIVE_ENABLED === "false") return false;
