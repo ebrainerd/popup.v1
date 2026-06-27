@@ -9,7 +9,6 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { HeroScrollButton } from "@/components/hero-scroll-button";
 
 const STEPS = [
   {
@@ -20,7 +19,7 @@ const STEPS = [
   {
     icon: Palette,
     title: "Make it yours",
-    body: "Customize your shop layout so it feels like your brand — not a generic storefront.",
+    body: "Customize your shop layout so it feels like your brand, not a generic storefront.",
   },
   {
     icon: CalendarClock,
@@ -40,54 +39,45 @@ const STEPS = [
   {
     icon: Store,
     title: "Open for business!",
-    body: "When the clock hits zero, the doors open. Run flash sales, live auctions, and checkout — all in one place.",
+    body: "When the clock hits zero, the doors open. Run flash sales, live auctions, and checkout, all in one place.",
   },
 ] as const;
 
 export function InviteOnlyHomePage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
-      <section className="relative mb-20 overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-24">
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#ff3b8b] via-[#a21caf] to-[#4c1d95]" />
-        <div
-          aria-hidden
-          className="absolute -z-10 left-1/2 top-1/2 h-[130%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/20 blur-3xl"
-        />
-
-        <h1 className="mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
+      <section className="bg-brand-gradient relative mb-6 overflow-hidden rounded-3xl px-6 py-20 text-center text-white sm:px-12 sm:py-28">
+        <h1 className="mx-auto max-w-3xl text-balance text-5xl font-extrabold leading-[0.98] tracking-tight sm:text-7xl">
           Pop up. Sell out.
         </h1>
 
-        <p className="mx-auto mt-5 max-w-xl text-pretty text-lg text-white/90 sm:text-xl">
-          Everything you need to run a timed pop-up shop — in one link.
+        <p className="mx-auto mt-6 max-w-xl text-pretty text-lg text-white/85 sm:text-xl">
+          Everything you need to run a timed pop-up shop, in one link.
         </p>
 
-        <div className="mt-8 flex flex-col items-center gap-3">
+        <div className="mt-9 flex justify-center">
           <Button
             asChild
             size="lg"
-            variant="outline"
-            className="group rounded-full border-white/40 bg-white px-8 text-primary shadow-lg shadow-black/20 transition-[transform,box-shadow] hover:scale-[1.02] hover:bg-white hover:shadow-xl hover:shadow-primary/30"
+            className="group rounded-full bg-white px-8 text-base text-primary shadow-lg shadow-black/30 hover:bg-white"
           >
             <Link href="/signup">
-              Create your shop
+              Create shop
               <ArrowRight className="transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
         </div>
-
-        <HeroScrollButton targetId="how-it-works" />
-
-        <p className="mx-auto mt-8 max-w-md text-sm text-white/75">
-          Got a creator&apos;s PopUp link? Open it directly to join their drop.
-        </p>
       </section>
+
+      <p className="mb-20 text-center text-sm text-muted-foreground">
+        Got a creator&apos;s PopUp link? Open it directly to join their drop.
+      </p>
 
       <section id="how-it-works" className="mb-20 scroll-mt-24">
         <div className="mb-10 text-center">
-          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How it works</h2>
-          <p className="mx-auto mt-2 max-w-lg text-muted-foreground">
-            From setup to sold-out — six steps to your first drop.
+          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">How it works</h2>
+          <p className="mx-auto mt-3 max-w-lg text-muted-foreground">
+            From setup to sold out in six simple steps.
           </p>
         </div>
 
@@ -112,14 +102,14 @@ export function InviteOnlyHomePage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-border/60 bg-card/50 px-6 py-12 text-center sm:px-10 sm:py-14">
+      <section className="rounded-3xl border border-border/60 bg-card/50 px-6 py-12 text-center sm:px-10 sm:py-14">
         <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Ready to open your shop?</h2>
         <p className="mx-auto mt-2 max-w-md text-muted-foreground">
-          Create your shop, add your products, and share your link when you&apos;re ready.
+          Add your products, set your schedule, and share your link when you&apos;re ready.
         </p>
         <Button asChild size="lg" className="mt-6 rounded-full px-8">
           <Link href="/signup">
-            Create your shop
+            Create shop
             <ArrowRight />
           </Link>
         </Button>

@@ -12,60 +12,48 @@ export const metadata: Metadata = {
 };
 
 type Step = {
-  n: string;
-  eyebrow: string;
   title: string;
   body: string;
   image: string;
   alt: string;
-  chips: { icon: React.ReactNode; label: string }[];
+  chip: { icon: React.ReactNode; label: string };
 };
 
 const STEPS: Step[] = [
   {
-    n: "01",
-    eyebrow: "Dream it up",
-    title: "Pick what you’ll drop — and when.",
+    title: "Pick what you’ll drop, and when.",
     body: "Every PopUp shop is an event with a start and an end. Choose a window that fits your moment: a one-hour flash, an evening, or a weekend. The countdown creates the urgency, so the scarcity markets itself.",
     image: "/marketing/sell-step-plan.webp",
     alt: "Creator planning a drop with a notebook and calendar in a sunlit home studio",
-    chips: [{ icon: <Clock className="size-4" />, label: "Timed open & close" }],
+    chip: { icon: <Clock className="size-4" />, label: "Timed open & close" },
   },
   {
-    n: "02",
-    eyebrow: "Set the stage",
     title: "Style your shop and price your pieces.",
-    body: "Add your products with photos and prices, then decide how each one sells — a simple Buy Now price, or a live auction with max bids and anti-snipe extensions. Build the lineup once; it’s ready the moment you open.",
+    body: "Add products with photos and prices, then decide how each one sells: a simple Buy Now price, or a live auction with max bids and anti-snipe extensions. Build the lineup once; it is ready the moment you open.",
     image: "/marketing/sell-step-setup.webp",
     alt: "Creator photographing and arranging handmade products under a studio light",
-    chips: [{ icon: <Clock className="size-4" />, label: "Buy Now or live auctions" }],
+    chip: { icon: <Clock className="size-4" />, label: "Buy Now or live auctions" },
   },
   {
-    n: "03",
-    eyebrow: "Spread the word",
     title: "Share one link with your people.",
-    body: "Post your shop link anywhere your audience already is — Instagram, TikTok, Discord, or a group text. Fans tap in, join the waiting room, and get a reminder right before you go live. No marketplace browsing required.",
+    body: "Post your shop link anywhere your audience already is: Instagram, TikTok, Discord, or a group text. Fans tap in, join the waiting room, and get a reminder right before you go live. No marketplace browsing required.",
     image: "/marketing/sell-step-share.webp",
     alt: "Creator sharing their shop link from a phone with social engagement around her",
-    chips: [{ icon: <Share2 className="size-4" />, label: "One shareable link" }],
+    chip: { icon: <Share2 className="size-4" />, label: "One shareable link" },
   },
   {
-    n: "04",
-    eyebrow: "Showtime",
     title: "Go live and sell in the moment.",
-    body: "When the clock hits zero, the doors open. Stream, chat with the room, and run flash deals and live auctions as the energy builds. Buyers check out instantly — and inventory holds mean you’ll never oversell.",
+    body: "When the clock hits zero, the doors open. Stream, chat with the room, and run flash deals and live auctions as the energy builds. Buyers check out instantly, and inventory holds mean you will never oversell.",
     image: "/marketing/sell-step-golive.webp",
     alt: "Creator going live on camera presenting a product with a ring light",
-    chips: [{ icon: <Radio className="size-4" />, label: "Live stream, chat & flash drops" }],
+    chip: { icon: <Radio className="size-4" />, label: "Live stream, chat & flash drops" },
   },
   {
-    n: "05",
-    eyebrow: "Cash in",
-    title: "Get paid — then plan the next one.",
+    title: "Get paid, then plan the next one.",
     body: "Stripe handles checkout and payouts, so the money lands in your account. After the drop, your report shows what sold, who showed up, and what to do differently. Tap a button and schedule the encore.",
     image: "/marketing/sell-step-payout.webp",
     alt: "Creator happily packing orders into shipping boxes with a sales dashboard nearby",
-    chips: [{ icon: <Wallet className="size-4" />, label: "Stripe payouts + drop report" }],
+    chip: { icon: <Wallet className="size-4" />, label: "Stripe payouts + drop report" },
   },
 ];
 
@@ -73,55 +61,49 @@ export default function SellPage() {
   return (
     <div className="overflow-hidden">
       {/* Intro */}
-      <section className="relative mx-auto max-w-5xl px-4 pb-10 pt-16 text-center sm:pt-24">
-        <p className="animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-muted/50 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-          How it works
-        </p>
-        <h1 className="animate-fade-up animate-fade-up-delay-1 text-balance text-4xl font-extrabold tracking-tight sm:text-6xl">
+      <section className="relative mx-auto max-w-5xl px-4 pb-12 pt-16 text-center sm:pt-24">
+        <h1 className="animate-fade-up text-balance text-5xl font-extrabold tracking-tight sm:text-7xl">
           From idea to{" "}
           <span className="text-gradient-brand">sold-out drop</span>, in five steps.
         </h1>
-        <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-pretty text-muted-foreground sm:text-lg">
-          PopUp turns a quiet idea into a live shopping event your audience shows up for. Here’s
+        <p className="animate-fade-up animate-fade-up-delay-1 mx-auto mt-6 max-w-xl text-pretty text-muted-foreground sm:text-lg">
+          PopUp turns a quiet idea into a live shopping event your audience shows up for. Here is
           how a drop comes together.
         </p>
-        <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex justify-center">
-          <Button asChild size="lg" className="rounded-full px-8">
+        <div className="animate-fade-up animate-fade-up-delay-2 mt-8 flex justify-center">
+          <Button asChild size="lg" className="group rounded-full px-8">
             <Link href="/signup">
-              Create your shop
+              Create shop
               <ArrowRight className="transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
         </div>
       </section>
 
-      {/* Story steps */}
-      <div className="mx-auto max-w-6xl px-4">
-        {STEPS.map((step, i) => (
-          <StepSection key={step.n} step={step} flip={i % 2 === 1} />
-        ))}
-      </div>
+      {/* Steps: image-forward cards. Four in a 2-col grid, the finale spans
+          full width so the grid has rhythm and exactly five cells. */}
+      <section className="mx-auto max-w-6xl px-4 pb-8">
+        <div className="grid gap-5 sm:grid-cols-2">
+          {STEPS.map((step, i) => (
+            <StepCard key={step.image} step={step} wide={i === STEPS.length - 1} />
+          ))}
+        </div>
+      </section>
 
       {/* Closing CTA */}
-      <section className="mx-auto mb-20 mt-6 max-w-5xl px-4">
-        <div className="relative overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-20">
-          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#ff3b8b] via-[#a21caf] to-[#4c1d95]" />
-          <div
-            aria-hidden
-            className="animate-drift absolute -z-10 left-1/2 top-1/2 h-[130%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/20 blur-3xl"
-          />
-          <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
+      <section className="mx-auto mb-20 mt-8 max-w-5xl px-4">
+        <div className="bg-brand-gradient relative overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-20">
+          <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-5xl">
             Your first drop is closer than you think.
           </h2>
-          <p className="mx-auto mt-3 max-w-md text-pretty text-white/90">
-            Create your shop, add a few pieces, and share the link when you’re ready. The
+          <p className="mx-auto mt-4 max-w-md text-pretty text-white/85">
+            Add a few pieces, set your schedule, and share the link when you are ready. The
             countdown does the rest.
           </p>
           <Button
             asChild
             size="lg"
-            variant="outline"
-            className="group mt-8 rounded-full border-white/40 bg-white px-8 text-primary shadow-lg shadow-black/20 transition-[transform,box-shadow] hover:scale-105 hover:bg-white hover:shadow-xl hover:shadow-primary/30"
+            className="group mt-8 rounded-full bg-white px-8 text-base text-primary shadow-lg shadow-black/30 hover:bg-white"
           >
             <Link href="/signup">
               Create shop
@@ -134,55 +116,33 @@ export default function SellPage() {
   );
 }
 
-function StepSection({ step, flip }: { step: Step; flip: boolean }) {
+function StepCard({ step, wide }: { step: Step; wide?: boolean }) {
   return (
-    <section className="flex min-h-[78vh] items-center py-12">
-      <div className="grid w-full items-center gap-8 lg:grid-cols-2 lg:gap-16">
-        {/* Image */}
-        <div className={cn("relative", flip && "lg:order-2")}>
-          <div
-            aria-hidden
-            className="absolute -inset-4 -z-10 rounded-[2rem] bg-gradient-to-br from-primary/20 via-accent/10 to-highlight/15 blur-2xl"
-          />
-          <div className="relative aspect-[3/2] overflow-hidden rounded-3xl border border-border/60 shadow-2xl shadow-black/20">
-            <Image
-              src={step.image}
-              alt={step.alt}
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-              priority={step.n === "01"}
-            />
-          </div>
-          <span className="absolute -left-3 -top-3 flex size-14 items-center justify-center rounded-2xl bg-primary text-xl font-extrabold text-primary-foreground shadow-lg shadow-primary/30 sm:-left-5 sm:-top-5 sm:size-16 sm:text-2xl">
-            {step.n}
-          </span>
-        </div>
-
-        {/* Copy */}
-        <div className={cn(flip && "lg:order-1")}>
-          <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-primary">
-            {step.eyebrow}
-          </p>
-          <h2 className="text-balance text-3xl font-extrabold tracking-tight sm:text-4xl">
-            {step.title}
-          </h2>
-          <p className="mt-4 max-w-md text-pretty text-base leading-relaxed text-muted-foreground sm:text-lg">
-            {step.body}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            {step.chips.map((chip) => (
-              <span
-                key={chip.label}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1.5 text-sm font-medium text-foreground/80 [&_svg]:text-primary"
-              >
-                {chip.icon}
-                {chip.label}
-              </span>
-            ))}
-          </div>
-        </div>
+    <article
+      className={cn(
+        "group flex flex-col overflow-hidden rounded-3xl border border-border/60 bg-card/50",
+        wide && "sm:col-span-2 sm:flex-row",
+      )}
+    >
+      <div className={cn("relative aspect-[3/2] w-full overflow-hidden", wide && "sm:aspect-auto sm:w-1/2")}>
+        <Image
+          src={step.image}
+          alt={step.alt}
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 600px"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
       </div>
-    </section>
+      <div className={cn("flex flex-1 flex-col p-6 sm:p-8", wide && "sm:justify-center")}>
+        <h2 className="text-balance text-xl font-bold tracking-tight sm:text-2xl">{step.title}</h2>
+        <p className="mt-3 max-w-prose text-pretty leading-relaxed text-muted-foreground">
+          {step.body}
+        </p>
+        <span className="mt-5 inline-flex w-fit items-center gap-2 rounded-full border border-border bg-muted/40 px-3 py-1.5 text-sm font-medium text-foreground/80 [&_svg]:text-primary">
+          {step.chip.icon}
+          {step.chip.label}
+        </span>
+      </div>
+    </article>
   );
 }

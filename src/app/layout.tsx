@@ -13,11 +13,11 @@ import { getSiteUrl } from "@/lib/env";
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: "PopUp — Pop up. Sell out.",
+    default: "PopUp: Pop up. Sell out.",
     template: "%s · PopUp",
   },
   description:
-    "Everything you need to run a timed pop-up shop — in one link.",
+    "Everything you need to run a timed pop-up shop, in one link.",
   applicationName: "PopUp",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -26,9 +26,9 @@ export const metadata: Metadata = {
     title: "PopUp",
   },
   openGraph: {
-    title: "PopUp — Pop up. Sell out.",
+    title: "PopUp: Pop up. Sell out.",
     description:
-      "Everything you need to run a timed pop-up shop — in one link.",
+      "Everything you need to run a timed pop-up shop, in one link.",
     type: "website",
   },
 };
