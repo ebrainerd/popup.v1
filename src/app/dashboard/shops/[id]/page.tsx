@@ -192,7 +192,6 @@ export default async function ManageShopPage({
             shopId={shop.id}
             isLive={shop.is_live}
             isOpen={window.isOpen}
-            isDraft={isDraft}
             isEnded={liveControlsEnded}
             streamProvider={streamProvider}
             liveUrl={shop.live_url}
