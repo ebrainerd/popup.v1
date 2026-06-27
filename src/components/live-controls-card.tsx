@@ -11,6 +11,7 @@ export function LiveControlsCard({
   shopId,
   isLive,
   isOpen,
+  isDraft,
   isEnded,
   streamProvider,
   liveUrl,
@@ -21,6 +22,7 @@ export function LiveControlsCard({
   shopId: string;
   isLive: boolean;
   isOpen: boolean;
+  isDraft: boolean;
   isEnded: boolean;
   streamProvider: StreamProvider;
   liveUrl: string | null;
@@ -78,7 +80,9 @@ export function LiveControlsCard({
 
       {!isOpen && !isEnded && isNative && (
         <p className="text-xs text-muted-foreground">
-          Go live unlocks when your shop opens. You can still test your camera above.
+          {isDraft
+            ? "Go live unlocks after you publish and your shop window is open. You can still test your camera above."
+            : "Go live unlocks when your shop opens. You can still test your camera above."}
         </p>
       )}
 
