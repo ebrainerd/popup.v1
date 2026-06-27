@@ -18,7 +18,7 @@ const STEPS = [
   {
     icon: <Store className="size-5" />,
     title: "Creators open a timed shop",
-    body: "Set a start and end — the shop opens and closes on the clock.",
+    body: "Set a start and end. The shop opens and closes on the clock.",
     accent: "from-primary/20 to-primary/5",
   },
   {
@@ -44,52 +44,44 @@ export async function MarketplaceHomePage() {
       <LiveTicker />
 
       <div className="mx-auto max-w-6xl px-4 py-8">
-        <section className="relative mb-14 overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-24">
-          <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#ff3b8b] via-[#a21caf] to-[#4c1d95]" />
-          <p className="animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
-            <span className="size-2 rounded-full bg-white animate-live-pulse" />
-            The night market is open
-          </p>
-          <h1 className="animate-fade-up animate-fade-up-delay-1 mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
+        <section className="bg-brand-gradient relative mb-14 overflow-hidden rounded-3xl px-6 py-20 text-center text-white sm:px-12 sm:py-28">
+          <h1 className="animate-fade-up mx-auto max-w-3xl text-balance text-5xl font-extrabold leading-[0.98] tracking-tight sm:text-7xl">
             <span className="inline-block">Shops that open and close</span>{" "}
-            <span className="inline-block bg-gradient-to-r from-white via-white to-white/70 bg-clip-text text-transparent">
-              on the clock.
-            </span>
+            <span className="inline-block text-highlight">on the clock.</span>
           </h1>
-          <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-pretty text-white/90 sm:text-lg">
+          <p className="animate-fade-up animate-fade-up-delay-1 mx-auto mt-6 max-w-xl text-pretty text-white/85 sm:text-lg">
             Limited windows. Real moments. Follow creators and catch their drops before they vanish.
           </p>
-          <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex flex-col items-center gap-3">
+          <div className="animate-fade-up animate-fade-up-delay-2 mt-9 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Button
               asChild
               size="lg"
-              variant="outline"
-              className="group rounded-full border-white/40 bg-white px-8 text-primary shadow-lg shadow-black/20"
+              className="group rounded-full bg-white px-8 text-base text-primary shadow-lg shadow-black/30 hover:bg-white"
             >
               <Link href="/signup">
-                Start your drop
+                Start a Drop
                 <ArrowRight className="transition-transform group-hover:translate-x-1" />
               </Link>
             </Button>
-            <Link href="/explore" className="text-sm text-white/90 hover:underline">
-              Browse what&apos;s happening now ↓
+            <Link href="/explore" className="text-sm font-medium text-white/90 hover:text-white hover:underline">
+              Browse what&apos;s happening now
             </Link>
           </div>
-          <div className="animate-fade-up animate-fade-up-delay-4 mx-auto mt-10 flex max-w-md justify-center gap-6 sm:gap-10">
+          <div className="animate-fade-up animate-fade-up-delay-3 mx-auto mt-10 flex max-w-md justify-center gap-6 sm:gap-10">
             <div className="text-center">
-              <p className="text-2xl font-extrabold sm:text-3xl">{upcoming.length || "—"}</p>
+              <p className="text-2xl font-extrabold sm:text-3xl">{upcoming.length || "0"}</p>
               <p className="text-xs text-white/70 sm:text-sm">Upcoming drops</p>
             </div>
             <div className="h-10 w-px bg-white/20" />
             <div className="text-center">
-              <p className="text-2xl font-extrabold sm:text-3xl">{liveCount || "—"}</p>
+              <p className="text-2xl font-extrabold sm:text-3xl">{liveCount || "0"}</p>
               <p className="text-xs text-white/70 sm:text-sm">Live now</p>
             </div>
           </div>
         </section>
 
         <section className="mb-14">
-          <h2 className="animate-fade-up mb-6 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
+          <h2 className="animate-fade-up mb-6 text-center text-2xl font-bold tracking-tight">
             How it works
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
