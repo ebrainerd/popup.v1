@@ -18,7 +18,8 @@ Stripe. Stack: **Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + Ver
 | Feature roadmap (M1–M3 done) | `docs/ROADMAP.md` |
 | Creator-led drop loop PRD | `docs/CREATOR_DROP_LOOP.md` |
 | Invite-only launch plan | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
-| Live auctions PRD | `docs/AUCTIONS_PRD.md` |
+| Live auctions PRD (shipped) | `docs/AUCTIONS_PRD.md` |
+| Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
 | Testing & CI | `docs/TESTING.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
@@ -32,6 +33,13 @@ user/shop search, draft→publish flow, live-stream auto-display, inventory
 reservations (no overselling), light/dark theme, detailed buyer order view,
 and the full **order-email lifecycle** (purchase, shipped, unshipped reminder,
 receipt nudge). **Invite-only launch mode** is the default (`NEXT_PUBLIC_DISCOVERY_MODE=invite_only`): homepage and nav are seller-led; Explore is hidden. Production runs in Stripe **live** mode.
+
+Also shipped since: **multiple photos per product** with a scrollable gallery and
+a clickable **product detail dialog**; a **$0.50 minimum price** (Stripe's minimum
+chargeable amount, enforced on products/flash items/discounts/checkout); **HEIC
+image uploads** (iPhone photos converted client-side via `src/lib/image-upload-client.ts`);
+and **live auctions/bidding** (real-time bids; see `docs/AUCTIONS_PRD.md` and
+`src/lib/auctions.ts` / `auction-bidding.ts`).
 
 ## ⚠️ Pending owner actions (do these when you can)
 
@@ -51,7 +59,9 @@ custom domain is purchased and pointed at Vercel, update **all** of these:
 
 ### Other standing items
 - [ ] Keep applying new DB migrations as they land (`supabase/migrations/`, in order).
-      Latest applied should match the highest-numbered file.
+      Latest applied should match the highest-numbered file — currently
+      **`0013_auctions.sql`** (auctions require it; `0009` adds multi-photo, `0010`–`0012`
+      cover the creator drop loop + invite-only launch).
 - [ ] Stripe webhook must subscribe to: `checkout.session.completed`,
       `account.updated`, `checkout.session.expired`.
 - [ ] Cron runs **daily** (Vercel Hobby limit) at `/api/cron/release-funds`; it
@@ -106,7 +116,6 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
 
 - Native in-app live streaming (currently embeds only) — Phase 2; would integrate
   Amazon IVS / LiveKit / Mux. Tracked as item #7 in prior discussions.
-- Live auctions/bidding - see `docs/AUCTIONS_PRD.md`.
 - Scale hardening (Realtime connection limits, Explore caching, load testing).
 - Carrier tracking API for real delivery ETAs (Shippo/EasyPost/AfterShip).
 - Wire drop-reminder cron (see pending items above).
