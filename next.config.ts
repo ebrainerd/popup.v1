@@ -13,7 +13,8 @@ const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // Allow camera/mic on this origin for PopUp Live (seller preview + go-live).
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(self), geolocation=()" },
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",
@@ -35,7 +36,7 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   "script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.ingest.sentry.io https://*.sentry.io https://challenges.cloudflare.com",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.livekit.cloud wss://*.livekit.cloud https://*.ingest.sentry.io https://*.sentry.io https://challenges.cloudflare.com",
   "frame-src 'self' https://challenges.cloudflare.com https://www.youtube.com https://www.youtube-nocookie.com https://player.twitch.tv https://*.twitch.tv",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
