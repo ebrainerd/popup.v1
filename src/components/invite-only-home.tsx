@@ -13,37 +13,31 @@ import { HeroScrollButton } from "@/components/hero-scroll-button";
 
 const STEPS = [
   {
-    n: "01",
     icon: Package,
     title: "Add your products",
     body: "Upload photos, set prices, and choose Buy Now or live auction for each piece.",
   },
   {
-    n: "02",
     icon: Palette,
     title: "Make it yours",
     body: "Customize your shop layout so it feels like your brand — not a generic storefront.",
   },
   {
-    n: "03",
     icon: CalendarClock,
     title: "Schedule your drop",
     body: "Pick when your shop opens and closes. The countdown builds the hype for you.",
   },
   {
-    n: "04",
     icon: Radio,
     title: "Connect with your audience",
     body: "Go live from the app, or embed your Twitch or YouTube stream. Chat and sell in the same room.",
   },
   {
-    n: "05",
     icon: Share2,
     title: "Send your invites",
     body: "Share one link anywhere your people already are. They join the waiting room and get reminded before you open.",
   },
   {
-    n: "06",
     icon: Store,
     title: "Open for business!",
     body: "When the clock hits zero, the doors open. Run flash sales, live auctions, and checkout — all in one place.",
@@ -102,16 +96,11 @@ export function InviteOnlyHomePage() {
             const Icon = step.icon;
             return (
               <article
-                key={step.n}
+                key={step.title}
                 className="flex gap-5 rounded-2xl border border-border/60 bg-card/50 p-6 sm:gap-6 sm:p-8"
               >
-                <div className="flex shrink-0 flex-col items-center gap-3">
-                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
-                    {step.n}
-                  </span>
-                  <div className="flex size-11 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-primary">
-                    <Icon className="size-5" />
-                  </div>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-primary">
+                  <Icon className="size-5" />
                 </div>
                 <div className="min-w-0 pt-0.5">
                   <h3 className="text-lg font-semibold tracking-tight sm:text-xl">{step.title}</h3>
