@@ -1,155 +1,138 @@
 import Link from "next/link";
 import {
+  Package,
+  Palette,
+  CalendarClock,
+  Radio,
+  Share2,
   Store,
-  Link2,
-  Clock,
-  Zap,
-  Gavel,
   ArrowRight,
-  Sparkles,
-  Megaphone,
-  BarChart3,
-  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { HeroScrollButton } from "@/components/hero-scroll-button";
 
-const FADE_DELAYS = [
-  "animate-fade-up-delay-1",
-  "animate-fade-up-delay-2",
-  "animate-fade-up-delay-3",
-  "animate-fade-up-delay-4",
-  "animate-fade-up-delay-5",
+const STEPS = [
+  {
+    n: "01",
+    icon: Package,
+    title: "Add your products",
+    body: "Upload photos, set prices, and choose Buy Now or live auction for each piece.",
+  },
+  {
+    n: "02",
+    icon: Palette,
+    title: "Make it yours",
+    body: "Customize your shop layout so it feels like your brand — not a generic storefront.",
+  },
+  {
+    n: "03",
+    icon: CalendarClock,
+    title: "Schedule your drop",
+    body: "Pick when your shop opens and closes. The countdown builds the hype for you.",
+  },
+  {
+    n: "04",
+    icon: Radio,
+    title: "Connect with your audience",
+    body: "Go live from the app, or embed your Twitch or YouTube stream. Chat and sell in the same room.",
+  },
+  {
+    n: "05",
+    icon: Share2,
+    title: "Send your invites",
+    body: "Share one link anywhere your people already are. They join the waiting room and get reminded before you open.",
+  },
+  {
+    n: "06",
+    icon: Store,
+    title: "Open for business!",
+    body: "When the clock hits zero, the doors open. Run flash sales, live auctions, and checkout — all in one place.",
+  },
 ] as const;
-
-const CAPABILITIES = [
-  {
-    icon: <Clock className="size-5" />,
-    title: "Timed drops",
-    body: "Set when your shop opens and closes — scarcity is built in.",
-    accent: "from-primary/20 to-primary/5",
-  },
-  {
-    icon: <Link2 className="size-5" />,
-    title: "One shareable link",
-    body: "Post your shop link anywhere — Instagram, TikTok, Discord, or text.",
-    accent: "from-accent/20 to-accent/5",
-  },
-  {
-    icon: <Megaphone className="size-5" />,
-    title: "Waiting room",
-    body: "Buyers join the waitlist, see announcements, and show up when you open.",
-    accent: "from-highlight/25 to-highlight/5",
-  },
-  {
-    icon: <Gavel className="size-5" />,
-    title: "Live auctions",
-    body: "Run countdown auctions in the room with max bids, anti-snipe extensions, and instant winner checkout.",
-    accent: "from-live/20 to-live/5",
-  },
-  {
-    icon: <Zap className="size-5" />,
-    title: "Flash drops",
-    body: "Run limited flash pricing live in the room while the clock ticks.",
-    accent: "from-primary/20 to-primary/5",
-  },
-  {
-    icon: <Truck className="size-5" />,
-    title: "Checkout & fulfillment",
-    body: "Stripe checkout, inventory holds, shipping updates, and order emails.",
-    accent: "from-accent/20 to-accent/5",
-  },
-  {
-    icon: <BarChart3 className="size-5" />,
-    title: "Post-drop report",
-    body: "See sales, sell-through, waitlist signups, and schedule your next drop.",
-    accent: "from-highlight/25 to-highlight/5",
-  },
-];
 
 export function InviteOnlyHomePage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
-      <section className="relative mb-14 overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-24">
+    <div className="mx-auto max-w-4xl px-4 py-8">
+      <section className="relative mb-20 overflow-hidden rounded-3xl px-6 py-16 text-center text-white sm:px-12 sm:py-24">
         <div className="absolute inset-0 -z-10 bg-gradient-to-br from-[#ff3b8b] via-[#a21caf] to-[#4c1d95]" />
         <div
           aria-hidden
-          className="animate-drift absolute -z-10 left-1/2 top-1/2 h-[130%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/30 blur-3xl"
+          className="absolute -z-10 left-1/2 top-1/2 h-[130%] w-[70%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/20 blur-3xl"
         />
 
-        <p className="animate-fade-up mb-4 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
-          <Store className="size-3.5" />
-          Timed online pop-up shops
-        </p>
-
-        <h1 className="animate-fade-up animate-fade-up-delay-1 mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
-          Online pop-up shops with live auctions in one link.
+        <h1 className="mx-auto max-w-3xl text-balance text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl">
+          Pop up. Sell out.
         </h1>
 
-        <p className="animate-fade-up animate-fade-up-delay-2 mx-auto mt-5 max-w-xl text-pretty text-white/90 sm:text-lg">
-          Create a timed shop, share it anywhere, run live auctions or Buy Now drops, and sell before
-          the clock runs out.
+        <p className="mx-auto mt-5 max-w-xl text-pretty text-lg text-white/90 sm:text-xl">
+          Everything you need to run a timed pop-up shop — in one link.
         </p>
 
-        <div className="animate-fade-up animate-fade-up-delay-3 mt-8 flex flex-col items-center gap-3">
+        <div className="mt-8 flex flex-col items-center gap-3">
           <Button
             asChild
             size="lg"
             variant="outline"
-            className="group rounded-full border-white/40 bg-white px-8 text-primary shadow-lg shadow-black/20 transition-[transform,box-shadow] hover:scale-105 hover:bg-white hover:shadow-xl hover:shadow-primary/30"
+            className="group rounded-full border-white/40 bg-white px-8 text-primary shadow-lg shadow-black/20 transition-[transform,box-shadow] hover:scale-[1.02] hover:bg-white hover:shadow-xl hover:shadow-primary/30"
           >
             <Link href="/signup">
-              Create a pop-up shop
+              Create your shop
               <ArrowRight className="transition-transform group-hover:translate-x-1" />
             </Link>
           </Button>
-          <Link
-            href="/sell"
-            className="text-sm text-white/90 underline-offset-4 transition-colors hover:text-white hover:underline"
-          >
-            See how PopUp shops work →
-          </Link>
         </div>
 
-        <p className="animate-fade-up animate-fade-up-delay-4 mx-auto mt-8 max-w-md text-sm text-white/80">
+        <HeroScrollButton targetId="how-it-works" />
+
+        <p className="mx-auto mt-8 max-w-md text-sm text-white/75">
           Got a creator&apos;s PopUp link? Open it directly to join their drop.
         </p>
       </section>
 
-      <section className="mb-14">
-        <h2 className="animate-fade-up mb-6 text-center text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-          Everything you need to run a drop
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {CAPABILITIES.map((item, i) => (
-            <div
-              key={item.title}
-              className={cn(
-                "animate-fade-up glass-card group rounded-2xl p-6 transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none",
-                FADE_DELAYS[Math.min(i, 4)],
-              )}
-            >
-              <div
-                className={`mb-4 flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${item.accent} text-primary transition-transform duration-300 group-hover:scale-110`}
+      <section id="how-it-works" className="mb-20 scroll-mt-24">
+        <div className="mb-10 text-center">
+          <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">How it works</h2>
+          <p className="mx-auto mt-2 max-w-lg text-muted-foreground">
+            From setup to sold-out — six steps to your first drop.
+          </p>
+        </div>
+
+        <div className="space-y-6">
+          {STEPS.map((step) => {
+            const Icon = step.icon;
+            return (
+              <article
+                key={step.n}
+                className="flex gap-5 rounded-2xl border border-border/60 bg-card/50 p-6 sm:gap-6 sm:p-8"
               >
-                {item.icon}
-              </div>
-              <h3 className="font-semibold">{item.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{item.body}</p>
-            </div>
-          ))}
+                <div className="flex shrink-0 flex-col items-center gap-3">
+                  <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-sm font-bold text-primary">
+                    {step.n}
+                  </span>
+                  <div className="flex size-11 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-primary">
+                    <Icon className="size-5" />
+                  </div>
+                </div>
+                <div className="min-w-0 pt-0.5">
+                  <h3 className="text-lg font-semibold tracking-tight sm:text-xl">{step.title}</h3>
+                  <p className="mt-2 text-pretty leading-relaxed text-muted-foreground">{step.body}</p>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
 
-      <section className="animate-fade-up glass-card rounded-2xl border-dashed p-10 text-center">
-        <Sparkles className="mx-auto mb-3 size-8 text-primary/60" />
-        <h2 className="text-xl font-bold">Bring your own audience</h2>
-        <p className="mx-auto mt-2 max-w-lg text-muted-foreground">
-          PopUp is invite-link first while we onboard selected creators. Share your shop link
-          wherever your people already are — no marketplace browsing required.
+      <section className="rounded-2xl border border-border/60 bg-card/50 px-6 py-12 text-center sm:px-10 sm:py-14">
+        <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Ready to open your shop?</h2>
+        <p className="mx-auto mt-2 max-w-md text-muted-foreground">
+          Create your shop, add your products, and share your link when you&apos;re ready.
         </p>
-        <Button asChild className="mt-6 rounded-full">
-          <Link href="/signup">Create shop</Link>
+        <Button asChild size="lg" className="mt-6 rounded-full px-8">
+          <Link href="/signup">
+            Create your shop
+            <ArrowRight />
+          </Link>
         </Button>
       </section>
     </div>
