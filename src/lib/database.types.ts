@@ -85,6 +85,7 @@ export interface Database {
           status: ShopStatusColumn;
           peak_viewers: number;
           featured_at: string | null;
+          wizard_completed_steps: string[];
           created_at: string;
           updated_at: string;
         };
@@ -105,6 +106,7 @@ export interface Database {
           status?: ShopStatusColumn;
           peak_viewers?: number;
           featured_at?: string | null;
+          wizard_completed_steps?: string[];
           created_at?: string;
           updated_at?: string;
         };
