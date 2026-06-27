@@ -13,6 +13,7 @@
     "test:e2e": "playwright test",
     "db:nuke": "bash scripts/db-nuke.sh",
     "db:nuke:production": "bash scripts/db-nuke-production.sh",
+    "db:nuke:production:api": "node scripts/nuke-production-via-api.mjs",
     "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts"
   },
   "dependencies": {
