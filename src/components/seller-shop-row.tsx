@@ -4,6 +4,7 @@ import { ExternalLink, Settings } from "lucide-react";
 import type { Shop } from "@/lib/database.types";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
+import { DeleteDraftButton } from "@/components/delete-draft-button";
 import { deriveShopStatus } from "@/lib/utils";
 
 export function SellerShopRow({ shop }: { shop: Shop }) {
@@ -48,6 +49,7 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
         >
           <Settings className="size-4" />
         </Link>
+        {isDraft && <DeleteDraftButton shopId={shop.id} shopName={shop.name} />}
       </div>
     </div>
   );
