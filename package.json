@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:nuke": "bash scripts/db-nuke.sh",
+    "db:nuke:production": "bash scripts/db-nuke-production.sh",
     "db:types": "supabase gen types typescript --linked > src/lib/database.types.ts"
   },
   "dependencies": {
