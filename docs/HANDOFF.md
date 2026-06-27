@@ -19,6 +19,7 @@ Stripe. Stack: **Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + Ver
 | Creator-led drop loop PRD | `docs/CREATOR_DROP_LOOP.md` |
 | Invite-only launch plan | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
 | Live auctions PRD (shipped) | `docs/AUCTIONS_PRD.md` |
+| Native live streaming plan (not started) | `docs/NATIVE_LIVE_STREAMING.md` |
 | Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
 | Testing & CI | `docs/TESTING.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
@@ -114,8 +115,9 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
 
 ## Known future work / ideas
 
-- Native in-app live streaming (currently embeds only) — Phase 2; would integrate
-  Amazon IVS / LiveKit / Mux. Tracked as item #7 in prior discussions.
+- **Native in-app live streaming** (currently embeds only) — implementation plan in
+  `docs/NATIVE_LIVE_STREAMING.md` (LiveKit Cloud, hybrid YouTube/Twitch fallback).
+  Awaiting owner answers to §13 clarification questions before Phase 1.
 - Scale hardening (Realtime connection limits, Explore caching, load testing).
 - Carrier tracking API for real delivery ETAs (Shippo/EasyPost/AfterShip).
 - Wire drop-reminder cron (see pending items above).
