@@ -121,6 +121,7 @@ export interface Database {
           photo_urls: string[];
           price: number;
           quantity: number;
+          shipping_rate: number;
           discount_price: number | null;
           is_flash_only: boolean;
           flash_expires_at: string | null;
@@ -141,6 +142,7 @@ export interface Database {
           photo_urls?: string[];
           price: number;
           quantity?: number;
+          shipping_rate?: number;
           discount_price?: number | null;
           is_flash_only?: boolean;
           flash_expires_at?: string | null;

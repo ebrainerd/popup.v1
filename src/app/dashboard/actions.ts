@@ -340,6 +340,7 @@ const productSchema = z
     sale_type: z.enum(["buy_now", "auction"]).default("buy_now"),
     price: z.coerce.number().min(0).max(1_000_000),
     quantity: z.coerce.number().int().min(0).max(1_000_000),
+    shipping_rate: z.coerce.number().min(0).max(100000).default(0),
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
     auction_duration_seconds: z.coerce.number().int().min(0).optional(),
@@ -393,6 +394,7 @@ function parseProductForm(formData: FormData) {
     sale_type: formData.get("sale_type") ?? "buy_now",
     price: formData.get("price") ?? 0,
     quantity: formData.get("quantity") ?? 1,
+    shipping_rate: formData.get("shipping_rate") ?? 0,
     auction_starting_bid: formData.get("auction_starting_bid") ?? undefined,
     auction_min_increment: formData.get("auction_min_increment") ?? undefined,
     auction_duration_seconds: formData.get("auction_duration_seconds") ?? undefined,
@@ -413,6 +415,7 @@ function productInsertFromParsed(d: z.infer<typeof productSchema>, photoUrls: st
     sale_type: d.sale_type,
     price: isAuction ? startingCents : toCents(d.price),
     quantity: isAuction ? 1 : d.quantity,
+    shipping_rate: toCents(d.shipping_rate ?? 0),
     auction_starting_bid: isAuction ? startingCents : null,
     auction_min_increment: isAuction ? toCents(d.auction_min_increment ?? 1) : null,
     auction_duration_seconds: isAuction ? d.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION : null,
@@ -430,6 +433,7 @@ const finishProductSchema = z
     price: z.coerce.number().min(0).max(1_000_000),
     quantity: z.coerce.number().int().min(0).max(1_000_000),
     photo_urls: z.array(z.string().url()).max(MAX_PHOTOS),
+    shipping_rate: z.coerce.number().min(0).max(100000),
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
     auction_duration_seconds: z.coerce.number().int().min(0).optional(),
@@ -484,7 +488,6 @@ const finishShopSetupSchema = z
     startAt: z.string().min(1, "Start time is required."),
     endAt: z.string().min(1, "End time is required."),
     visibility: z.enum(["public", "private"]),
-    shippingRate: z.coerce.number().min(0).max(100000),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(finishProductSchema).min(1, "Add at least one product."),
@@ -505,6 +508,7 @@ function finishProductInsert(
     sale_type: product.sale_type,
     price: product.sale_type === "buy_now" ? product.price : product.auction_starting_bid ?? 0,
     quantity: product.sale_type === "auction" ? 1 : product.quantity,
+    shipping_rate: product.shipping_rate,
     auction_starting_bid: product.auction_starting_bid,
     auction_min_increment: product.auction_min_increment,
     auction_duration_seconds: product.auction_duration_seconds,
@@ -542,7 +546,7 @@ export async function finishShopSetup(
     start_at: startIso,
     end_at: endIso,
     visibility,
-    shipping_rate: toCents(d.shippingRate),
+    shipping_rate: 0,
     live_url: d.youtubeUrl || null,
     twitch_url: d.twitchUrl || null,
   };
@@ -657,6 +661,7 @@ const updateProductSchema = z
     sale_type: z.enum(["buy_now", "auction"]),
     price: z.coerce.number().min(0).max(1_000_000),
     quantity: z.coerce.number().int().min(0).max(1_000_000),
+    shipping_rate: z.coerce.number().min(0).max(100000).default(0),
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
     auction_duration_seconds: z.coerce.number().int().min(0).optional(),
@@ -687,6 +692,7 @@ export async function updateProduct(input: {
   sale_type?: "buy_now" | "auction";
   price: number;
   quantity: number;
+  shipping_rate?: number;
   auction_starting_bid?: number;
   auction_min_increment?: number;
   auction_duration_seconds?: number;
@@ -740,6 +746,7 @@ export async function updateProduct(input: {
       sale_type: d.sale_type,
       price: isAuction ? startingCents : toCents(d.price),
       quantity: isAuction ? 1 : d.quantity,
+      shipping_rate: toCents(d.shipping_rate ?? 0),
       auction_starting_bid: isAuction ? startingCents : null,
       auction_min_increment: isAuction ? toCents(d.auction_min_increment ?? 1) : null,
       auction_duration_seconds: isAuction ? d.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION : null,
@@ -831,6 +838,7 @@ export async function duplicateShop(shopId: string): Promise<void> {
         photo_urls: p.photo_urls,
         price: p.price,
         quantity: p.quantity,
+        shipping_rate: p.shipping_rate,
         is_flash_only: p.is_flash_only,
         sale_type: p.sale_type,
         auction_starting_bid: p.auction_starting_bid,

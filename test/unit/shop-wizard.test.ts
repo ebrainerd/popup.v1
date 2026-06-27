@@ -41,6 +41,7 @@ describe("shop wizard", () => {
           price: "5.00",
           quantity: "1",
           photo_urls: [],
+          shippingRate: "0.00",
           auctionFields: {
             saleType: "buy_now",
             startingBid: "",

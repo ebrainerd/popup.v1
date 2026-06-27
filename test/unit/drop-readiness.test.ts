@@ -31,6 +31,7 @@ const baseShop: ShopWithDetails = {
     photo_urls: [],
     price: 1000,
     quantity: 5,
+    shipping_rate: 0,
     discount_price: null,
     is_flash_only: false,
     flash_expires_at: null,

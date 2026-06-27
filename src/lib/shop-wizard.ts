@@ -9,7 +9,6 @@ export const WIZARD_STEPS = [
   { id: "products", label: "Products", shortLabel: "Products" },
   { id: "live", label: "Live stream", shortLabel: "Live" },
   { id: "schedule", label: "Schedule", shortLabel: "Schedule" },
-  { id: "layout", label: "Layout", shortLabel: "Layout" },
 ] as const;
 
 export type WizardStepId = (typeof WIZARD_STEPS)[number]["id"];
@@ -21,6 +20,7 @@ export type WizardProductDraft = {
   description: string;
   price: string;
   quantity: string;
+  shippingRate: string;
   photo_urls: string[];
   auctionFields: AuctionFieldState;
 };
@@ -30,7 +30,6 @@ export type ShopWizardDraft = {
   name: string;
   description: string;
   visibility: "public" | "private";
-  shippingRate: string;
   coverUrl: string;
   youtubeUrl: string;
   twitchUrl: string;
@@ -53,7 +52,6 @@ export function defaultWizardDraft(): ShopWizardDraft {
     name: "",
     description: "",
     visibility: "private",
-    shippingRate: "0.00",
     coverUrl: "",
     youtubeUrl: "",
     twitchUrl: "",
@@ -71,6 +69,7 @@ export function newWizardProduct(): WizardProductDraft {
     description: "",
     price: "",
     quantity: "1",
+    shippingRate: "0.00",
     photo_urls: [],
     auctionFields: defaultAuctionFields(),
   };
@@ -108,6 +107,7 @@ export function productToWizardDraft(product: Product): WizardProductDraft {
       2,
     ),
     quantity: String(product.quantity),
+    shippingRate: ((product.shipping_rate ?? 0) / 100).toFixed(2),
     photo_urls: photos,
     auctionFields: {
       saleType: product.sale_type,
@@ -127,7 +127,6 @@ export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDr
     name: shop.name,
     description: shop.description ?? "",
     visibility: shop.visibility,
-    shippingRate: (shop.shipping_rate / 100).toFixed(2),
     coverUrl: shop.cover_url ?? "",
     youtubeUrl: streams.youtubeUrl,
     twitchUrl: streams.twitchUrl,
@@ -199,8 +198,6 @@ export function getStepValidation(
       }
       return { valid: true };
     }
-    case "layout":
-      return { valid: true };
     default:
       return { valid: true };
   }
@@ -245,7 +242,6 @@ export function wizardDraftToFinishPayload(draft: ShopWizardDraft) {
     name: draft.name.trim(),
     description: draft.description.trim(),
     visibility: draft.visibility,
-    shippingRate: parseFloat(draft.shippingRate) || 0,
     coverUrl: draft.coverUrl.trim(),
     youtubeUrl: draft.youtubeUrl.trim(),
     twitchUrl: draft.twitchUrl.trim(),
@@ -259,6 +255,7 @@ export function wizardDraftToFinishPayload(draft: ShopWizardDraft) {
       sale_type: p.auctionFields.saleType,
       price: parseFloat(p.price) || 0,
       quantity: parseInt(p.quantity, 10) || 0,
+      shipping_rate: parseFloat(p.shippingRate) || 0,
       auction_starting_bid: parseFloat(p.auctionFields.startingBid) || 0,
       auction_min_increment: parseFloat(p.auctionFields.minIncrement) || 1,
       auction_duration_seconds: p.auctionFields.durationSeconds,

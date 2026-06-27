@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 
 const ACTIVE_DRAFT_KEY = "popup-active-draft-shop-id";
 
+export { ACTIVE_DRAFT_KEY };
+
 /** Resume an in-progress draft instead of starting over on /new. */
 export function ContinueDraftShop() {
   const router = useRouter();

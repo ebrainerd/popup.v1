@@ -4,7 +4,7 @@ import { Eye, Star } from "lucide-react";
 import type { ShopWithSeller } from "@/lib/shops";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
-import { deriveShopStatus, formatCurrency, cn } from "@/lib/utils";
+import { deriveShopStatus, cn } from "@/lib/utils";
 
 export function ShopCard({ shop }: { shop: ShopWithSeller }) {
   const status = deriveShopStatus(shop.start_at, shop.end_at);
@@ -86,14 +86,6 @@ export function ShopCard({ shop }: { shop: ShopWithSeller }) {
             </span>
           )}
         </div>
-
-        {shop.shipping_rate > 0 ? (
-          <p className="text-xs text-muted-foreground">
-            +{formatCurrency(shop.shipping_rate)} shipping
-          </p>
-        ) : (
-          <p className="text-xs text-success">Free shipping</p>
-        )}
       </div>
     </Link>
   );

@@ -274,6 +274,10 @@ function PriceBlock({ product }: { product: Product }) {
       )}
       <p className="text-xs text-muted-foreground">
         {isAuction ? "1-of-1 lot" : soldOut ? "Out of stock" : `${product.quantity} left`}
+        {" · "}
+        {(product.shipping_rate ?? 0) > 0
+          ? `+${formatCurrency(product.shipping_rate)} shipping`
+          : "Free shipping"}
       </p>
     </div>
   );

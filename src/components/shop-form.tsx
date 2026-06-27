@@ -22,7 +22,6 @@ type NewShopDraft = {
   description: string;
   startLocal: string;
   endLocal: string;
-  shippingRate: string;
   liveUrl: string;
   visibility: "public" | "private";
 };
@@ -41,7 +40,6 @@ function defaultNewShopDraft(): NewShopDraft {
     description: "",
     startLocal: plusHoursLocal(1),
     endLocal: plusHoursLocal(3),
-    shippingRate: "0.00",
     liveUrl: "",
     visibility: "private",
   };
@@ -86,7 +84,6 @@ export function ShopForm({ shop }: { shop: Shop }) {
   const [visibility, setVisibility] = useState<"public" | "private">(
     inviteOnly ? "private" : shop.visibility,
   );
-  const [shippingRate, setShippingRate] = useState((shop.shipping_rate / 100).toFixed(2));
   const [liveUrl, setLiveUrl] = useState(shop.live_url ?? "");
 
   const timeError =
@@ -115,13 +112,13 @@ export function ShopForm({ shop }: { shop: Shop }) {
         nameError={state.fieldErrors?.name}
       />
 
+      <input type="hidden" name="shipping_rate" value="0" />
+
       <ScheduleFields
         startLocal={startLocal}
         setStartLocal={setStartLocal}
         endLocal={endLocal}
         setEndLocal={setEndLocal}
-        shippingRate={shippingRate}
-        setShippingRate={setShippingRate}
         liveUrl={liveUrl}
         setLiveUrl={setLiveUrl}
         timeError={timeError}
@@ -195,13 +192,13 @@ export function CreateShopForm() {
         nameError={state.fieldErrors?.name}
       />
 
+      <input type="hidden" name="shipping_rate" value="0" />
+
       <ScheduleFields
         startLocal={draft.startLocal}
         setStartLocal={(startLocal) => patch({ startLocal })}
         endLocal={draft.endLocal}
         setEndLocal={(endLocal) => patch({ endLocal })}
-        shippingRate={draft.shippingRate}
-        setShippingRate={(shippingRate) => patch({ shippingRate })}
         liveUrl={draft.liveUrl}
         setLiveUrl={(liveUrl) => patch({ liveUrl })}
         timeError={timeError}
@@ -287,8 +284,6 @@ function ScheduleFields({
   setStartLocal,
   endLocal,
   setEndLocal,
-  shippingRate,
-  setShippingRate,
   liveUrl,
   setLiveUrl,
   timeError,
@@ -300,8 +295,6 @@ function ScheduleFields({
   setStartLocal: (v: string) => void;
   endLocal: string;
   setEndLocal: (v: string) => void;
-  shippingRate: string;
-  setShippingRate: (v: string) => void;
   liveUrl: string;
   setLiveUrl: (v: string) => void;
   timeError: string | null;
@@ -346,32 +339,17 @@ function ScheduleFields({
         <VisibilityPicker visibility={visibility} onChange={setVisibility} />
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="space-y-1.5">
-          <Label htmlFor="shipping_rate">Flat shipping rate (USD)</Label>
-          <Input
-            id="shipping_rate"
-            name="shipping_rate"
-            type="number"
-            min={0}
-            step="0.01"
-            value={shippingRate}
-            onChange={(e) => setShippingRate(e.target.value)}
-          />
-          <p className="text-xs text-muted-foreground">Added to each item at checkout.</p>
-        </div>
-        <div className="space-y-1.5">
-          <Label htmlFor="live_url">Live stream URL (optional)</Label>
-          <Input
-            id="live_url"
-            name="live_url"
-            type="url"
-            value={liveUrl}
-            onChange={(e) => setLiveUrl(e.target.value)}
-            placeholder="https://youtube.com/watch?v=…"
-          />
-          <p className="text-xs text-muted-foreground">YouTube or Twitch embeds; Instagram links out.</p>
-        </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="live_url">Live stream URL (optional)</Label>
+        <Input
+          id="live_url"
+          name="live_url"
+          type="url"
+          value={liveUrl}
+          onChange={(e) => setLiveUrl(e.target.value)}
+          placeholder="https://youtube.com/watch?v=…"
+        />
+        <p className="text-xs text-muted-foreground">YouTube or Twitch embeds; Instagram links out.</p>
       </div>
     </>
   );

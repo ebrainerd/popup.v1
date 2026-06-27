@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { trackActiveDraftShop } from "@/components/continue-draft-shop";
-import { ArrowLeft, ArrowRight, Check, LayoutTemplate, Radio, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Radio, Zap } from "lucide-react";
 import { finishShopSetup } from "@/app/dashboard/actions";
 import { isInviteOnlyMode } from "@/lib/discovery";
 import { isoToLocalInput } from "@/lib/datetime";
@@ -237,9 +237,7 @@ export function ShopSetupWizard({
           {currentStep.id === "products" && (
             <WizardProductManager
               products={draft.products}
-              shippingRate={draft.shippingRate}
               onProductsChange={(products) => patch({ products })}
-              onShippingRateChange={(shippingRate) => patch({ shippingRate })}
             />
           )}
 
@@ -248,6 +246,7 @@ export function ShopSetupWizard({
               <div className="space-y-2">
                 <Label>Shop banner</Label>
                 <ImageUpload
+                  key={draft.coverUrl || "empty-cover"}
                   name="cover_url"
                   bucket="covers"
                   defaultValue={draft.coverUrl}
@@ -322,17 +321,6 @@ export function ShopSetupWizard({
                   />
                 </div>
               </div>
-            </div>
-          )}
-
-          {currentStep.id === "layout" && (
-            <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
-              <LayoutTemplate className="mx-auto mb-3 size-10 text-muted-foreground" />
-              <h3 className="text-lg font-semibold">Customize your shop layout</h3>
-              <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-                Layout customization is coming soon. For now, your shop will use the default PopUp
-                drop page design.
-              </p>
             </div>
           )}
 

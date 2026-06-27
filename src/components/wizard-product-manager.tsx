@@ -18,14 +18,10 @@ import { formatCurrency } from "@/lib/utils";
 
 export function WizardProductManager({
   products,
-  shippingRate,
   onProductsChange,
-  onShippingRateChange,
 }: {
   products: WizardProductDraft[];
-  shippingRate: string;
   onProductsChange: (products: WizardProductDraft[]) => void;
-  onShippingRateChange: (value: string) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(
     products.length === 0 ? "new" : null,
@@ -73,19 +69,6 @@ export function WizardProductManager({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1.5">
-        <Label htmlFor="shipping_rate">Flat shipping rate (USD)</Label>
-        <Input
-          id="shipping_rate"
-          type="number"
-          min={0}
-          step="0.01"
-          value={shippingRate}
-          onChange={(e) => onShippingRateChange(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">Added to each item at checkout.</p>
-      </div>
-
       <div className="space-y-2">
         {products.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
@@ -168,34 +151,51 @@ export function WizardProductManager({
             />
           </div>
 
-          {draft.auctionFields.saleType === "buy_now" && (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="product_price">Price (USD)</Label>
-                <Input
-                  id="product_price"
-                  type="number"
-                  min={0.5}
-                  step="0.01"
-                  placeholder="24.00"
-                  value={draft.price}
-                  onChange={(e) => patchDraft({ price: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">Minimum $0.50.</p>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="product_quantity">Quantity</Label>
-                <Input
-                  id="product_quantity"
-                  type="number"
-                  min={0}
-                  step={1}
-                  value={draft.quantity}
-                  onChange={(e) => patchDraft({ quantity: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            {draft.auctionFields.saleType === "buy_now" && (
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="product_price">Price (USD)</Label>
+                  <Input
+                    id="product_price"
+                    type="number"
+                    min={0.5}
+                    step="0.01"
+                    placeholder="24.00"
+                    value={draft.price}
+                    onChange={(e) => patchDraft({ price: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum $0.50.</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="product_quantity">Quantity</Label>
+                  <Input
+                    id="product_quantity"
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={draft.quantity}
+                    onChange={(e) => patchDraft({ quantity: e.target.value })}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="product_shipping_rate">Shipping rate (USD)</Label>
+            <Input
+              id="product_shipping_rate"
+              type="number"
+              min={0}
+              step="0.01"
+              value={draft.shippingRate}
+              onChange={(e) => patchDraft({ shippingRate: e.target.value })}
+            />
+            <p className="text-xs text-muted-foreground">
+              Flat shipping added at checkout for this item.
+            </p>
+          </div>
 
           <div className="flex gap-2">
             <Button type="button" onClick={saveProduct} disabled={!draft.title.trim()}>
@@ -221,6 +221,7 @@ function ProductRow({
   onDelete: () => void;
 }) {
   const photo = product.photo_urls[0];
+  const shippingCents = Math.round(parseFloat(product.shippingRate || "0") * 100);
 
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border p-3">
@@ -239,6 +240,8 @@ function ProductRow({
           {product.auctionFields.saleType === "auction"
             ? `Auction · starting ${formatCurrency(Math.round(parseFloat(product.auctionFields.startingBid || product.price || "0") * 100))}`
             : `${formatCurrency(Math.round(parseFloat(product.price || "0") * 100))} · ${product.quantity} in stock`}
+          {" · "}
+          {shippingCents > 0 ? `${formatCurrency(shippingCents)} shipping` : "Free shipping"}
         </p>
       </div>
       <Button type="button" variant="ghost" size="icon" onClick={onEdit} aria-label="Edit product">
