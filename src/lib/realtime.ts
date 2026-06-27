@@ -69,6 +69,7 @@ export type FlashItemBroadcast = {
 export type LiveBroadcast = {
   isLive: boolean;
   liveUrl: string | null;
+  streamProvider?: "native" | "youtube" | "twitch";
 };
 
 export type AuctionStartedBroadcast = {

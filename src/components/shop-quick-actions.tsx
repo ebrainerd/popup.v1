@@ -12,12 +12,17 @@ export function ShopQuickActions({
   isOpen,
   isEnded,
   hasLiveUrl,
+  canGoLive = true,
+  nativePublisherActive = false,
 }: {
   shopId: string;
   isLive: boolean;
   isOpen: boolean;
   isEnded: boolean;
   hasLiveUrl: boolean;
+  /** When false, go-live is handled elsewhere (native publisher). */
+  canGoLive?: boolean;
+  nativePublisherActive?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -68,16 +73,22 @@ export function ShopQuickActions({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant={live ? "destructive" : "default"}
-          size="sm"
-          onClick={onToggleLive}
-          disabled={pending || !hasLiveUrl || !isOpen || isEnded}
-          title={!hasLiveUrl ? "Add a live stream URL first" : !isOpen ? "Shop must be open" : ""}
-        >
-          {live ? <Check className="size-4" /> : <Radio className="size-4" />}
-          {live ? "End live" : "Go live"}
-        </Button>
+        {canGoLive && (
+          <Button
+            variant={live ? "destructive" : "default"}
+            size="sm"
+            onClick={onToggleLive}
+            disabled={pending || !hasLiveUrl || !isOpen || isEnded}
+            title={!hasLiveUrl ? "Add a live stream URL first" : !isOpen ? "Shop must be open" : ""}
+          >
+            {live ? <Check className="size-4" /> : <Radio className="size-4" />}
+            {live ? "End live" : "Go live"}
+          </Button>
+        )}
+
+        {nativePublisherActive && isLive && (
+          <span className="text-sm text-muted-foreground">Video controls are above.</span>
+        )}
 
         <div className="flex items-center gap-1">
           <Button

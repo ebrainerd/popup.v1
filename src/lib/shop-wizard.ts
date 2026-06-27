@@ -4,6 +4,11 @@ import { defaultAuctionFields } from "@/components/auction-product-fields";
 import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { defaultShopTheme, parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
+import {
+  providerToStreamChoice,
+  type StreamSourceChoice,
+} from "@/lib/live-stream";
+import { effectiveStreamProvider } from "@/lib/live-stream";
 
 export const WIZARD_STEPS = [
   { id: "details", label: "Shop details", shortLabel: "Details" },
@@ -33,6 +38,7 @@ export type ShopWizardDraft = {
   description: string;
   visibility: "public" | "private";
   coverUrl: string;
+  streamSource: StreamSourceChoice;
   youtubeUrl: string;
   twitchUrl: string;
   startLocal: string;
@@ -56,6 +62,7 @@ export function defaultWizardDraft(): ShopWizardDraft {
     description: "",
     visibility: "private",
     coverUrl: "",
+    streamSource: "native",
     youtubeUrl: "",
     twitchUrl: "",
     startLocal: plusHoursLocal(1),
@@ -126,12 +133,17 @@ export function productToWizardDraft(product: Product): WizardProductDraft {
 
 export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDraft {
   const streams = splitStreamUrls(shop.live_url, shop.twitch_url ?? null);
+  const provider = effectiveStreamProvider(shop);
   const base: ShopWizardDraft = {
     shopId: shop.id,
     name: shop.name,
     description: shop.description ?? "",
     visibility: shop.visibility,
     coverUrl: shop.cover_url ?? "",
+    streamSource: providerToStreamChoice(
+      provider,
+      Boolean(streams.youtubeUrl || streams.twitchUrl),
+    ),
     youtubeUrl: streams.youtubeUrl,
     twitchUrl: streams.twitchUrl,
     startLocal: isoToLocalInput(shop.start_at),
@@ -193,11 +205,13 @@ export function getStepValidation(
     case "layout":
       return { valid: true };
     case "live":
-      if (!isValidOptionalUrl(draft.youtubeUrl)) {
-        return { valid: false, message: "Enter a valid YouTube URL or leave it blank." };
-      }
-      if (!isValidOptionalUrl(draft.twitchUrl)) {
-        return { valid: false, message: "Enter a valid Twitch URL or leave it blank." };
+      if (draft.streamSource === "external") {
+        if (!isValidOptionalUrl(draft.youtubeUrl)) {
+          return { valid: false, message: "Enter a valid YouTube URL or leave it blank." };
+        }
+        if (!isValidOptionalUrl(draft.twitchUrl)) {
+          return { valid: false, message: "Enter a valid Twitch URL or leave it blank." };
+        }
       }
       return { valid: true };
     case "schedule": {
@@ -287,8 +301,9 @@ function buildWizardPersistPayload(
     description: draft.description.trim(),
     visibility: draft.visibility,
     coverUrl: draft.coverUrl.trim(),
-    youtubeUrl: draft.youtubeUrl.trim(),
-    twitchUrl: draft.twitchUrl.trim(),
+    streamSource: draft.streamSource,
+    youtubeUrl: draft.streamSource === "external" ? draft.youtubeUrl.trim() : "",
+    twitchUrl: draft.streamSource === "external" ? draft.twitchUrl.trim() : "",
     startAt: localInputToIso(startLocal),
     endAt: localInputToIso(endLocal),
     products: mapWizardProducts(draft, Boolean(options?.draftMode)),

@@ -21,6 +21,7 @@ Stripe. Stack: **Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + Ver
 | Live auctions PRD (shipped) | `docs/AUCTIONS_PRD.md` |
 | Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
 | Testing & CI | `docs/TESTING.md` |
+| Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
 | DB schema | `supabase/migrations/*.sql` (apply in order) |
@@ -105,6 +106,8 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
   open as draft; merge only when the user says so.
 - Before pushing, run: `npm run typecheck && npm run lint && npm run test &&
   npm run build`, and `npm run test:e2e` for UI changes (build first).
+- After UI or integration features, walk the relevant checklist in
+  `docs/MANUAL_TESTING.md`.
 - Env vars are documented in `docs/DEPLOYMENT.md` (full reference + checklist).
 - Hand-maintained `src/lib/database.types.ts` mirrors the migrations — update it
   alongside any schema change (or regenerate via `npm run db:types`).

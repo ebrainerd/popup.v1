@@ -7,6 +7,7 @@
  */
 
 export type ShopVisibility = "public" | "private";
+export type StreamProvider = "none" | "native" | "youtube" | "twitch";
 export type ShopStatusColumn = "draft" | "scheduled" | "open" | "ended" | "canceled";
 export type ProductSaleType = "buy_now" | "auction";
 export type AuctionRunStatus =
@@ -82,6 +83,11 @@ export interface Database {
           is_live: boolean;
           live_url: string | null;
           twitch_url: string | null;
+          stream_provider: StreamProvider;
+          stream_room_id: string | null;
+          native_live_started_at: string | null;
+          native_live_ended_at: string | null;
+          native_live_tos_accepted_at: string | null;
           status: ShopStatusColumn;
           peak_viewers: number;
           featured_at: string | null;
@@ -104,6 +110,11 @@ export interface Database {
           is_live?: boolean;
           live_url?: string | null;
           twitch_url?: string | null;
+          stream_provider?: StreamProvider;
+          stream_room_id?: string | null;
+          native_live_started_at?: string | null;
+          native_live_ended_at?: string | null;
+          native_live_tos_accepted_at?: string | null;
           status?: ShopStatusColumn;
           peak_viewers?: number;
           featured_at?: string | null;
@@ -445,6 +456,26 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["drop_reminder_deliveries"]["Insert"]>;
         Relationships: [];
       };
+      live_reminders: {
+        Row: {
+          id: string;
+          shop_id: string;
+          user_id: string;
+          created_at: string;
+          notified_at: string | null;
+          cancelled_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          shop_id: string;
+          user_id: string;
+          created_at?: string;
+          notified_at?: string | null;
+          cancelled_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["live_reminders"]["Insert"]>;
+        Relationships: [];
+      };
       shop_announcements: {
         Row: {
           id: string;
@@ -512,6 +543,10 @@ export interface Database {
         Args: { target_shop: string };
         Returns: number;
       };
+      live_reminder_count: {
+        Args: { target_shop: string };
+        Returns: number;
+      };
       queue_auction_run: { Args: { p_product_id: string }; Returns: string };
       start_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
       place_auction_bid: {
@@ -553,6 +588,7 @@ export interface Database {
     Enums: {
       shop_visibility: ShopVisibility;
       shop_status: ShopStatusColumn;
+      stream_provider: StreamProvider;
       order_status: OrderStatus;
     };
     CompositeTypes: Record<string, never>;
@@ -567,6 +603,7 @@ export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type Rating = Database["public"]["Tables"]["ratings"]["Row"];
 export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
 export type DropReminder = Database["public"]["Tables"]["drop_reminders"]["Row"];
+export type LiveReminder = Database["public"]["Tables"]["live_reminders"]["Row"];
 export type ShopAnnouncement = Database["public"]["Tables"]["shop_announcements"]["Row"];
 export type AuctionRun = Database["public"]["Tables"]["auction_runs"]["Row"];
 export type AuctionBidEvent = Database["public"]["Tables"]["auction_bid_events"]["Row"];
