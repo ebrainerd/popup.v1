@@ -11,7 +11,7 @@ test("home renders invite-only seller positioning", async ({ page }) => {
   const res = await page.goto("/");
   expect(res?.status()).toBe(200);
   await expect(page.getByRole("heading", { name: /pop up\. sell out\./i })).toBeVisible();
-  await expect(page.getByRole("link", { name: /create your shop/i }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: /create shop/i }).first()).toBeVisible();
   await expect(page.getByText(/got a creator's popup link/i)).toBeVisible();
   await expect(page.getByRole("heading", { name: /how it works/i })).toBeVisible();
 });
