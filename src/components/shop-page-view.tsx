@@ -24,6 +24,8 @@ import { FlashControls } from "@/components/flash-controls";
 import { AuctionControls } from "@/components/auction-controls";
 import { AuctionLivePanel } from "@/components/auction-live-panel";
 import { DraftPreviewBanner } from "@/components/draft-preview-banner";
+import { OwnerShopLiveBar } from "@/components/owner-shop-live-bar";
+import { OwnerSellingTools } from "@/components/owner-selling-tools";
 import { cn } from "@/lib/utils";
 
 type Announcement = Awaited<
@@ -116,6 +118,20 @@ export function ShopPageView({
           liveReminderCount={liveReminderCount}
         />
 
+        {isOwner && isOpen && !isDraftPreview && (
+          <OwnerShopLiveBar
+            shopId={shop.id}
+            isLive={shop.is_live}
+            isOpen={isOpen}
+            isEnded={false}
+            streamProvider={streamProvider}
+            liveUrl={shop.live_url}
+            twitchUrl={shop.twitch_url}
+            nativeEnabled={nativeLiveEnabled}
+            needsTosAcceptance={!shop.native_live_tos_accepted_at}
+          />
+        )}
+
         <ShopHeader
           shop={shop}
           theme={theme}
@@ -166,10 +182,10 @@ export function ShopPageView({
         )}
 
         {isOwner && isOpen && (
-          <div className="mb-8 space-y-4">
+          <OwnerSellingTools>
             <AuctionControls shopId={shop.id} products={shop.products} runs={auctionRuns} />
             <FlashControls products={shop.products} />
-          </div>
+          </OwnerSellingTools>
         )}
 
         <AuctionLivePanel
@@ -238,7 +254,7 @@ function ShopHeader({
       <div className="space-y-2">
         <h1
           className={cn(
-            "font-extrabold tracking-tight",
+            "font-extrabold tracking-tight text-foreground",
             layout === "countdown" ? "text-2xl" : "text-3xl",
           )}
         >
@@ -279,7 +295,7 @@ function ShopHeader({
       <div className="flex flex-col items-start gap-3 sm:items-end">
         <div className="flex items-center gap-2">
           {isOpen && <ViewerCount />}
-          {layout !== "countdown" && (
+          {layout !== "countdown" && isOpen && (
             <Countdown startAt={shop.start_at} endAt={shop.end_at} draft={isDraftPreview} />
           )}
         </div>
@@ -346,7 +362,7 @@ function MainContent({
 }) {
   const productsSection = (
     <section>
-      <h2 className="mb-4 flex items-center gap-2 text-xl font-bold">
+      <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-foreground">
         <Package className="size-5" />
         {isScheduled ? "Product preview" : "Products"}
       </h2>

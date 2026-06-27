@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
+  contrastRatio,
   defaultShopTheme,
   parseShopTheme,
+  relativeLuminance,
   shopThemeRootClassName,
+  SHOP_PRESET_VISUAL,
   SHOP_THEME_PRESET_META,
+  validateShopThemeContrast,
 } from "@/lib/shop-theme";
 
 describe("shop theme", () => {
@@ -56,5 +60,28 @@ describe("shop theme", () => {
     expect(classes).toContain("shop-layout-broadcast");
     expect(classes).toContain("shop-grid-cols-3");
     expect(classes).toContain("shop-bg-none");
+  });
+
+  it("computes contrast ratio for readable pairs", () => {
+    const dark = SHOP_PRESET_VISUAL.default.foreground;
+    const light = SHOP_PRESET_VISUAL.gallery.foreground;
+    expect(contrastRatio(dark, SHOP_PRESET_VISUAL.default.pageBackground)).toBeGreaterThan(4.5);
+    expect(contrastRatio(light, SHOP_PRESET_VISUAL.gallery.pageBackground)).toBeGreaterThan(4.5);
+    expect(relativeLuminance("#ffffff")).toBeGreaterThan(relativeLuminance("#000000"));
+  });
+
+  it("detects unreadable light-on-light text pairs", () => {
+    expect(contrastRatio("#f5f5f7", "#fffbeb")).toBeLessThan(4.5);
+  });
+
+  it("passes contrast for market stall preset with plain background", () => {
+    const theme = {
+      ...defaultShopTheme(),
+      preset: "market_stall" as const,
+      accent: SHOP_THEME_PRESET_META.market_stall.defaultAccent,
+      background: "none" as const,
+    };
+    const warnings = validateShopThemeContrast(theme);
+    expect(warnings).toHaveLength(0);
   });
 });

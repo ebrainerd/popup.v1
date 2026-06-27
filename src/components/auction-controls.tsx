@@ -122,10 +122,10 @@ export function AuctionControls({
   if (auctionProducts.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-primary/40 bg-primary/5 p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2">
         <Gavel className="size-5 text-primary" />
-        <h3 className="font-semibold">Auction queue</h3>
+        <h3 className="font-semibold text-foreground">Auction queue</h3>
         <span className="text-xs text-muted-foreground">Start lots live in the room</span>
       </div>
 

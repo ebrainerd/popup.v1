@@ -54,14 +54,11 @@ export function StreamSlot({
   const showNativeLive = isLive && showNative;
   const showCover = !showNativeLive && !showExternalLive;
 
-  if (layout === "catalog" && !showNativeLive && !showExternalLive) {
-    return null;
-  }
-
   const countdownFocus = layout === "countdown" && isScheduled;
+  const catalogHero = layout === "catalog" && showCover;
 
   return (
-    <div className={cn("mb-6", layout === "broadcast" && "mb-4")}>
+    <div className={cn("mb-6", layout === "broadcast" && "mb-4", catalogHero && "mb-4")}>
       {showNativeLive && <NativeLivePlayer shopId={shop.id} initialIsLive={isLive} />}
 
       {showExternalLive && embed && <LiveEmbedPlayer embed={embed} />}
@@ -70,7 +67,7 @@ export function StreamSlot({
         <div
           className={cn(
             "relative w-full overflow-hidden bg-muted",
-            layout === "broadcast" || showNative ? "aspect-video rounded-xl" : "aspect-[16/6] rounded-2xl",
+            layout === "broadcast" || showNative || catalogHero ? "aspect-video rounded-xl" : "aspect-[16/6] rounded-2xl",
             countdownFocus && "aspect-[16/9] ring-2 ring-[var(--shop-accent)]/50",
           )}
         >

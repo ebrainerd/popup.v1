@@ -81,10 +81,10 @@ export function FlashControls({ products }: { products: Product[] }) {
   );
 
   return (
-    <div className="rounded-xl border border-accent/40 bg-accent/5 p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="mb-3 flex items-center gap-2">
-        <Zap className="size-5 text-accent" />
-        <h3 className="font-semibold">Flash drops</h3>
+        <Zap className="size-5 text-primary" />
+        <h3 className="font-semibold text-foreground">Flash drops</h3>
         <span className="text-xs text-muted-foreground">Broadcasts instantly to all viewers</span>
       </div>
 

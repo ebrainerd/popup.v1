@@ -49,6 +49,7 @@ export function NativeLivePublisher({
   needsTosAcceptance,
   canGoLive,
   isEnded,
+  embedded = false,
 }: {
   shopId: string;
   initialIsLive: boolean;
@@ -56,6 +57,8 @@ export function NativeLivePublisher({
   /** False when shop is not published/open yet. Preview still allowed. */
   canGoLive: boolean;
   isEnded: boolean;
+  /** Compact layout for the public shop page owner bar. */
+  embedded?: boolean;
 }) {
   const router = useRouter();
   const roomRef = useRef<Room | null>(null);
@@ -281,10 +284,20 @@ export function NativeLivePublisher({
   const timer = formatLiveTimer(liveSeconds);
   const showVideo =
     state === "preview" || state === "connecting" || state === "live";
+  const embeddedIdle = embedded && state === "idle";
 
   return (
-    <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-      <div className="relative aspect-video overflow-hidden rounded-lg bg-black">
+    <div
+      className={cn(
+        "space-y-3",
+        embedded ? "" : "rounded-lg border border-border bg-muted/30 p-4",
+      )}
+    >
+      {!embeddedIdle && (
+      <div className={cn(
+        "relative aspect-video overflow-hidden rounded-lg bg-black",
+        embedded && "max-h-[220px]",
+      )}>
         <video
           ref={videoRef}
           muted
@@ -321,6 +334,13 @@ export function NativeLivePublisher({
           </div>
         )}
       </div>
+      )}
+
+      {embeddedIdle && (
+        <p className="text-sm text-muted-foreground">
+          Not live yet — buyers still see your cover photo until you go live.
+        </p>
+      )}
 
       {state === "preview" && (
         <div className="space-y-3">
