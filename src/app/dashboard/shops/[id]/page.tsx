@@ -119,6 +119,28 @@ export default async function ManageShopPage({
         productCount={shop.products.length}
       />
 
+      <Card id="live-controls">
+        <CardHeader>
+          <CardTitle>Live controls</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Choose your stream source, test your camera, and go live when your shop is open.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <LiveControlsCard
+            shopId={shop.id}
+            isLive={shop.is_live}
+            isOpen={isOpen}
+            isEnded={isEnded}
+            streamProvider={streamProvider}
+            liveUrl={shop.live_url}
+            twitchUrl={shop.twitch_url}
+            needsTosAcceptance={!shop.native_live_tos_accepted_at}
+            nativeEnabled={nativeLiveEnabled}
+          />
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
           <div>
@@ -153,26 +175,6 @@ export default async function ManageShopPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>Live controls</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <LiveControlsCard
-            shopId={shop.id}
-            isLive={shop.is_live}
-            isOpen={isOpen}
-            isScheduled={status === "scheduled"}
-            isEnded={isEnded}
-            streamProvider={streamProvider}
-            liveUrl={shop.live_url}
-            twitchUrl={shop.twitch_url}
-            needsTosAcceptance={!shop.native_live_tos_accepted_at}
-            nativeEnabled={nativeLiveEnabled}
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
           <CardTitle>Orders</CardTitle>
         </CardHeader>
         <CardContent>
@@ -183,6 +185,13 @@ export default async function ManageShopPage({
       <Card>
         <CardHeader>
           <CardTitle>Shop details</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Name, schedule, and cover photo. Stream source and camera test are in{" "}
+            <a href="#live-controls" className="text-primary hover:underline">
+              Live controls
+            </a>{" "}
+            above.
+          </p>
         </CardHeader>
         <CardContent>
           <ShopForm shop={shop} />

@@ -24,7 +24,7 @@ Record pass/fail and any notes in your PR or handoff comment.
 | - | ---- | -------- |
 | 1 | Create or edit a shop in the setup wizard → **Live stream** step | **PopUp Live** is selected by default; YouTube/Twitch URL fields hidden |
 | 2 | Switch to **YouTube or Twitch**, then back to **PopUp Live** | URL fields hide again |
-| 3 | Finish setup and open **Manage shop** → **Live controls** | Camera test panel and go-live controls visible |
+| 3 | Finish setup and open **Manage shop** → **Live controls** (below publish, above products) | Stream source shows **PopUp Live (in-app)**; **Change live stream source** button; no URL field under Shop details |
 | 4 | Click **Test camera** (before shop opens or while open, not live) | Local preview appears; mic mute works; buyers still see cover photo on shop page |
 | 5 | Click **Stop test** | Preview stops; no `is_live` change |
 

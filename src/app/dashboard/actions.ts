@@ -135,7 +135,6 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
     end_at: formData.get("end_at"),
     visibility: formData.get("visibility") ?? "public",
     shipping_rate: formData.get("shipping_rate") ?? 0,
-    live_url: formData.get("live_url") ?? "",
   });
 
   if (!parsed.success) {
@@ -173,7 +172,6 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
       end_at: endIso,
       visibility,
       shipping_rate: toCents(d.shipping_rate),
-      live_url: d.live_url || null,
       status: nextStatus,
     })
     .eq("id", shopId)
@@ -371,6 +369,59 @@ export async function acceptNativeLiveTos(shopId: string): Promise<ActionState> 
     .eq("seller_id", user.id);
   if (error) return { error: error.message };
   revalidatePath(`/dashboard/shops/${shopId}`);
+  return { ...initialOk };
+}
+
+const updateStreamSourceSchema = z.object({
+  streamSource: z.enum(["native", "external"]),
+  youtubeUrl: z.string().url().optional().or(z.literal("")),
+  twitchUrl: z.string().url().optional().or(z.literal("")),
+});
+
+/** Change how a shop goes live (PopUp Live vs YouTube/Twitch). */
+export async function updateStreamSource(
+  shopId: string,
+  input: z.infer<typeof updateStreamSourceSchema>,
+): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const parsed = updateStreamSourceSchema.safeParse(input);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
+  }
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("is_live")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+  if (shop.is_live) return { error: "End your live stream before changing the stream source." };
+
+  const d = parsed.data;
+  if (d.streamSource === "external" && !d.youtubeUrl?.trim() && !d.twitchUrl?.trim()) {
+    return { error: "Add a YouTube or Twitch URL, or choose PopUp Live." };
+  }
+
+  const stream_provider = streamProviderFromWizard(
+    d.streamSource,
+    d.youtubeUrl ?? "",
+    d.twitchUrl ?? "",
+  );
+
+  const { error } = await supabase
+    .from("shops")
+    .update({
+      stream_provider,
+      live_url: d.streamSource === "external" ? d.youtubeUrl?.trim() || null : null,
+      twitch_url: d.streamSource === "external" ? d.twitchUrl?.trim() || null : null,
+    })
+    .eq("id", shopId)
+    .eq("seller_id", user.id);
+  if (error) return { error: error.message };
+
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
   return { ...initialOk };
 }
 

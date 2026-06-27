@@ -84,7 +84,6 @@ export function ShopForm({ shop }: { shop: Shop }) {
   const [visibility, setVisibility] = useState<"public" | "private">(
     inviteOnly ? "private" : shop.visibility,
   );
-  const [liveUrl, setLiveUrl] = useState(shop.live_url ?? "");
 
   const timeError =
     startLocal && endLocal && new Date(endLocal) <= new Date(startLocal)
@@ -119,8 +118,6 @@ export function ShopForm({ shop }: { shop: Shop }) {
         setStartLocal={setStartLocal}
         endLocal={endLocal}
         setEndLocal={setEndLocal}
-        liveUrl={liveUrl}
-        setLiveUrl={setLiveUrl}
         timeError={timeError}
         showVisibility={!inviteOnly}
         visibility={visibility}
@@ -201,6 +198,7 @@ export function CreateShopForm() {
         setEndLocal={(endLocal) => patch({ endLocal })}
         liveUrl={draft.liveUrl}
         setLiveUrl={(liveUrl) => patch({ liveUrl })}
+        showLiveUrl
         timeError={timeError}
         showVisibility={!inviteOnly}
         visibility={draft.visibility}
@@ -284,23 +282,25 @@ function ScheduleFields({
   setStartLocal,
   endLocal,
   setEndLocal,
-  liveUrl,
-  setLiveUrl,
   timeError,
   showVisibility,
   visibility,
   setVisibility,
+  liveUrl,
+  setLiveUrl,
+  showLiveUrl = false,
 }: {
   startLocal: string;
   setStartLocal: (v: string) => void;
   endLocal: string;
   setEndLocal: (v: string) => void;
-  liveUrl: string;
-  setLiveUrl: (v: string) => void;
   timeError: string | null;
   showVisibility: boolean;
   visibility: "public" | "private";
   setVisibility: (v: "public" | "private") => void;
+  liveUrl?: string;
+  setLiveUrl?: (v: string) => void;
+  showLiveUrl?: boolean;
 }) {
   return (
     <>
@@ -339,18 +339,20 @@ function ScheduleFields({
         <VisibilityPicker visibility={visibility} onChange={setVisibility} />
       )}
 
-      <div className="space-y-1.5">
-        <Label htmlFor="live_url">Live stream URL (optional)</Label>
-        <Input
-          id="live_url"
-          name="live_url"
-          type="url"
-          value={liveUrl}
-          onChange={(e) => setLiveUrl(e.target.value)}
-          placeholder="https://youtube.com/watch?v=…"
-        />
-        <p className="text-xs text-muted-foreground">YouTube or Twitch embeds; Instagram links out.</p>
-      </div>
+      {showLiveUrl && liveUrl !== undefined && setLiveUrl && (
+        <div className="space-y-1.5">
+          <Label htmlFor="live_url">Live stream URL (optional)</Label>
+          <Input
+            id="live_url"
+            name="live_url"
+            type="url"
+            value={liveUrl}
+            onChange={(e) => setLiveUrl(e.target.value)}
+            placeholder="https://youtube.com/watch?v=…"
+          />
+          <p className="text-xs text-muted-foreground">YouTube or Twitch embeds; Instagram links out.</p>
+        </div>
+      )}
     </>
   );
 }
