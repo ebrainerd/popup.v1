@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Palette } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
 import { getSellerOrders } from "@/lib/orders";
@@ -115,6 +115,22 @@ export default async function ManageShopPage({
         isDraft={isDraft}
         productCount={shop.products.length}
       />
+
+      <Card>
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-3 space-y-0">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="size-5" /> Shop appearance
+            </CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Theme, layout, and what buyers see on your drop page.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/dashboard/shops/${shop.id}/customize`}>Customize appearance</Link>
+          </Button>
+        </CardHeader>
+      </Card>
 
       <Card id="products">
         <CardHeader>

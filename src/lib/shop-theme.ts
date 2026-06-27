@@ -3,7 +3,6 @@ export const SHOP_THEME_PRESETS = [
   "gallery",
   "dark_room",
   "market_stall",
-  "broadcast",
 ] as const;
 
 export type ShopThemePreset = (typeof SHOP_THEME_PRESETS)[number];
@@ -37,6 +36,7 @@ export type ShopTheme = {
 export type ShopThemePresetMeta = {
   id: ShopThemePreset;
   label: string;
+  tagline: string;
   description: string;
   defaultAccent: string;
   swatch: string;
@@ -45,44 +45,65 @@ export type ShopThemePresetMeta = {
 export type ShopLayoutModeMeta = {
   id: ShopLayoutMode;
   label: string;
+  tagline: string;
   description: string;
+};
+
+export type ShopBackgroundMeta = {
+  id: ShopBackgroundStyle;
+  label: string;
+  description: string;
+};
+
+export type ShopPresetVisual = {
+  pageBackground: string;
+  cardBackground: string;
+  foreground: string;
+  mutedForeground: string;
+  border: string;
+  fontFamily: string;
+  headingTransform: string;
+  headingLetterSpacing: string;
+  radius: string;
+  heroTreatment: "gradient" | "flat" | "frame";
 };
 
 export const SHOP_THEME_PRESET_META: Record<ShopThemePreset, ShopThemePresetMeta> = {
   default: {
     id: "default",
-    label: "PopUp Default",
-    description: "Electric coral and teal — the signature PopUp drop energy.",
+    label: "Neon PopUp",
+    tagline: "Electric & bold",
+    description:
+      "The signature PopUp look — dark canvas, neon accent glow, and punchy sans-serif type. Best for hype drops and live energy.",
     defaultAccent: "#ff3b8b",
-    swatch: "linear-gradient(135deg, #ff3b8b 0%, #00e6c8 100%)",
+    swatch: "linear-gradient(135deg, #0f0f14 0%, #ff3b8b 50%, #00e6c8 100%)",
   },
   gallery: {
     id: "gallery",
     label: "Gallery",
-    description: "Clean white space and refined typography for art and collectibles.",
-    defaultAccent: "#c4a882",
-    swatch: "linear-gradient(135deg, #f5f0ea 0%, #c4a882 100%)",
+    tagline: "Calm & curated",
+    description:
+      "Bright, editorial layout with serif headings and generous whitespace. Ideal for art, prints, and collectible drops.",
+    defaultAccent: "#b8956b",
+    swatch: "linear-gradient(135deg, #faf8f5 0%, #e8dfd3 50%, #b8956b 100%)",
   },
   dark_room: {
     id: "dark_room",
     label: "Dark Room",
-    description: "Near-black backdrop with high-contrast accents for night drops.",
+    tagline: "Late-night drop",
+    description:
+      "Near-black surfaces with a vivid accent and tight corners. Built for streetwear, music, and after-hours releases.",
     defaultAccent: "#7c5cff",
-    swatch: "linear-gradient(135deg, #0a0a0f 0%, #7c5cff 100%)",
+    swatch: "linear-gradient(135deg, #050508 0%, #1a1030 50%, #7c5cff 100%)",
   },
   market_stall: {
     id: "market_stall",
     label: "Market Stall",
-    description: "Warm earthy tones for vintage, handmade, and market finds.",
-    defaultAccent: "#d97706",
-    swatch: "linear-gradient(135deg, #fef3c7 0%, #d97706 100%)",
-  },
-  broadcast: {
-    id: "broadcast",
-    label: "Broadcast",
-    description: "Stream-first styling with bold accents for live-heavy sellers.",
-    defaultAccent: "#ef4444",
-    swatch: "linear-gradient(135deg, #1a1a2e 0%, #ef4444 100%)",
+    tagline: "Warm & handmade",
+    description:
+      "Cream paper tones, rounded cards, and earthy accents. Perfect for vintage finds, ceramics, and maker goods.",
+    defaultAccent: "#c2410c",
+    swatch: "linear-gradient(135deg, #fffbeb 0%, #fde68a 40%, #c2410c 100%)",
   },
 };
 
@@ -90,26 +111,106 @@ export const SHOP_LAYOUT_MODE_META: Record<ShopLayoutMode, ShopLayoutModeMeta> =
   classic: {
     id: "classic",
     label: "Classic",
-    description: "Cover hero, shop info, product grid with chat alongside.",
+    tagline: "Balanced storefront",
+    description:
+      "Banner at the top, shop details, then products with chat in a side panel. The default PopUp room layout.",
   },
   broadcast: {
     id: "broadcast",
-    label: "Broadcast",
-    description: "Live stream dominates; products in a compact rail below.",
+    label: "Stream first",
+    tagline: "Live-forward",
+    description:
+      "Your live video (or banner) fills the top. Products stack below and chat spans the full width — built for watch-and-buy.",
   },
   countdown: {
     id: "countdown",
-    label: "Countdown",
-    description: "Waiting-room optimized with a big timer and minimal preview.",
+    label: "Waiting room",
+    tagline: "Hype the opener",
+    description:
+      "Oversized countdown on the hero, reminder button up front, and a lighter product preview until doors open.",
   },
   catalog: {
     id: "catalog",
     label: "Catalog",
-    description: "Products are the hero; stream is secondary when live.",
+    tagline: "Products first",
+    description:
+      "Your product grid leads the page. Live stream and chat sit underneath as supporting panels.",
+  },
+};
+
+export const SHOP_BACKGROUND_META: Record<ShopBackgroundStyle, ShopBackgroundMeta> = {
+  gradient: {
+    id: "gradient",
+    label: "Accent glow",
+    description: "A soft radial wash of your accent color behind the shop.",
+  },
+  solid: {
+    id: "solid",
+    label: "Tinted",
+    description: "A subtle flat tint of your accent across the page background.",
+  },
+  none: {
+    id: "none",
+    label: "Plain",
+    description: "No extra page coloring — just your theme surfaces and cards.",
+  },
+};
+
+export const SHOP_PRESET_VISUAL: Record<ShopThemePreset, ShopPresetVisual> = {
+  default: {
+    pageBackground: "#0f0f14",
+    cardBackground: "#1a1a22",
+    foreground: "#f5f5f7",
+    mutedForeground: "#a1a1aa",
+    border: "#2a2a36",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    headingTransform: "none",
+    headingLetterSpacing: "-0.02em",
+    radius: "1rem",
+    heroTreatment: "gradient",
+  },
+  gallery: {
+    pageBackground: "#faf8f5",
+    cardBackground: "#ffffff",
+    foreground: "#1c1917",
+    mutedForeground: "#78716c",
+    border: "#e7e5e4",
+    fontFamily: "Georgia, 'Times New Roman', serif",
+    headingTransform: "none",
+    headingLetterSpacing: "-0.03em",
+    radius: "0.35rem",
+    heroTreatment: "frame",
+  },
+  dark_room: {
+    pageBackground: "#050508",
+    cardBackground: "#101018",
+    foreground: "#ededf2",
+    mutedForeground: "#8b8b9a",
+    border: "#252532",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    headingTransform: "uppercase",
+    headingLetterSpacing: "0.06em",
+    radius: "0.5rem",
+    heroTreatment: "flat",
+  },
+  market_stall: {
+    pageBackground: "#fffbeb",
+    cardBackground: "#fffdf7",
+    foreground: "#451a03",
+    mutedForeground: "#92400e",
+    border: "#fcd34d",
+    fontFamily: "var(--font-geist-sans), system-ui, sans-serif",
+    headingTransform: "none",
+    headingLetterSpacing: "0",
+    radius: "1.25rem",
+    heroTreatment: "frame",
   },
 };
 
 const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+const LEGACY_PRESETS: Record<string, ShopThemePreset> = {
+  broadcast: "default",
+};
 
 export function defaultShopTheme(): ShopTheme {
   return {
@@ -136,12 +237,20 @@ function isBackground(value: unknown): value is ShopBackgroundStyle {
   return typeof value === "string" && SHOP_BACKGROUND_STYLES.includes(value as ShopBackgroundStyle);
 }
 
+function normalizePreset(value: unknown): ShopThemePreset {
+  if (typeof value === "string" && value in LEGACY_PRESETS) {
+    return LEGACY_PRESETS[value]!;
+  }
+  if (isPreset(value)) return value;
+  return defaultShopTheme().preset;
+}
+
 export function parseShopTheme(raw: unknown): ShopTheme {
   const defaults = defaultShopTheme();
   if (!raw || typeof raw !== "object") return defaults;
 
   const data = raw as Record<string, unknown>;
-  const preset = isPreset(data.preset) ? data.preset : defaults.preset;
+  const preset = normalizePreset(data.preset);
   const presetMeta = SHOP_THEME_PRESET_META[preset];
 
   const accent =
@@ -166,12 +275,18 @@ export function shopThemeToJson(theme: ShopTheme): ShopTheme {
 }
 
 export function shopThemeCssVars(theme: ShopTheme): Record<string, string> {
-  const preset = SHOP_THEME_PRESET_META[theme.preset];
+  const visual = SHOP_PRESET_VISUAL[theme.preset];
   return {
     "--shop-accent": theme.accent,
-    "--shop-preset-accent": preset.defaultAccent,
-    "--shop-radius":
-      theme.preset === "gallery" ? "0.5rem" : theme.preset === "market_stall" ? "1rem" : "1.25rem",
+    "--shop-page-bg": visual.pageBackground,
+    "--shop-card-bg": visual.cardBackground,
+    "--shop-fg": visual.foreground,
+    "--shop-muted": visual.mutedForeground,
+    "--shop-border": visual.border,
+    "--shop-font": visual.fontFamily,
+    "--shop-radius": visual.radius,
+    "--shop-heading-transform": visual.headingTransform,
+    "--shop-heading-spacing": visual.headingLetterSpacing,
   };
 }
 
@@ -185,7 +300,20 @@ export function shopThemeRootClassName(theme: ShopTheme): string {
   ].join(" ");
 }
 
-export function accentForPreset(preset: ShopThemePreset, currentAccent?: string): string {
-  if (currentAccent && HEX_COLOR.test(currentAccent)) return currentAccent;
+export function presetAccent(preset: ShopThemePreset): string {
   return SHOP_THEME_PRESET_META[preset].defaultAccent;
+}
+
+/** @deprecated use presetAccent */
+export function accentForPreset(preset: ShopThemePreset): string {
+  return presetAccent(preset);
+}
+
+export function previewPageBackground(theme: ShopTheme): string {
+  const visual = SHOP_PRESET_VISUAL[theme.preset];
+  if (theme.background === "none") return visual.pageBackground;
+  if (theme.background === "solid") {
+    return `color-mix(in srgb, ${theme.accent} 10%, ${visual.pageBackground})`;
+  }
+  return `radial-gradient(ellipse 90% 55% at 50% -5%, color-mix(in srgb, ${theme.accent} 28%, transparent), ${visual.pageBackground})`;
 }

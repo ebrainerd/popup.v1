@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { MessageCircle, Package, User } from "lucide-react";
+import { MessageCircle, Monitor, Package, Radio, User } from "lucide-react";
 import {
   SHOP_LAYOUT_MODE_META,
   SHOP_THEME_PRESET_META,
-  shopThemeRootClassName,
+  previewPageBackground,
   shopThemeCssVars,
+  shopThemeRootClassName,
+  SHOP_PRESET_VISUAL,
   type ShopTheme,
 } from "@/lib/shop-theme";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -22,115 +24,330 @@ export function ShopThemePreview({
   shopName,
   coverUrl,
   products,
-  mobile = false,
+  viewport = "desktop",
 }: {
   theme: ShopTheme;
   shopName: string;
   coverUrl?: string;
   products: PreviewProduct[];
-  mobile?: boolean;
+  viewport?: "desktop" | "mobile";
 }) {
   const preset = SHOP_THEME_PRESET_META[theme.preset];
   const layout = SHOP_LAYOUT_MODE_META[theme.layout];
+  const visual = SHOP_PRESET_VISUAL[theme.preset];
+  const isMobile = viewport === "mobile";
   const previewProducts = products.filter((p) => p.title.trim()).slice(0, theme.productGridColumns);
-  const style = shopThemeCssVars(theme) as React.CSSProperties;
+  const displayProducts =
+    previewProducts.length > 0 ? previewProducts : [{ title: "Sample item", price: "24.00" }];
+
+  const cssVars = {
+    ...shopThemeCssVars(theme),
+    background: previewPageBackground(theme),
+    color: visual.foreground,
+    fontFamily: visual.fontFamily,
+  } as React.CSSProperties;
 
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-xl border border-border shadow-sm",
-        mobile ? "mx-auto w-[220px]" : "w-full",
+        "mx-auto flex flex-col overflow-hidden rounded-2xl border shadow-xl",
+        isMobile ? "w-[300px]" : "w-full max-w-3xl",
         shopThemeRootClassName(theme),
       )}
-      style={style}
+      style={{
+        ...cssVars,
+        borderColor: visual.border,
+      }}
     >
-      <div className="border-b border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        Preview · {preset.label} · {layout.label}
+      {/* Browser / device chrome */}
+      <div
+        className="flex items-center gap-2 border-b px-3 py-2 text-[10px]"
+        style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
+      >
+        <div className="flex gap-1">
+          <span className="size-2 rounded-full bg-red-400/80" />
+          <span className="size-2 rounded-full bg-amber-400/80" />
+          <span className="size-2 rounded-full bg-emerald-400/80" />
+        </div>
+        <span className="ml-1 truncate font-medium">
+          {isMobile ? "popup.app · mobile" : "popup.app/shop/preview"}
+        </span>
+        <span className="ml-auto rounded-full px-2 py-0.5 text-[9px]" style={{ background: `${theme.accent}22`, color: theme.accent }}>
+          {preset.label}
+        </span>
       </div>
 
-      <div className="space-y-2 p-3">
-        {theme.layout !== "catalog" && (
+      <div className="flex-1 space-y-3 p-3 sm:p-4" style={{ background: previewPageBackground(theme) }}>
+        <LayoutPreview
+          theme={theme}
+          layout={layout.id}
+          shopName={shopName}
+          coverUrl={coverUrl}
+          products={displayProducts}
+          isMobile={isMobile}
+          visual={visual}
+        />
+      </div>
+    </div>
+  );
+}
+
+function LayoutPreview({
+  theme,
+  layout,
+  shopName,
+  coverUrl,
+  products,
+  isMobile,
+  visual,
+}: {
+  theme: ShopTheme;
+  layout: ShopTheme["layout"];
+  shopName: string;
+  coverUrl?: string;
+  products: PreviewProduct[];
+  isMobile: boolean;
+  visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
+}) {
+  const hero = (
+    <HeroBlock
+      theme={theme}
+      coverUrl={coverUrl}
+      visual={visual}
+      layout={layout}
+      large={layout === "broadcast" || layout === "countdown"}
+    />
+  );
+
+  const title = (
+    <div className="space-y-0.5">
+      <p
+        className={cn("font-bold leading-tight", isMobile ? "text-sm" : "text-lg")}
+        style={{
+          textTransform: visual.headingTransform as React.CSSProperties["textTransform"],
+          letterSpacing: visual.headingLetterSpacing,
+        }}
+      >
+        {shopName.trim() || "Your shop name"}
+      </p>
+      {theme.showSellerBio && (
+        <p className="flex items-center gap-1 text-[10px]" style={{ color: visual.mutedForeground }}>
+          <User className="size-3" /> @yourhandle
+        </p>
+      )}
+    </div>
+  );
+
+  const productGrid = (
+    <ProductGrid products={products} theme={theme} visual={visual} isMobile={isMobile} compact={layout === "broadcast"} />
+  );
+
+  const chat = theme.showChat && layout !== "countdown" && (
+    <ChatStub visual={visual} isMobile={isMobile} />
+  );
+
+  const reminder =
+    theme.showReminderCta && layout === "countdown" ? (
+      <button
+        type="button"
+        className="w-full rounded-lg py-2 text-center text-[10px] font-semibold"
+        style={{ background: theme.accent, color: "#fff" }}
+      >
+        Remind me when it opens
+      </button>
+    ) : null;
+
+  if (layout === "broadcast") {
+    return (
+      <div className="space-y-3">
+        {hero}
+        {title}
+        {productGrid}
+        {chat}
+      </div>
+    );
+  }
+
+  if (layout === "countdown") {
+    return (
+      <div className="space-y-3">
+        {hero}
+        {reminder}
+        {title}
+        <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: visual.mutedForeground }}>
+          Sneak peek
+        </p>
+        {productGrid}
+        {chat}
+      </div>
+    );
+  }
+
+  if (layout === "catalog") {
+    return (
+      <div className="space-y-3">
+        {title}
+        {productGrid}
+        <div className={cn("grid gap-2", !isMobile && "grid-cols-2")}>
           <div
-            className={cn(
-              "relative overflow-hidden rounded-lg bg-muted",
-              theme.layout === "broadcast" ? "aspect-video" : "aspect-[16/7]",
-              theme.layout === "countdown" && "ring-2 ring-[var(--shop-accent)]/40",
-            )}
+            className="flex aspect-video items-center justify-center rounded-lg border text-[10px]"
+            style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
           >
-            {coverUrl ? (
-              <Image src={coverUrl} alt="" fill className="object-cover" unoptimized />
-            ) : (
-              <div className="h-full w-full bg-gradient-to-br from-[var(--shop-accent)]/25 to-muted" />
-            )}
-            {theme.layout === "countdown" && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-center text-[10px] font-semibold text-white">
-                Opens in 2h 14m
-              </div>
-            )}
+            <Radio className="mr-1 size-3" /> Live stream
+          </div>
+          {chat}
+        </div>
+      </div>
+    );
+  }
+
+  // classic
+  return (
+    <div className="space-y-3">
+      {hero}
+      {title}
+      <div className={cn("grid gap-3", !isMobile && "grid-cols-[1fr_120px]")}>
+        {productGrid}
+        {chat}
+      </div>
+    </div>
+  );
+}
+
+function HeroBlock({
+  theme,
+  coverUrl,
+  visual,
+  layout,
+  large,
+}: {
+  theme: ShopTheme;
+  coverUrl?: string;
+  visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
+  layout: ShopTheme["layout"];
+  large: boolean;
+}) {
+  if (layout === "catalog") return null;
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden",
+        large ? "aspect-video rounded-xl" : "aspect-[2/1] rounded-lg",
+        visual.heroTreatment === "frame" && "border-2 p-0.5",
+      )}
+      style={{
+        borderColor: visual.heroTreatment === "frame" ? theme.accent : undefined,
+        borderRadius: visual.radius,
+      }}
+    >
+      <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: visual.radius }}>
+        {coverUrl ? (
+          <Image src={coverUrl} alt="" fill className="object-cover" unoptimized />
+        ) : (
+          <div
+            className="h-full w-full"
+            style={{
+              background:
+                visual.heroTreatment === "gradient"
+                  ? `linear-gradient(135deg, ${theme.accent}55, ${visual.cardBackground})`
+                  : visual.heroTreatment === "flat"
+                    ? visual.cardBackground
+                    : `linear-gradient(180deg, ${theme.accent}33, ${visual.cardBackground})`,
+            }}
+          />
+        )}
+        {layout === "countdown" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 text-white">
+            <p className="text-[9px] font-medium uppercase tracking-[0.2em] opacity-90">Opens in</p>
+            <p className="mt-1 text-2xl font-extrabold tabular-nums">02:14:08</p>
           </div>
         )}
+        {layout === "broadcast" && (
+          <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold text-white" style={{ background: theme.accent }}>
+            <Monitor className="size-3" /> LIVE
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
-        <div className="space-y-1">
-          <p className="truncate text-sm font-bold">{shopName.trim() || "Your shop name"}</p>
-          {theme.showSellerBio && (
-            <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <User className="size-2.5" /> @seller
-            </p>
-          )}
-        </div>
+function ProductGrid({
+  products,
+  theme,
+  visual,
+  isMobile,
+  compact,
+}: {
+  products: PreviewProduct[];
+  theme: ShopTheme;
+  visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
+  isMobile: boolean;
+  compact?: boolean;
+}) {
+  const cols = isMobile ? 2 : theme.productGridColumns;
 
+  return (
+    <div
+      className={cn("grid gap-2", cols === 3 ? "grid-cols-3" : "grid-cols-2", compact && "grid-cols-3")}
+    >
+      {products.map((product, i) => (
         <div
-          className={cn(
-            "grid gap-1.5",
-            theme.productGridColumns === 3 ? "grid-cols-3" : "grid-cols-2",
-            theme.layout === "catalog" && "order-first",
-          )}
+          key={`${product.title}-${i}`}
+          className="overflow-hidden border"
+          style={{
+            background: visual.cardBackground,
+            borderColor: visual.border,
+            borderRadius: visual.radius,
+          }}
         >
-          {(previewProducts.length > 0
-            ? previewProducts
-            : [{ title: "Product", price: "12.00" }]
-          ).map((product, i) => (
-            <div
-              key={`${product.title}-${i}`}
-              className="overflow-hidden rounded-md border border-border/70 bg-card/80"
-            >
-              <div className="aspect-square bg-muted">
-                {product.photoUrl ? (
-                  <Image
-                    src={product.photoUrl}
-                    alt=""
-                    width={80}
-                    height={80}
-                    className="h-full w-full object-cover"
-                    unoptimized
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center">
-                    <Package className="size-3 text-muted-foreground/50" />
-                  </div>
-                )}
+          <div className="aspect-square" style={{ background: `${theme.accent}12` }}>
+            {product.photoUrl ? (
+              <Image
+                src={product.photoUrl}
+                alt=""
+                width={120}
+                height={120}
+                className="h-full w-full object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <Package className="size-4" style={{ color: visual.mutedForeground }} />
               </div>
-              <div className="space-y-0.5 p-1.5">
-                <p className="truncate text-[9px] font-medium">{product.title}</p>
-                <p className="text-[9px] font-semibold text-[var(--shop-accent)]">
-                  {formatCurrency(Math.round(parseFloat(product.price || "0") * 100))}
-                </p>
-              </div>
-            </div>
-          ))}
+            )}
+          </div>
+          <div className="space-y-0.5 p-1.5">
+            <p className="truncate text-[9px] font-medium">{product.title}</p>
+            <p className="text-[9px] font-bold" style={{ color: theme.accent }}>
+              {formatCurrency(Math.round(parseFloat(product.price || "0") * 100))}
+            </p>
+          </div>
         </div>
+      ))}
+    </div>
+  );
+}
 
-        {theme.showChat && theme.layout !== "countdown" && (
-          <div className="flex items-center gap-1.5 rounded-md border border-dashed border-border/80 bg-muted/20 px-2 py-1.5 text-[9px] text-muted-foreground">
-            <MessageCircle className="size-3" /> Chat room
-          </div>
-        )}
-
-        {theme.showReminderCta && theme.layout === "countdown" && (
-          <div className="rounded-md bg-[var(--shop-accent)]/15 px-2 py-1.5 text-center text-[9px] font-medium text-[var(--shop-accent)]">
-            Remind me when it opens
-          </div>
-        )}
+function ChatStub({
+  visual,
+  isMobile,
+}: {
+  visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
+  isMobile: boolean;
+}) {
+  return (
+    <div
+      className={cn("flex flex-col rounded-lg border p-2", isMobile ? "min-h-[60px]" : "min-h-[100px]")}
+      style={{ borderColor: visual.border, background: visual.cardBackground, borderRadius: visual.radius }}
+    >
+      <p className="mb-1 flex items-center gap-1 text-[9px] font-medium" style={{ color: visual.mutedForeground }}>
+        <MessageCircle className="size-3" /> Shop chat
+      </p>
+      <div className="space-y-1">
+        <div className="h-1.5 w-3/4 rounded-full" style={{ background: `${visual.mutedForeground}33` }} />
+        <div className="h-1.5 w-1/2 rounded-full" style={{ background: `${visual.mutedForeground}22` }} />
       </div>
     </div>
   );

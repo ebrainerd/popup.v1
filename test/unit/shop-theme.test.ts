@@ -38,6 +38,11 @@ describe("shop theme", () => {
     expect(theme.accent).toBe(SHOP_THEME_PRESET_META.dark_room.defaultAccent);
   });
 
+  it("migrates legacy broadcast preset to default", () => {
+    const theme = parseShopTheme({ preset: "broadcast", layout: "classic" });
+    expect(theme.preset).toBe("default");
+  });
+
   it("builds root class names for preset, layout, and grid", () => {
     const classes = shopThemeRootClassName({
       ...defaultShopTheme(),
