@@ -51,6 +51,34 @@ export function deriveShopStatus(
   return "open";
 }
 
+export type PublishedShopWindow = {
+  /** Time-based phase from start_at / end_at (ignores draft). */
+  schedule: ShopStatus;
+  isDraft: boolean;
+  isPublished: boolean;
+  /** Published and within the open window — buyers can shop. */
+  isOpen: boolean;
+  isScheduled: boolean;
+  isEnded: boolean;
+};
+
+/** Combine DB status (draft vs published) with the schedule window. */
+export function derivePublishedShopWindow(
+  shop: { status: string; start_at: string; end_at: string },
+  now: Date = new Date(),
+): PublishedShopWindow {
+  const schedule = deriveShopStatus(shop.start_at, shop.end_at, now);
+  const isDraft = shop.status === "draft";
+  return {
+    schedule,
+    isDraft,
+    isPublished: !isDraft,
+    isOpen: !isDraft && schedule === "open",
+    isScheduled: !isDraft && schedule === "scheduled",
+    isEnded: !isDraft && schedule === "ended",
+  };
+}
+
 /**
  * Compute schedule timestamps when a seller ends a shop early.
  * Preserves orders/history; only closes the purchase window.

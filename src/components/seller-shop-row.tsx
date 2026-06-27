@@ -30,7 +30,7 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
           {shop.visibility === "private" && <Badge variant="muted">Private</Badge>}
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <Countdown startAt={shop.start_at} endAt={shop.end_at} compact />
+          <Countdown startAt={shop.start_at} endAt={shop.end_at} compact draft={isDraft} />
         </div>
       </div>
 

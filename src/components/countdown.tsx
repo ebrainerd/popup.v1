@@ -60,11 +60,14 @@ export function Countdown({
   endAt,
   className,
   compact = false,
+  draft = false,
 }: {
   startAt: string;
   endAt: string;
   className?: string;
   compact?: boolean;
+  /** When true, labels reflect a draft that will not open until published. */
+  draft?: boolean;
 }) {
   const now = useNow();
 
@@ -95,7 +98,9 @@ export function Countdown({
 
   if (phase === "ended") {
     return (
-      <span className={cn("font-semibold text-muted-foreground", className)}>Ended</span>
+      <span className={cn("font-semibold text-muted-foreground", className)}>
+        {draft ? "Planned window ended" : "Ended"}
+      </span>
     );
   }
 
@@ -103,11 +108,17 @@ export function Countdown({
   const remaining = target - now;
   const urgent = phase === "open" && remaining < 5 * 60 * 1000;
   const low = phase === "open" && remaining < 15 * 60 * 1000;
-  const label = phase === "scheduled" ? "Opens in" : "Closes in";
+  const label = draft
+    ? phase === "scheduled"
+      ? "Planned opens in"
+      : "Publish before"
+    : phase === "scheduled"
+      ? "Opens in"
+      : "Closes in";
 
-  // Open shops shift from teal (plenty of time) → coral (running low).
+  // Draft shops never auto-open; during the planned window show close urgency only.
   const colorClass =
-    phase !== "open"
+    draft || phase !== "open"
       ? "text-muted-foreground"
       : low
         ? "text-live"

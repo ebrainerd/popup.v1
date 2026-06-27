@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, toCents, deriveShopStatus } from "@/lib/utils";
+import { formatCurrency, toCents, deriveShopStatus, derivePublishedShopWindow } from "@/lib/utils";
 
 describe("formatCurrency", () => {
   it("formats integer cents as USD", () => {
@@ -52,5 +52,27 @@ describe("deriveShopStatus", () => {
     expect(
       deriveShopStatus(start.toISOString(), end.toISOString(), new Date("2026-06-20T13:00:00Z")),
     ).toBe("open");
+  });
+});
+
+describe("derivePublishedShopWindow", () => {
+  const start = "2026-06-20T12:00:00Z";
+  const end = "2026-06-20T14:00:00Z";
+  const during = new Date("2026-06-20T13:00:00Z");
+
+  it("keeps drafts closed even inside the scheduled window", () => {
+    const w = derivePublishedShopWindow({ status: "draft", start_at: start, end_at: end }, during);
+    expect(w.schedule).toBe("open");
+    expect(w.isDraft).toBe(true);
+    expect(w.isOpen).toBe(false);
+  });
+
+  it("opens published shops during the window", () => {
+    const w = derivePublishedShopWindow(
+      { status: "scheduled", start_at: start, end_at: end },
+      during,
+    );
+    expect(w.isOpen).toBe(true);
+    expect(w.isDraft).toBe(false);
   });
 });
