@@ -304,11 +304,31 @@ export async function endShop(shopId: string): Promise<ActionState> {
   return { ...initialOk };
 }
 
-export async function deleteShop(shopId: string): Promise<void> {
+/** Permanently delete a draft shop and its products. Published shops cannot be deleted here. */
+export async function deleteDraftShop(shopId: string): Promise<ActionState> {
   const { supabase, user } = await requireUser();
-  await supabase.from("shops").delete().eq("id", shopId).eq("seller_id", user.id);
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id, status")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+  if (shop.status !== "draft") return { error: "Only draft shops can be deleted." };
+
+  const { error } = await supabase
+    .from("shops")
+    .delete()
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .eq("status", "draft");
+  if (error) return { error: error.message };
+
   revalidatePath("/dashboard");
-  redirect("/dashboard");
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/dashboard/shops/${shopId}/setup`);
+  return { ...initialOk };
 }
 
 // Stripe's minimum chargeable amount is $0.50 USD — items below that can't be

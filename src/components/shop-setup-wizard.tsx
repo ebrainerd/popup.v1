@@ -27,6 +27,7 @@ import { ImageUpload } from "@/components/image-upload";
 import { VisibilityPicker } from "@/components/visibility-picker";
 import { WizardProductManager } from "@/components/wizard-product-manager";
 import { WizardExitDialog } from "@/components/wizard-exit-dialog";
+import { DeleteDraftButton } from "@/components/delete-draft-button";
 import { cn } from "@/lib/utils";
 
 function nowLocal(): string {
@@ -168,14 +169,23 @@ export function ShopSetupWizard({
             Save a draft anytime to pick up later from your dashboard.
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleSaveDraft(false)}
-          disabled={pending || !canSaveDraft}
-        >
-          {pending ? "Saving…" : "Save as draft"}
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          {shopId && (
+            <DeleteDraftButton
+              shopId={shopId}
+              shopName={draft.name.trim() || undefined}
+              variant="outline"
+            />
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => handleSaveDraft(false)}
+            disabled={pending || !canSaveDraft}
+          >
+            {pending ? "Saving…" : "Save as draft"}
+          </Button>
+        </div>
       </div>
 
       {saveMessage && (
