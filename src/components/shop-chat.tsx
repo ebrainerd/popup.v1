@@ -23,11 +23,13 @@ export function ShopChat({
   isOpen,
   startAt,
   endAt,
+  className,
 }: {
   initialMessages: ChatBroadcast[];
   isOpen: boolean;
   startAt: string;
   endAt: string;
+  className?: string;
 }) {
   const shopOpen = useShopOpen(startAt, endAt, isOpen);
   const { shopId, currentUser, isOwner, broadcast } = useShopRoom();
@@ -106,7 +108,12 @@ export function ShopChat({
   }
 
   return (
-    <div className="flex h-[28rem] flex-col rounded-xl border border-border bg-card lg:h-[32rem]">
+    <div
+      className={cn(
+        "flex flex-col rounded-xl border border-border bg-card",
+        className ?? "h-[28rem] lg:h-[32rem]",
+      )}
+    >
       <div className="flex items-center gap-2 border-b border-border px-4 py-2.5">
         <MessageCircle className="size-4 text-primary" />
         <span className="text-sm font-semibold">The Room</span>

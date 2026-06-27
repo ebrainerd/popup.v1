@@ -28,6 +28,7 @@ export function StreamSlot({
   profileId,
   hasLiveReminder,
   liveReminderCount,
+  className,
 }: {
   shop: Shop;
   layout: ShopTheme["layout"];
@@ -41,6 +42,7 @@ export function StreamSlot({
   profileId?: string;
   hasLiveReminder: boolean;
   liveReminderCount: number;
+  className?: string;
 }) {
   const [isLive, setIsLive] = useState(initialIsLive);
 
@@ -56,9 +58,10 @@ export function StreamSlot({
 
   const countdownFocus = layout === "countdown" && isScheduled;
   const catalogHero = layout === "catalog" && showCover;
+  const wideHero = layout === "broadcast" || showNative || catalogHero;
 
   return (
-    <div className={cn("mb-6", layout === "broadcast" && "mb-4", catalogHero && "mb-4")}>
+    <div className={cn("min-w-0", className)}>
       {showNativeLive && <NativeLivePlayer shopId={shop.id} initialIsLive={isLive} />}
 
       {showExternalLive && embed && <LiveEmbedPlayer embed={embed} />}
@@ -67,7 +70,7 @@ export function StreamSlot({
         <div
           className={cn(
             "relative w-full overflow-hidden bg-muted",
-            layout === "broadcast" || showNative || catalogHero ? "aspect-video rounded-xl" : "aspect-[16/6] rounded-2xl",
+            wideHero ? "aspect-video rounded-xl" : "aspect-[16/6] rounded-2xl",
             countdownFocus && "aspect-[16/9] ring-2 ring-[var(--shop-accent)]/50",
           )}
         >
