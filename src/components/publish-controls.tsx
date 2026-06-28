@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, EyeOff, ExternalLink, Rocket } from "lucide-react";
-import { publishShop } from "@/app/dashboard/actions";
+import { Eye, EyeOff, ExternalLink, Rocket, Clock } from "lucide-react";
+import { publishShop, extendShop } from "@/app/dashboard/actions";
 import { CloseShopButton } from "@/components/close-shop-dialog";
 import { isInviteOnlyMode } from "@/lib/discovery";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 export function PublishControls({
   shopId,
   isDraft,
+  isOpen,
   isEnded,
   productCount,
   startAt,
@@ -19,6 +20,7 @@ export function PublishControls({
 }: {
   shopId: string;
   isDraft: boolean;
+  isOpen: boolean;
   isEnded: boolean;
   productCount: number;
   startAt: string;
@@ -34,6 +36,15 @@ export function PublishControls({
     setError(null);
     startTransition(async () => {
       const res = await publishShop(shopId);
+      if (res.error) setError(res.error);
+      else router.refresh();
+    });
+  }
+
+  function onExtend(minutes: number) {
+    setError(null);
+    startTransition(async () => {
+      const res = await extendShop(shopId, minutes);
       if (res.error) setError(res.error);
       else router.refresh();
     });
@@ -75,28 +86,52 @@ export function PublishControls({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-success/10 p-4">
-      <span className="flex items-center gap-2 text-sm font-medium text-success">
-        <Eye className="size-4" />
-        {isEnded
-          ? "Shop closed"
-          : inviteOnly
-            ? "Published — share your shop link from the checklist"
-            : "Published & findable"}
-      </span>
-      <div className="flex flex-wrap items-center gap-2">
-        {!isEnded && (
-          <Button asChild size="sm">
-            <Link href={`/shop/${shopId}`}>
-              <ExternalLink className="size-4" />
-              Go to shop
-            </Link>
-          </Button>
-        )}
-        {!isEnded && (
-          <CloseShopButton shopId={shopId} startAt={startAt} endAt={endAt} />
-        )}
+    <div className="rounded-xl border border-success/30 bg-success/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="flex items-center gap-2 text-sm font-medium text-success">
+          <Eye className="size-4" />
+          {isEnded
+            ? "Shop closed"
+            : inviteOnly
+              ? "Published — share your shop link from the checklist"
+              : "Published & findable"}
+        </span>
+        <div className="flex flex-wrap items-center gap-2">
+          {!isEnded && (
+            <Button asChild size="sm">
+              <Link href={`/shop/${shopId}`}>
+                <ExternalLink className="size-4" />
+                Go to shop
+              </Link>
+            </Button>
+          )}
+          {isOpen && !isEnded && (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Add more time</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onExtend(15)}
+                disabled={pending}
+              >
+                <Clock className="size-4" /> +15m
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onExtend(60)}
+                disabled={pending}
+              >
+                +1h
+              </Button>
+            </div>
+          )}
+          {!isEnded && (
+            <CloseShopButton shopId={shopId} startAt={startAt} endAt={endAt} />
+          )}
+        </div>
       </div>
+      {error && <p className="mt-2 text-sm text-live">{error}</p>}
     </div>
   );
 }

@@ -8,8 +8,6 @@ import { StreamSourceSettings } from "@/components/stream-source-settings";
 
 export function LiveControlsCard({
   shopId,
-  startAt,
-  endAt,
   isLive,
   isOpen,
   isEnded,
@@ -20,8 +18,6 @@ export function LiveControlsCard({
   nativeEnabled,
 }: {
   shopId: string;
-  startAt: string;
-  endAt: string;
   isLive: boolean;
   isOpen: boolean;
   isEnded: boolean;
@@ -59,7 +55,7 @@ export function LiveControlsCard({
         </p>
       )}
 
-      {isNative && (
+      {isNative ? (
         <NativeLivePublisher
           shopId={shopId}
           initialIsLive={isLive}
@@ -67,19 +63,15 @@ export function LiveControlsCard({
           canGoLive={isOpen}
           isEnded={isEnded}
         />
+      ) : (
+        <ShopQuickActions
+          shopId={shopId}
+          isLive={isLive}
+          isOpen={isOpen}
+          isEnded={isEnded}
+          hasLiveUrl={Boolean(liveUrl || twitchUrl)}
+        />
       )}
-
-      <ShopQuickActions
-        shopId={shopId}
-        startAt={startAt}
-        endAt={endAt}
-        isLive={isLive}
-        isOpen={isOpen}
-        isEnded={isEnded}
-        canGoLive={!isNative}
-        hasLiveUrl={Boolean(liveUrl || twitchUrl)}
-        nativePublisherActive={isNative}
-      />
     </div>
   );
 }
