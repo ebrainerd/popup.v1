@@ -204,7 +204,7 @@ function ChatLine({
   canMute: boolean;
   onMute: () => void;
 }) {
-  const name = data.user.display_name || data.user.username;
+  const name = data.user.username;
   return (
     <div className="group flex items-start gap-2">
       {data.user.avatar_url ? (

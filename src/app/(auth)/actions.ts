@@ -5,8 +5,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/env";
+import { validateUsername } from "@/lib/username";
+import { isUsernameAvailable } from "@/lib/profile";
 
-export type AuthState = { error: string | null };
+export type AuthState = {
+  error: string | null;
+  ok?: boolean;
+  needsEmailConfirm?: boolean;
+};
 
 const credentialsSchema = z.object({
   email: z.string().email("Enter a valid email address."),
@@ -15,9 +21,26 @@ const credentialsSchema = z.object({
 
 function safeRedirectPath(input: FormDataEntryValue | null): string {
   const value = typeof input === "string" ? input : "";
-  // Only allow internal absolute paths to prevent open redirects.
   if (value.startsWith("/") && !value.startsWith("//")) return value;
   return "/dashboard";
+}
+
+function captchaTokenFromForm(formData: FormData): string | undefined {
+  const token =
+    (formData.get("captchaToken") as string) ||
+    (formData.get("cf-turnstile-response") as string) ||
+    "";
+  return token.trim() || undefined;
+}
+
+function captchaErrorMessage(error: { message: string }, fallback: string): string {
+  if (
+    error.message.toLowerCase().includes("captcha") &&
+    !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+  ) {
+    return fallback;
+  }
+  return error.message;
 }
 
 export async function signInWithPassword(
@@ -33,17 +56,18 @@ export async function signInWithPassword(
   }
 
   const supabase = await createClient();
-  const captchaToken = (formData.get("cf-turnstile-response") as string) || undefined;
+  const captchaToken = captchaTokenFromForm(formData);
   const { error } = await supabase.auth.signInWithPassword({
     ...parsed.data,
     options: { captchaToken },
   });
   if (error) {
-    const message =
-      error.message.toLowerCase().includes("captcha") && !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-        ? "Log in is temporarily unavailable. Try Continue with Google, or contact support if this persists."
-        : error.message;
-    return { error: message };
+    return {
+      error: captchaErrorMessage(
+        error,
+        "Log in is temporarily unavailable. Try Continue with Google, or contact support if this persists.",
+      ),
+    };
   }
 
   revalidatePath("/", "layout");
@@ -62,28 +86,56 @@ export async function signUpWithPassword(
     return { error: parsed.error.issues[0]?.message ?? "Invalid input." };
   }
 
-  const captchaToken = (formData.get("cf-turnstile-response") as string) || undefined;
+  const confirmPassword = String(formData.get("confirmPassword") ?? "");
+  if (parsed.data.password !== confirmPassword) {
+    return { error: "Passwords do not match." };
+  }
+
+  const usernameInput = String(formData.get("username") ?? "");
+  const usernameResult = validateUsername(usernameInput);
+  if (!usernameResult.ok) {
+    return { error: usernameResult.error };
+  }
+
+  const available = await isUsernameAvailable(usernameResult.username);
+  if (!available) {
+    return { error: "That username is already taken." };
+  }
+
+  const captchaToken = captchaTokenFromForm(formData);
+  if (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && !captchaToken) {
+    return { error: "Complete the captcha verification before continuing." };
+  }
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback`, captchaToken },
+    options: {
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      captchaToken,
+      data: { username: usernameResult.username },
+    },
   });
   if (error) {
-    const message =
-      error.message.toLowerCase().includes("captcha") && !process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
-        ? "Sign-up is temporarily unavailable. Try Continue with Google, or contact support if this persists."
-        : error.message;
-    return { error: message };
+    const message = error.message.toLowerCase();
+    if (message.includes("username_taken") || message.includes("duplicate")) {
+      return { error: "That username is already taken." };
+    }
+    return {
+      error: captchaErrorMessage(
+        error,
+        "Sign-up is temporarily unavailable. Try Continue with Google, or contact support if this persists.",
+      ),
+    };
   }
 
-  // When email confirmation is required, there is no active session yet.
   if (!data.session) {
-    redirect("/login?checkEmail=1");
+    return { error: null, needsEmailConfirm: true };
   }
 
   revalidatePath("/", "layout");
-  redirect(safeRedirectPath(formData.get("redirectTo")));
+  return { error: null, ok: true };
 }
 
 export async function signInWithGoogle(formData: FormData) {

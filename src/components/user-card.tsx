@@ -4,7 +4,7 @@ import { Star } from "lucide-react";
 import type { ProfileLite } from "@/lib/users";
 
 export function UserCard({ profile }: { profile: ProfileLite }) {
-  const name = profile.display_name || profile.username;
+  const name = profile.username;
   return (
     <Link
       href={`/u/${profile.username}`}

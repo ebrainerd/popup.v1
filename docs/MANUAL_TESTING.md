@@ -79,7 +79,19 @@ Record pass/fail and any notes in your PR or handoff comment.
 
 ---
 
-## Template for new features
+## Auth & profile signup
+
+**Requires:** migration `0021_profile_setup_username.sql`; Turnstile env + Supabase captcha. See `docs/AUTH_PROFILE_ROADMAP.md`.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| 1 | `/signup` — username, email, password, confirm, Turnstile visible | Widget renders; account created |
+| 2 | Mismatched passwords | Error before submit |
+| 3 | Reserved username (`admin`) | Rejected |
+| 4 | Google signup (new user) | `/onboarding` → pick username → dashboard |
+| 5 | Chat / profile / orders | Shows `@username` only |
+
+---
 
 Copy this block when adding the next checklist:
 

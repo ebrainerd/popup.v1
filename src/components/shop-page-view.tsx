@@ -282,7 +282,7 @@ function ShopHeader({
               />
             ) : (
               <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                {(seller.display_name || seller.username).charAt(0).toUpperCase()}
+                {seller.username.charAt(0).toUpperCase()}
               </span>
             )}
             <span>@{seller.username}</span>

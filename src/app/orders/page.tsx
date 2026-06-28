@@ -103,7 +103,7 @@ export default async function OrdersPage({
 
 function OrderCard({ order }: { order: BuyerOrder }) {
   const seller = order.shop?.seller;
-  const sellerName = seller?.display_name || seller?.username || "Seller";
+  const sellerName = seller?.username ? `@${seller.username}` : "Seller";
   const trackingUrl = carrierTrackingUrl(order.carrier, order.tracking_number);
   const canConfirm = order.status === "shipped" || order.status === "in_transit";
   const canRate =

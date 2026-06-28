@@ -68,7 +68,7 @@ export function ShopCard({ shop }: { shop: ShopWithSeller }) {
               />
             ) : (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-bold">
-                {(seller?.display_name || seller?.username || "?").charAt(0).toUpperCase()}
+                {(seller?.username ?? "?").charAt(0).toUpperCase()}
               </span>
             )}
             <span className="line-clamp-1">@{seller?.username ?? "seller"}</span>

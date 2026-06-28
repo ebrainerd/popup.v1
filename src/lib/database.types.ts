@@ -51,6 +51,7 @@ export interface Database {
           rating_count: number;
           follower_count: number;
           seller_terms_accepted_at: string | null;
+          profile_setup_complete: boolean;
           created_at: string;
         };
         Insert: {
@@ -65,6 +66,7 @@ export interface Database {
           rating_count?: number;
           follower_count?: number;
           seller_terms_accepted_at?: string | null;
+          profile_setup_complete?: boolean;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;

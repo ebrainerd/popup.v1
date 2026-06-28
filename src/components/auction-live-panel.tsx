@@ -193,7 +193,7 @@ export function AuctionLivePanel({
       const data = res.data as Record<string, unknown>;
       const winnerName =
         currentUser && data.current_winner_id === currentUser.id
-          ? currentUser.display_name || currentUser.username
+          ? currentUser.username
           : state?.winnerName ?? null;
       const payload: AuctionBidBroadcast = {
         auctionId: run.id,
