@@ -16,7 +16,15 @@ Record pass/fail and any notes in your PR or handoff comment.
 
 ## Native live streaming (PopUp Live)
 
-**Requires:** migrations `0018_native_live_stream.sql` and `0019_live_reminders.sql` applied; LiveKit env vars set (`LIVEKIT_*`, `NEXT_PUBLIC_LIVEKIT_URL`, `NATIVE_LIVE_ENABLED=true`). See `docs/NATIVE_LIVE_STREAMING.md`.
+**Requires:** migrations `0018_native_live_stream.sql`, `0019_live_reminders.sql`, and `0020_seller_terms_accepted.sql` applied; LiveKit env vars set (`LIVEKIT_*`, `NEXT_PUBLIC_LIVEKIT_URL`, `NATIVE_LIVE_ENABLED=true`). See `docs/NATIVE_LIVE_STREAMING.md`.
+
+### Seller — terms before shop setup
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| 0 | First visit to **Create shop** (`/dashboard/shops/new`) without prior acceptance | Full-screen Terms dialog; **Acknowledge** disabled until scrolled to bottom |
+| 0b | Scroll to end → **Acknowledge** | Dialog closes; wizard loads; acceptance stored on profile |
+| 0c | Return to **Create shop** later | Wizard opens directly (no second prompt) |
 
 ### Seller — setup & camera test
 

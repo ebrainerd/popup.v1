@@ -68,8 +68,39 @@ async function requireUser() {
   return { supabase, user };
 }
 
+async function requireSellerTermsAccepted(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ActionState | null> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("seller_terms_accepted_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!data?.seller_terms_accepted_at) {
+    return { error: "You must accept the Terms of Service before creating a shop." };
+  }
+  return null;
+}
+
+/** Persist seller acceptance of the Terms of Service (required before opening a shop). */
+export async function acceptSellerTerms(): Promise<ActionState> {
+  const { supabase, user } = await requireUser();
+  const { error } = await supabase
+    .from("profiles")
+    .update({ seller_terms_accepted_at: new Date().toISOString() })
+    .eq("id", user.id);
+  if (error) return { error: error.message };
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/shops/new");
+  return { ...initialOk };
+}
+
 export async function createShop(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase, user } = await requireUser();
+
+  const termsError = await requireSellerTermsAccepted(supabase, user.id);
+  if (termsError) return termsError;
 
   const parsed = shopSchema.safeParse({
     name: formData.get("name"),
@@ -718,6 +749,9 @@ export async function finishShopSetup(
   input: z.infer<typeof finishShopSetupSchema>,
 ): Promise<ActionState> {
   const { supabase, user } = await requireUser();
+  const termsError = await requireSellerTermsAccepted(supabase, user.id);
+  if (termsError) return termsError;
+
   const parsed = finishShopSetupSchema.safeParse(input);
   if (!parsed.success) {
     return {
@@ -933,6 +967,9 @@ export async function saveShopDraft(
   input: z.infer<typeof saveShopDraftSchema>,
 ): Promise<ActionState & { shopId?: string }> {
   const { supabase, user } = await requireUser();
+  const termsError = await requireSellerTermsAccepted(supabase, user.id);
+  if (termsError) return termsError;
+
   const parsed = saveShopDraftSchema.safeParse(input);
   if (!parsed.success) {
     return {
