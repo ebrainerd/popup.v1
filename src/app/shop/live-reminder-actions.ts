@@ -20,6 +20,7 @@ export async function toggleLiveReminder(shopId: string): Promise<LiveReminderRe
     .eq("shop_id", shopId)
     .eq("user_id", user.id)
     .is("cancelled_at", null)
+    .is("notified_at", null)
     .maybeSingle();
 
   if (existing) {
@@ -37,7 +38,22 @@ export async function toggleLiveReminder(shopId: string): Promise<LiveReminderRe
     user_id: user.id,
   });
   if (error) {
-    if (error.code === "23505") return { subscribed: true };
+    // Legacy row may still block the unique index (notified but not cancelled).
+    if (error.code === "23505") {
+      const { error: reactivateError } = await supabase
+        .from("live_reminders")
+        .update({
+          cancelled_at: null,
+          notified_at: null,
+          created_at: new Date().toISOString(),
+        })
+        .eq("shop_id", shopId)
+        .eq("user_id", user.id)
+        .is("cancelled_at", null);
+      if (reactivateError) return { subscribed: false, error: reactivateError.message };
+      revalidatePath(`/shop/${shopId}`);
+      return { subscribed: true };
+    }
     return { subscribed: false, error: error.message };
   }
 

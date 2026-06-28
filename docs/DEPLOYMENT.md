@@ -140,6 +140,30 @@ and the route rejects unauthorized calls. To run it elsewhere,
 > release-funds frequency (e.g. hourly `0 * * * *`) for faster payouts — with a
 > 72h hold, a daily run releases funds within ~72–96h, which is fine for MVP.
 
+### External scheduler for drop opening reminders (Vercel Hobby)
+
+PopUp has two reminder systems:
+
+| Feature | How it fires | Cron needed? |
+| ------- | ------------ | ------------ |
+| **Notify me when live** (`live_reminders`) | Instantly when the seller goes live | No |
+| **Remind me** before shop opens (`drop_reminders`) | 24h / 1h / at opening windows | Yes — every **15 minutes** |
+
+On Hobby, wire drop reminders with [cron-job.org](https://cron-job.org) (free tier is fine):
+
+1. Create an account and **Create cronjob**
+2. **Title:** PopUp drop reminders
+3. **URL:**
+   ```
+   https://www.popupdrop.co/api/cron/send-drop-reminders?secret=YOUR_CRON_SECRET
+   ```
+   Replace `YOUR_CRON_SECRET` with the same value as `CRON_SECRET` in Vercel.
+4. **Schedule:** every 15 minutes (`*/15 * * * *` or the UI equivalent)
+5. **Request method:** GET
+6. Save and enable the job
+
+Verify: after the first run, cron-job.org should show HTTP **200** and a body like `{"sent":0}` (or a positive count when reminders are due). Check **Resend → Logs** when a shop has an upcoming `start_at`.
+
 ## 4. Error monitoring (Sentry)
 
 Set `SENTRY_DSN` (server) and `NEXT_PUBLIC_SENTRY_DSN` (browser) plus
