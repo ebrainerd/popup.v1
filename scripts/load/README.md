@@ -19,6 +19,28 @@ echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.i
 sudo apt-get update && sudo apt-get install k6
 ```
 
+## Quick start (shop URL only)
+
+Install k6 once (`brew install k6`), then from the repo root:
+
+```bash
+npm run load:shop-smoke -- https://www.popupdrop.co/shop/<your-shop-uuid>
+```
+
+Or run the script directly:
+
+```bash
+./scripts/load/run-shop-smoke.sh https://www.popupdrop.co/shop/<your-shop-uuid>
+```
+
+Heavier run:
+
+```bash
+VUS=100 DURATION=3m npm run load:shop-smoke -- https://www.popupdrop.co/shop/<uuid>
+```
+
+The script parses the shop URL into `BASE_URL` + `SHOP_ID` and runs `shop-smoke.js`.
+
 ## shop-smoke.js
 
 Ramps virtual users against `/api/health`, `/`, and optionally `/shop/[id]`.
