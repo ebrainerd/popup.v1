@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from "react";
 declare global {
   interface Window {
     turnstile?: {
-      ready: (callback: () => void) => void;
       render: (container: HTMLElement, options: Record<string, unknown>) => string;
       reset: (widgetId?: string) => void;
       remove: (widgetId: string) => void;
@@ -18,33 +17,40 @@ const TURNSTILE_SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api
 
 type TurnstileProps = {
   onTokenChange: (token: string | null) => void;
-  /** Bump to force a fresh widget (e.g. after a failed submit). */
   resetKey?: number;
 };
 
 type LoadState = "loading" | "ready" | "error";
 
+function apiReady(): boolean {
+  return typeof window.turnstile?.render === "function";
+}
+
+function waitForTurnstileApi(timeoutMs = 15_000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const started = Date.now();
+    const tick = () => {
+      if (apiReady()) {
+        resolve();
+        return;
+      }
+      if (Date.now() - started > timeoutMs) {
+        reject(new Error("Turnstile API timeout"));
+        return;
+      }
+      window.setTimeout(tick, 50);
+    };
+    tick();
+  });
+}
+
 function loadTurnstileScript(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
-  if (window.turnstile) return Promise.resolve();
 
   const existing = document.getElementById(TURNSTILE_SCRIPT_ID) as HTMLScriptElement | null;
   if (existing) {
-    return new Promise((resolve, reject) => {
-      const started = Date.now();
-      const tick = () => {
-        if (window.turnstile) {
-          resolve();
-          return;
-        }
-        if (Date.now() - started > 15_000) {
-          reject(new Error("Turnstile script timeout"));
-          return;
-        }
-        window.setTimeout(tick, 50);
-      };
-      tick();
-    });
+    if (apiReady()) return Promise.resolve();
+    return waitForTurnstileApi();
   }
 
   return new Promise((resolve, reject) => {
@@ -54,39 +60,36 @@ function loadTurnstileScript(): Promise<void> {
     script.async = true;
     script.defer = true;
     script.onload = () => {
-      const started = Date.now();
-      const tick = () => {
-        if (window.turnstile) {
-          resolve();
-          return;
-        }
-        if (Date.now() - started > 15_000) {
-          reject(new Error("Turnstile API timeout"));
-          return;
-        }
-        window.setTimeout(tick, 50);
-      };
-      tick();
+      waitForTurnstileApi()
+        .then(resolve)
+        .catch(reject);
     };
     script.onerror = () => reject(new Error("Turnstile script blocked"));
     document.head.appendChild(script);
   });
 }
 
+function removeTurnstileScript() {
+  document.getElementById(TURNSTILE_SCRIPT_ID)?.remove();
+  delete window.turnstile;
+}
+
 /**
- * Cloudflare Turnstile (explicit render). Uses a direct script tag + turnstile.ready()
- * because next/script onLoad can fire before window.turnstile exists in production.
+ * Cloudflare Turnstile (explicit render). Never call turnstile.ready() before the
+ * api.js script has fully loaded — that breaks the widget (Cloudflare console warning).
  */
 export function Turnstile({ onTokenChange, resetKey = 0 }: TurnstileProps) {
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenChangeRef = useRef(onTokenChange);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
+  const [retryCount, setRetryCount] = useState(0);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+
   useEffect(() => {
     onTokenChangeRef.current = onTokenChange;
   }, [onTokenChange]);
-  const [loadState, setLoadState] = useState<LoadState>("loading");
-  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
@@ -99,37 +102,30 @@ export function Turnstile({ onTokenChange, resetKey = 0 }: TurnstileProps) {
 
       try {
         await loadTurnstileScript();
-        if (cancelled || !containerRef.current || !window.turnstile) return;
+        if (cancelled || !containerRef.current || !apiReady()) return;
 
-        const render = () => {
-          if (!containerRef.current || !window.turnstile) return;
-
-          if (widgetIdRef.current) {
-            window.turnstile.remove(widgetIdRef.current);
-            widgetIdRef.current = null;
-          }
-
-          widgetIdRef.current = window.turnstile.render(containerRef.current, {
-            sitekey: siteKey,
-            theme: "auto",
-            size: "normal",
-            callback: (token: string) => {
-              onTokenChangeRef.current(token);
-              setLoadState("ready");
-            },
-            "expired-callback": () => onTokenChangeRef.current(null),
-            "error-callback": () => {
-              onTokenChangeRef.current(null);
-              if (!cancelled) setLoadState("error");
-            },
-          });
-        };
-
-        if (window.turnstile.ready) {
-          window.turnstile.ready(render);
-        } else {
-          render();
+        if (widgetIdRef.current && window.turnstile) {
+          window.turnstile.remove(widgetIdRef.current);
+          widgetIdRef.current = null;
         }
+
+        widgetIdRef.current = window.turnstile!.render(containerRef.current, {
+          sitekey: siteKey,
+          theme: "auto",
+          size: "normal",
+          callback: (token: string) => {
+            onTokenChangeRef.current(token);
+            if (!cancelled) setLoadState("ready");
+          },
+          "expired-callback": () => onTokenChangeRef.current(null),
+          "error-callback": (code?: string) => {
+            onTokenChangeRef.current(null);
+            if (!cancelled) {
+              setErrorCode(code ?? null);
+              setLoadState("error");
+            }
+          },
+        });
       } catch {
         if (!cancelled) setLoadState("error");
       }
@@ -160,11 +156,26 @@ export function Turnstile({ onTokenChange, resetKey = 0 }: TurnstileProps) {
       )}
       {loadState === "error" && (
         <div className="space-y-2 text-center text-xs text-live">
-          <p>Verification could not load. Try disabling ad blockers, or use Continue with Google.</p>
+          {errorCode === "110200" ? (
+            <p>
+              This domain is not authorized for Turnstile yet. In the{" "}
+              <strong>Cloudflare dashboard → Turnstile → your widget → Hostname Management</strong>,
+              add both <strong>popupdrop.co</strong> and <strong>www.popupdrop.co</strong>, save,
+              then click Retry below.
+            </p>
+          ) : (
+            <p>
+              Verification could not load{errorCode ? ` (error ${errorCode})` : ""}. Disable ad
+              blockers, confirm Turnstile hostnames include this site, or use Continue with Google.
+            </p>
+          )}
           <button
             type="button"
             className="font-medium text-primary underline"
-            onClick={() => setRetryCount((n) => n + 1)}
+            onClick={() => {
+              removeTurnstileScript();
+              setRetryCount((n) => n + 1);
+            }}
           >
             Retry verification
           </button>

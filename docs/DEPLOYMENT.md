@@ -206,6 +206,10 @@ These take the app from "deployed" to "ready for real users and real money."
       **CAPTCHA** (hCaptcha/Turnstile) on signup to deter bots.
 - [ ] **Google OAuth:** publish the consent screen to **Production** (External), and
       add the production `…/auth/callback` redirect.
+- [ ] **Turnstile hostnames:** Cloudflare dashboard → Turnstile → your widget →
+      **Hostname Management** → add **`popupdrop.co`** and **`www.popupdrop.co`**
+      (both — adding only `www` does **not** cover the apex). Error **110200** means
+      the current domain is missing from this list.
 
 ### Secrets / config
 - [ ] Set **`CRON_SECRET`** in Vercel (required — cron routes fail closed without it).
