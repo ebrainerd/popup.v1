@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -19,10 +19,10 @@ import { USERNAME_PERMANENCE_NOTICE } from "@/lib/username";
 
 const initialState: AuthState = { error: null };
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" size="lg" disabled={pending}>
+    <Button type="submit" className="w-full" size="lg" disabled={pending || disabled}>
       {pending ? "Please wait…" : "Create account"}
     </Button>
   );
@@ -32,28 +32,14 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
   const router = useRouter();
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
-  const [avatarStep, setAvatarStep] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [state, formAction] = useActionState(signUpWithPassword, initialState);
 
-  async function signupAction(prev: AuthState, formData: FormData): Promise<AuthState> {
-    const next = await signUpWithPassword(prev, formData);
-    if (next.error) {
-      setCaptchaToken(null);
-      setTurnstileResetKey((k) => k + 1);
-      return next;
+  useEffect(() => {
+    if (state.needsEmailConfirm) {
+      router.replace("/login?checkEmail=1");
     }
-    if (next.needsEmailConfirm) {
-      router.push("/login?checkEmail=1");
-      return next;
-    }
-    if (next.ok) {
-      setAvatarStep(true);
-    }
-    return next;
-  }
-
-  const [state, formAction] = useActionState(signupAction, initialState);
+  }, [state.needsEmailConfirm, router]);
 
   async function finishSignup() {
     if (avatarUrl) {
@@ -63,7 +49,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
     router.refresh();
   }
 
-  if (avatarStep) {
+  if (state.ok) {
     return (
       <div className="space-y-4">
         <div className="text-center">
@@ -165,7 +151,10 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
           />
         </div>
 
-        <Turnstile onTokenChange={setCaptchaToken} resetKey={turnstileResetKey} />
+        <Turnstile
+          onTokenChange={(token) => setCaptchaToken(token)}
+          resetKey={state.error ? state.error.length : 0}
+        />
 
         {state.error && (
           <p className="flex items-center gap-2 rounded-md bg-live/10 px-3 py-2 text-sm text-live">
@@ -173,7 +162,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
           </p>
         )}
 
-        <SubmitButton />
+        <SubmitButton disabled={submitDisabled} />
         {submitDisabled && (
           <p className="text-center text-xs text-muted-foreground">Complete captcha to continue.</p>
         )}
