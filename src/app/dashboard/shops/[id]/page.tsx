@@ -11,7 +11,6 @@ import { getDropReport } from "@/lib/drop-analytics";
 import { SellerOrdersTable } from "@/components/seller-orders-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Countdown } from "@/components/countdown";
 import { ShopForm } from "@/components/shop-form";
 import { ProductManager } from "@/components/product-manager";
@@ -138,6 +137,7 @@ export default async function ManageShopPage({
       <PublishControls
         shopId={shop.id}
         isDraft={isDraft}
+        isOpen={window.isOpen}
         isEnded={window.isEnded}
         productCount={shop.products.length}
         startAt={shop.start_at}
@@ -187,14 +187,12 @@ export default async function ManageShopPage({
         <CollapsibleSection
           id="live-controls"
           title="Live controls"
-          description="Stream source, camera test, and go live when your shop is open."
+          description="Stream source, camera, and go live when your shop is open."
           defaultOpen={!liveDone && nativeLiveEnabled}
           complete={liveDone}
         >
           <LiveControlsCard
             shopId={shop.id}
-            startAt={shop.start_at}
-            endAt={shop.end_at}
             isLive={shop.is_live}
             isOpen={window.isOpen}
             isEnded={liveControlsEnded}
@@ -209,14 +207,17 @@ export default async function ManageShopPage({
 
       {report && <DropReportCard report={report} shopId={shop.id} />}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <SellerOrdersTable orders={orders} />
-        </CardContent>
-      </Card>
+      <CollapsibleSection
+        title="Orders"
+        description={
+          orders.length === 0
+            ? "No orders yet."
+            : `${orders.length} order${orders.length === 1 ? "" : "s"}.`
+        }
+        defaultOpen={false}
+      >
+        <SellerOrdersTable orders={orders} />
+      </CollapsibleSection>
     </div>
   );
 }
