@@ -72,6 +72,15 @@ All three milestones are in. Post-MVP candidates: scheduled "opening soon"
 notifications (cron), live-embed hot-swap, carrier tracking APIs, auctions,
 international shipping/tax, and native apps.
 
+## 🔜 Native live streaming (planned)
+
+Video today is **YouTube/Twitch embed only**; sellers must paste a URL before
+"go live" works. Full implementation plan (LiveKit Cloud, hybrid fallback,
+phased roadmap, UX flows): **`docs/NATIVE_LIVE_STREAMING.md`**.
+
+Known gap to fix in Phase 1.5: live embed does not hot-swap for connected
+viewers when the seller toggles live (see Milestone 2 notes above).
+
 ## Open items / decisions (from design doc §11)
 
 - **In Transit confirmation:** MVP uses seller-marked shipped + 72h time-based
