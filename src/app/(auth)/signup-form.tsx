@@ -1,31 +1,26 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
-import { useFormStatus } from "react-dom";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  signUpWithPassword,
-  signInWithGoogle,
-  type AuthState,
-} from "@/app/(auth)/actions";
+import { signInWithGoogle } from "@/app/(auth)/actions";
 import { updateProfileAvatar } from "@/app/onboarding/actions";
 import { Turnstile } from "@/components/turnstile";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { USERNAME_PERMANENCE_NOTICE } from "@/lib/username";
+import { createClient } from "@/lib/supabase/client";
+import { USERNAME_PERMANENCE_NOTICE, validateUsername } from "@/lib/username";
 
-const initialState: AuthState = { error: null };
-
-function SubmitButton({ disabled }: { disabled?: boolean }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" className="w-full" size="lg" disabled={pending || disabled}>
-      {pending ? "Please wait…" : "Create account"}
-    </Button>
-  );
+function siteUrlForAuth(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (fromEnv) {
+    const withScheme = /^https?:\/\//i.test(fromEnv) ? fromEnv : `https://${fromEnv}`;
+    return withScheme.replace(/\/$/, "");
+  }
+  if (typeof window !== "undefined") return window.location.origin;
+  return "http://localhost:3000";
 }
 
 export function SignupForm({ redirectTo }: { redirectTo?: string }) {
@@ -33,13 +28,92 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [state, formAction] = useActionState(signUpWithPassword, initialState);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [showAvatarStep, setShowAvatarStep] = useState(false);
 
-  useEffect(() => {
-    if (state.needsEmailConfirm) {
-      router.replace("/login?checkEmail=1");
+  async function handleEmailSignup(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    const usernameInput = String(formData.get("username") ?? "");
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
     }
-  }, [state.needsEmailConfirm, router]);
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    const usernameResult = validateUsername(usernameInput);
+    if (!usernameResult.ok) {
+      setError(usernameResult.error);
+      return;
+    }
+
+    if (turnstileEnabled && !captchaToken) {
+      setError("Complete the captcha verification before continuing.");
+      return;
+    }
+
+    setPending(true);
+    try {
+      const supabase = createClient();
+
+      const { data: taken } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("username", usernameResult.username)
+        .maybeSingle();
+      if (taken) {
+        setError("That username is already taken.");
+        return;
+      }
+
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${siteUrlForAuth()}/auth/callback`,
+          captchaToken: captchaToken ?? undefined,
+          data: { username: usernameResult.username },
+        },
+      });
+
+      if (signUpError) {
+        setCaptchaToken(null);
+        const message = signUpError.message.toLowerCase();
+        if (message.includes("username_taken") || message.includes("duplicate")) {
+          setError("That username is already taken.");
+        } else if (message.includes("captcha")) {
+          setError(signUpError.message);
+        } else {
+          setError(signUpError.message);
+        }
+        return;
+      }
+
+      if (!data.session) {
+        router.replace("/login?checkEmail=1");
+        return;
+      }
+
+      setShowAvatarStep(true);
+      router.refresh();
+    } catch {
+      setCaptchaToken(null);
+      setError("Something went wrong creating your account. Please try again.");
+    } finally {
+      setPending(false);
+    }
+  }
 
   async function finishSignup() {
     if (avatarUrl) {
@@ -49,7 +123,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
     router.refresh();
   }
 
-  if (state.ok) {
+  if (showAvatarStep) {
     return (
       <div className="space-y-4">
         <div className="text-center">
@@ -75,7 +149,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
     );
   }
 
-  const submitDisabled = turnstileEnabled && !captchaToken;
+  const submitDisabled = pending || (turnstileEnabled && !captchaToken);
 
   return (
     <div className="space-y-4">
@@ -93,10 +167,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
         <span className="h-px flex-1 bg-border" />
       </div>
 
-      <form action={formAction} className="space-y-3">
-        <input type="hidden" name="redirectTo" value={redirectTo ?? "/dashboard"} />
-        <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
-
+      <form onSubmit={(e) => void handleEmailSignup(e)} className="space-y-3">
         <div className="space-y-1.5">
           <Label htmlFor="username">Username</Label>
           <div className="relative">
@@ -153,17 +224,19 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
 
         <Turnstile
           onTokenChange={(token) => setCaptchaToken(token)}
-          resetKey={state.error ? state.error.length : 0}
+          resetKey={error ? error.length : 0}
         />
 
-        {state.error && (
+        {error && (
           <p className="flex items-center gap-2 rounded-md bg-live/10 px-3 py-2 text-sm text-live">
-            {state.error}
+            {error}
           </p>
         )}
 
-        <SubmitButton disabled={submitDisabled} />
-        {submitDisabled && (
+        <Button type="submit" className="w-full" size="lg" disabled={submitDisabled}>
+          {pending ? "Please wait…" : "Create account"}
+        </Button>
+        {turnstileEnabled && !captchaToken && !pending && (
           <p className="text-center text-xs text-muted-foreground">Complete captcha to continue.</p>
         )}
       </form>
