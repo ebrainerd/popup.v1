@@ -2,10 +2,12 @@
 
 **Date:** June 24, 2026  
 **Reviewer:** Cursor Cloud Agent  
-**Production URL:** https://popup-v1-vercel.app (invite-only mode)  
+**Production URL:** https://www.popupdrop.co (invite-only mode)  
 **Review method:** Codebase audit of all routes and user flows, local stack testing (`npm run dev` + Supabase), Playwright smoke tests, and interactive browser walkthrough on localhost.
 
-> **Note:** The production hostname could not be resolved from the review environment (DNS/network). Findings below combine local runtime verification with code review of production configuration documented in `docs/HANDOFF.md` and `docs/DEPLOYMENT.md`.
+> **Note (June 2026):** This review predates the custom domain and several shipped
+> fixes (seller terms gate, native live, legal pages). Use `docs/PRE_MARKETING_TEST.md`
+> for current launch validation; treat P0 items below as historical unless still open.
 
 ---
 
@@ -170,10 +172,10 @@ Current (invite-only): "Online pop-up shops in one link." — Good. Keep.
 
 ## Technical / operational findings
 
-1. **Production captcha:** Set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in Vercel **and** the matching secret in Supabase Auth → Captcha, **or** disable captcha in Supabase until both are configured.
-2. **Custom domain:** Still on `popup-v1-vercel.app` — blocks real email delivery and OAuth branding.
-3. **Drop reminder cron:** Not wired on Vercel Hobby (documented in HANDOFF) — "Remind me" signup works but emails won't send on schedule.
-4. **Buyer emails:** `RESEND_FROM` on `onboarding@resend.dev` — buyers don't receive order emails until domain verified.
+1. **Production captcha:** Set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in Vercel **and** the matching secret in Supabase Auth → Captcha. *(Configured on popupdrop.co.)*
+2. **Custom domain:** Now live at `popupdrop.co` / `www.popupdrop.co` — see `docs/HANDOFF.md`.
+3. **Drop reminder cron:** Wired via cron-job.org every 15 min (Hobby-safe); see `docs/DEPLOYMENT.md`.
+4. **Buyer emails:** Resend domain verified; order emails send from `popupdrop.co`. `/about` lists `support@popupdrop.co`.
 
 ---
 

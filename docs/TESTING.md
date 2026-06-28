@@ -65,6 +65,9 @@ verified manually (or in a dedicated staging job) rather than in PR CI:
 3. Seller completes Connect onboarding → buyer checks out with `4242…` →
    seller marks shipped → buyer confirms receipt → buyer rates.
 
+For production pre-launch validation (live Stripe, two testers), use
+`docs/PRE_MARKETING_TEST.md`.
+
 ## Keeping types in sync
 
 `src/lib/database.types.ts` is hand-maintained. Once a Supabase project is

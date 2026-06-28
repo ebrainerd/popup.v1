@@ -3,6 +3,10 @@
 Use this doc after shipping a feature — especially anything that touches auth,
 payments, realtime, or third-party services automated tests don't fully cover.
 
+**Pre-launch:** For a full seller + buyer walkthrough of every feature before
+marketing, use **`docs/PRE_MARKETING_TEST.md`** instead. This file stays focused
+on deep checks for individual features (starting with native live streaming).
+
 **How to use it**
 
 1. Run automated checks first: `npm run typecheck && npm run lint && npm run test && npm run build`
