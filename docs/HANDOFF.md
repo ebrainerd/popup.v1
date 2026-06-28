@@ -79,7 +79,6 @@ Use **`docs/PRE_MARKETING_TEST.md`** — the full two-person checklist. Short li
 - [ ] Real purchase end-to-end with emails to real inboxes (not Resend sandbox)
 - [ ] k6 smoke on a published shop URL (already passed once; re-run after major changes)
 - [ ] Optional: attorney review of `/legal/terms` and `/legal/privacy`
-- [ ] Optional: update `/about` contact from Gmail to `support@popupdrop.co`
 - [ ] When supply is ready: set `NEXT_PUBLIC_DISCOVERY_MODE=marketplace` and test Explore/search
 
 ### Standing ops

@@ -175,7 +175,7 @@ Current (invite-only): "Online pop-up shops in one link." — Good. Keep.
 1. **Production captcha:** Set `NEXT_PUBLIC_TURNSTILE_SITE_KEY` in Vercel **and** the matching secret in Supabase Auth → Captcha. *(Configured on popupdrop.co.)*
 2. **Custom domain:** Now live at `popupdrop.co` / `www.popupdrop.co` — see `docs/HANDOFF.md`.
 3. **Drop reminder cron:** Wired via cron-job.org every 15 min (Hobby-safe); see `docs/DEPLOYMENT.md`.
-4. **Buyer emails:** Resend domain verified; order emails send from `popupdrop.co`. `/about` still lists Gmail — consider `support@popupdrop.co`.
+4. **Buyer emails:** Resend domain verified; order emails send from `popupdrop.co`. `/about` lists `support@popupdrop.co`.
 
 ---
 
