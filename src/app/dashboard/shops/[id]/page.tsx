@@ -138,7 +138,10 @@ export default async function ManageShopPage({
       <PublishControls
         shopId={shop.id}
         isDraft={isDraft}
+        isEnded={window.isEnded}
         productCount={shop.products.length}
+        startAt={shop.start_at}
+        endAt={shop.end_at}
       />
 
       <div className="space-y-4">
@@ -190,6 +193,8 @@ export default async function ManageShopPage({
         >
           <LiveControlsCard
             shopId={shop.id}
+            startAt={shop.start_at}
+            endAt={shop.end_at}
             isLive={shop.is_live}
             isOpen={window.isOpen}
             isEnded={liveControlsEnded}

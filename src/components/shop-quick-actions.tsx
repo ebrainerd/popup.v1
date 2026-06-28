@@ -2,12 +2,15 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Radio, Clock, CircleStop, Check } from "lucide-react";
-import { extendShop, toggleLive, endShop } from "@/app/dashboard/actions";
+import { Radio, Clock, Check } from "lucide-react";
+import { extendShop, toggleLive } from "@/app/dashboard/actions";
+import { CloseShopButton } from "@/components/close-shop-dialog";
 import { Button } from "@/components/ui/button";
 
 export function ShopQuickActions({
   shopId,
+  startAt,
+  endAt,
   isLive,
   isOpen,
   isEnded,
@@ -17,6 +20,8 @@ export function ShopQuickActions({
   variant = "full",
 }: {
   shopId: string;
+  startAt: string;
+  endAt: string;
   isLive: boolean;
   isOpen: boolean;
   isEnded: boolean;
@@ -51,24 +56,6 @@ export function ShopQuickActions({
         setLive(!next);
         setError(res.error);
       }
-      router.refresh();
-    });
-  }
-
-  function onEndShop() {
-    const message = isOpen
-      ? "End this shop now? Buyers won't be able to purchase anymore. Existing orders are unaffected."
-      : "End this drop? It won't open on schedule and reminder emails won't send.";
-    if (!confirm(message)) return;
-
-    setError(null);
-    startTransition(async () => {
-      const res = await endShop(shopId);
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
-      setLive(false);
       router.refresh();
     });
   }
@@ -127,15 +114,13 @@ export function ShopQuickActions({
               </Button>
             </div>
 
-            <Button
+            <CloseShopButton
+              shopId={shopId}
+              startAt={startAt}
+              endAt={endAt}
               variant="outline"
-              size="sm"
               className="text-live"
-              disabled={pending}
-              onClick={onEndShop}
-            >
-              <CircleStop className="size-4" /> End shop
-            </Button>
+            />
           </>
         )}
       </div>

@@ -9,6 +9,8 @@ import { ShopQuickActions } from "@/components/shop-quick-actions";
 
 export function OwnerShopLiveBar({
   shopId,
+  startAt,
+  endAt,
   isLive,
   isOpen,
   isEnded,
@@ -19,6 +21,8 @@ export function OwnerShopLiveBar({
   needsTosAcceptance,
 }: {
   shopId: string;
+  startAt: string;
+  endAt: string;
   isLive: boolean;
   isOpen: boolean;
   isEnded: boolean;
@@ -69,6 +73,8 @@ export function OwnerShopLiveBar({
       ) : (
         <ShopQuickActions
           shopId={shopId}
+          startAt={startAt}
+          endAt={endAt}
           isLive={isLive}
           isOpen={isOpen}
           isEnded={isEnded}

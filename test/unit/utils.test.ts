@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, toCents, deriveShopStatus, derivePublishedShopWindow } from "@/lib/utils";
+import { formatCurrency, toCents, deriveShopStatus, derivePublishedShopWindow, formatDurationMs } from "@/lib/utils";
 
 describe("formatCurrency", () => {
   it("formats integer cents as USD", () => {
@@ -74,5 +74,19 @@ describe("derivePublishedShopWindow", () => {
     );
     expect(w.isOpen).toBe(true);
     expect(w.isDraft).toBe(false);
+  });
+});
+
+describe("formatDurationMs", () => {
+  it("formats hours and minutes", () => {
+    expect(formatDurationMs(2 * 60 * 60_000 + 14 * 60_000)).toBe("2h 14m");
+  });
+
+  it("formats days", () => {
+    expect(formatDurationMs(3 * 24 * 60 * 60_000 + 5 * 60 * 60_000)).toBe("3d 5h");
+  });
+
+  it("never returns negative durations", () => {
+    expect(formatDurationMs(-1000)).toBe("0m");
   });
 });
