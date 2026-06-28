@@ -20,7 +20,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | **Discovery mode** | `invite_only` (default) — link-only shops; Explore is a holding page |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations** | Through **`0020_seller_terms_accepted.sql`** |
+| **Migrations** | Through **`0021_profile_setup_username.sql`** |
 
 ## Where to look
 
@@ -36,6 +36,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
 | Testing & CI | `docs/TESTING.md` |
 | Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
+| Auth & profile signup flows | `docs/AUTH_PROFILE_ROADMAP.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
 | Production launch & load testing | `docs/PRODUCTION_READINESS.md` |
 | k6 load scripts | `scripts/load/README.md` |

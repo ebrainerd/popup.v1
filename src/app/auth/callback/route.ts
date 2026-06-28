@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 
 /**
  * OAuth / email-confirmation callback. Exchanges the `code` for a session and
- * redirects to the originally requested page.
+ * redirects to onboarding or the originally requested page.
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -15,6 +15,21 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("profile_setup_complete")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (profile && !profile.profile_setup_complete) {
+          const onboarding = new URL("/onboarding", origin);
+          onboarding.searchParams.set("redirectTo", safeNext);
+          return NextResponse.redirect(onboarding);
+        }
+      }
       return NextResponse.redirect(`${origin}${safeNext}`);
     }
   }

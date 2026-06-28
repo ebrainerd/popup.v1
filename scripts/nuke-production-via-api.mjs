@@ -60,6 +60,7 @@ async function clearPublicTables() {
     ["products"],
     ["shops"],
     ["shop_follows", "seller_id"],
+    ["live_reminders"],
     ["push_subscriptions"],
     ["profiles"],
   ];

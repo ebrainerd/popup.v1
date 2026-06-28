@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { AuthForm } from "@/app/(auth)/auth-form";
+import { SignupForm } from "@/app/(auth)/signup-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
 import { getCurrentUser } from "@/lib/auth";
@@ -28,7 +28,7 @@ export default async function SignupPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm mode="signup" redirectTo={redirectTo} />
+          <SignupForm redirectTo={redirectTo} />
         </CardContent>
       </Card>
     </div>

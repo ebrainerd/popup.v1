@@ -40,7 +40,7 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">
-            Hi, {profile.display_name || profile.username} 👋
+            Hi, @{profile.username} 👋
           </h1>
           <p className="text-muted-foreground">Manage your drops and orders.</p>
         </div>

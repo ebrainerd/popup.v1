@@ -89,7 +89,7 @@ export async function getLiveAuctionPanelState(
       .select("username, display_name")
       .eq("id", active.current_winner_id)
       .maybeSingle();
-    winnerName = profile?.display_name || profile?.username || null;
+    winnerName = profile?.username ?? null;
   }
 
   return {

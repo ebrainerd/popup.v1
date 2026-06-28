@@ -1,40 +1,46 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { Mail } from "lucide-react";
 import {
   signInWithPassword,
-  signUpWithPassword,
   signInWithGoogle,
   type AuthState,
 } from "@/app/(auth)/actions";
+import { Turnstile } from "@/components/turnstile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Turnstile } from "@/components/turnstile";
 
 const initialState: AuthState = { error: null };
 
-function SubmitButton({ label }: { label: string }) {
+function SubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full" size="lg" disabled={pending}>
-      {pending ? "Please wait…" : label}
+      {pending ? "Please wait…" : "Log in"}
     </Button>
   );
 }
 
-export function AuthForm({
-  mode,
-  redirectTo,
-}: {
-  mode: "login" | "signup";
-  redirectTo?: string;
-}) {
-  const action = mode === "login" ? signInWithPassword : signUpWithPassword;
-  const [state, formAction] = useActionState(action, initialState);
+export function LoginForm({ redirectTo }: { redirectTo?: string }) {
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+
+  async function loginAction(prev: AuthState, formData: FormData): Promise<AuthState> {
+    const next = await signInWithPassword(prev, formData);
+    if (next.error) {
+      setCaptchaToken(null);
+      setTurnstileResetKey((k) => k + 1);
+    }
+    return next;
+  }
+
+  const [state, formAction] = useActionState(loginAction, initialState);
+  const submitDisabled = turnstileEnabled && !captchaToken;
 
   return (
     <div className="space-y-4">
@@ -54,6 +60,7 @@ export function AuthForm({
 
       <form action={formAction} className="space-y-3">
         <input type="hidden" name="redirectTo" value={redirectTo ?? "/dashboard"} />
+        <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
@@ -64,14 +71,14 @@ export function AuthForm({
             id="password"
             name="password"
             type="password"
-            autoComplete={mode === "login" ? "current-password" : "new-password"}
+            autoComplete="current-password"
             required
             placeholder="••••••••"
             minLength={8}
           />
         </div>
 
-        <Turnstile />
+        <Turnstile onTokenChange={setCaptchaToken} resetKey={turnstileResetKey} />
 
         {state.error && (
           <p className="flex items-center gap-2 rounded-md bg-live/10 px-3 py-2 text-sm text-live">
@@ -79,25 +86,17 @@ export function AuthForm({
           </p>
         )}
 
-        <SubmitButton label={mode === "login" ? "Log in" : "Create account"} />
+        <SubmitButton />
+        {submitDisabled && (
+          <p className="text-center text-xs text-muted-foreground">Complete captcha to continue.</p>
+        )}
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
-        {mode === "login" ? (
-          <>
-            New to PopUp?{" "}
-            <Link href="/signup" className="font-medium text-primary hover:underline">
-              Create an account
-            </Link>
-          </>
-        ) : (
-          <>
-            Already have an account?{" "}
-            <Link href="/login" className="font-medium text-primary hover:underline">
-              Log in
-            </Link>
-          </>
-        )}
+        New to PopUp?{" "}
+        <Link href="/signup" className="font-medium text-primary hover:underline">
+          Create an account
+        </Link>
       </p>
     </div>
   );

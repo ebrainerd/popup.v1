@@ -138,7 +138,7 @@ export async function notifyFollowersOfLive(shopId: string): Promise<void> {
     const seller = (shop as unknown as {
       seller: { username: string; display_name: string | null } | null;
     }).seller;
-    const sellerName = seller?.display_name || seller?.username || "A seller you follow";
+    const sellerName = seller?.username ? `@${seller.username}` : "A seller you follow";
     const url = `${getSiteUrl()}/shop/${shopId}`;
 
     await Promise.allSettled([
@@ -189,7 +189,7 @@ export async function notifyLiveReminders(shopId: string): Promise<void> {
     const seller = (shop as unknown as {
       seller: { username: string; display_name: string | null } | null;
     }).seller;
-    const sellerName = seller?.display_name || seller?.username || "A seller";
+    const sellerName = seller?.username ? `@${seller.username}` : "A seller";
     const url = `${getSiteUrl()}/shop/${shopId}`;
 
     await Promise.allSettled([
@@ -597,7 +597,7 @@ export async function sendDropReminders(): Promise<number> {
       }
 
       const copy = REMINDER_COPY[window];
-      const sellerName = shop.seller?.display_name || shop.seller?.username || "A creator";
+      const sellerName = shop.seller?.username ? `@${shop.seller.username}` : "A creator";
       const url = `${site}/shop/${shop.id}`;
       const when = new Date(shop.start_at).toLocaleString("en-US", {
         weekday: "short",

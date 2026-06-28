@@ -86,13 +86,12 @@ export default async function ProfilePage({
               <Image src={profile.avatar_url} alt={profile.username} fill className="object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-2xl font-bold text-muted-foreground">
-                {(profile.display_name || profile.username).charAt(0).toUpperCase()}
+                {profile.username.charAt(0).toUpperCase()}
               </div>
             )}
           </div>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold">{profile.display_name || profile.username}</h1>
-            <p className="text-muted-foreground">@{profile.username}</p>
+            <h1 className="text-2xl font-bold">@{profile.username}</h1>
             <div className="mt-1 flex items-center gap-4 text-sm text-muted-foreground">
               {profile.rating_count > 0 && (
                 <span className="flex items-center gap-1">

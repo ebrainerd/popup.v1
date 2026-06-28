@@ -19,7 +19,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
     return () => document.removeEventListener("mousedown", onClick);
   }, []);
 
-  const initial = (profile.display_name || profile.username || "?").charAt(0).toUpperCase();
+  const initial = (profile.username || "?").charAt(0).toUpperCase();
 
   return (
     <div className="relative" ref={ref}>
@@ -49,10 +49,7 @@ export function UserMenu({ profile }: { profile: Profile }) {
           className="absolute right-0 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-card py-1 shadow-lg"
         >
           <div className="border-b border-border px-3 py-2">
-            <p className="truncate text-sm font-semibold">
-              {profile.display_name || profile.username}
-            </p>
-            <p className="truncate text-xs text-muted-foreground">@{profile.username}</p>
+            <p className="truncate text-sm font-semibold">@{profile.username}</p>
           </div>
           <MenuLink href="/dashboard" icon={<LayoutDashboard />} label="Dashboard" />
           <MenuLink href="/orders" icon={<ShoppingBag />} label="My orders" />

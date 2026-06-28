@@ -97,11 +97,14 @@ Test on **both** seller and buyer accounts.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
-| 1.1 | Buyer: `/signup` → email + password (8+ chars) | Account created; logged in; redirected to dashboard or home | |
-| 1.2 | Seller: `/signup` with Google OAuth | Google consent shows **PopUp**; returns to site logged in | |
+| 1.1 | Buyer: `/signup` → username, email, password, confirm password, Turnstile | Account created; optional avatar step; logged in | |
+| 1.1b | Signup without completing Turnstile | Submit disabled or captcha error | |
+| 1.1c | Signup with mismatched passwords | "Passwords do not match." | |
+| 1.1d | Signup with reserved username (`admin`) | Rejected with clear error | |
+| 1.2 | Seller: `/signup` with Google OAuth (new account) | Lands on `/onboarding` → pick username → dashboard | |
 | 1.3 | Sign up with weak password (< 8 chars) | Validation error; no account | |
 | 1.4 | Sign up with email already in use | Clear error | |
-| 1.5 | Cloudflare Turnstile widget visible on login/signup | Completes without error | |
+| 1.5 | Cloudflare Turnstile widget visible on login **and** signup | Widget renders; submit works after verification | |
 
 ### Log in / log out
 

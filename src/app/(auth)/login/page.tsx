@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { AuthForm, CheckEmailNotice } from "@/app/(auth)/auth-form";
+import { LoginForm, CheckEmailNotice } from "@/app/(auth)/login-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
 import { getCurrentUser } from "@/lib/auth";
@@ -32,7 +32,7 @@ export default async function LoginPage({
               Something went wrong signing you in. Please try again.
             </p>
           )}
-          <AuthForm mode="login" redirectTo={redirectTo} />
+          <LoginForm redirectTo={redirectTo} />
         </CardContent>
       </Card>
     </div>

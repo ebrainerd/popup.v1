@@ -34,7 +34,7 @@ function OrderRow({ order }: { order: SellerOrder }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
-  const buyerName = order.buyer?.display_name || order.buyer?.username || "Buyer";
+  const buyerName = order.buyer?.username ? `@${order.buyer.username}` : "Buyer";
   const address = order.shipping_address as
     | { name?: string; address?: Record<string, string | null> }
     | null;
