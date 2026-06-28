@@ -27,7 +27,7 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Settings → API → Project URL | `https://abcd.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase → Settings → API → `anon` `public` key | `eyJ…` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Settings → API → `service_role` secret | `eyJ…` |
-| `NEXT_PUBLIC_SITE_URL` | Your deployed URL (full, **with** scheme) | `https://popup-v1.vercel.app` |
+| `NEXT_PUBLIC_SITE_URL` | Your deployed URL (full, **with** scheme) | `https://www.popupdrop.co` |
 | `NEXT_PUBLIC_DISCOVERY_MODE` | Launch mode: `invite_only` (default) or `marketplace` | `invite_only` |
 | `CRON_SECRET` | Random secret for `/api/cron/*` routes (required in production) | `openssl rand -hex 32` |
 
@@ -214,11 +214,10 @@ These take the app from "deployed" to "ready for real users and real money."
 - [ ] Set **VAPID** + **Resend** keys if you want web-push / email notifications.
 
 ### Domain & infra
-- [ ] Add a **custom domain** in Vercel; update `NEXT_PUBLIC_SITE_URL`, the Supabase
-      Site URL + redirect URLs, the Stripe webhook URL, and Stripe Connect branding
-      to the new domain. Redeploy.
+- [x] **Custom domain** on Vercel (`popupdrop.co`); `NEXT_PUBLIC_SITE_URL`,
+      Supabase Auth URLs, Stripe webhook, and Connect branding updated. Redeployed.
 - [ ] Confirm **CI is green** (Actions runners require a verified GitHub account).
-- [ ] Add **uptime monitoring** against `/api/health`.
+- [x] **Uptime monitoring** on `/api/health`.
 - [ ] Review **Supabase backups** / plan (PITR on Pro) for the production project.
 
 ### App
@@ -231,12 +230,15 @@ These take the app from "deployed" to "ready for real users and real money."
 
 ## Pre-launch checklist
 
-- [ ] Production Supabase migrated; RLS verified (run the integration suite against staging)
-- [ ] Google OAuth redirect URLs set for the production domain
-- [ ] Stripe **live** keys + webhook configured; Connect enabled
-- [ ] `RELEASE_DELAY_HOURS=72`, `PLATFORM_FEE_BPS=900`, `CRON_SECRET` set
-- [ ] Cron confirmed running (check `/api/cron/release-funds` logs)
-- [ ] Sentry DSNs set; a test error appears in the dashboard
-- [ ] `NEXT_PUBLIC_SITE_URL` / `NEXT_PUBLIC_APP_ENV` correct for prod
-- [ ] VAPID + Resend keys set (or notifications intentionally disabled)
+Walk **`docs/PRE_MARKETING_TEST.md`** for the full manual pass. Infrastructure:
+
+- [x] Production Supabase migrated through `0020`; RLS verified locally / staging
+- [x] Google OAuth redirect URLs set for `https://www.popupdrop.co`
+- [x] Stripe **live** keys + webhook configured; Connect enabled
+- [ ] Confirm `RELEASE_DELAY_HOURS=72`, `PLATFORM_FEE_BPS=900`, `CRON_SECRET` in Vercel
+- [x] Daily `release-funds` cron; drop reminders via cron-job.org every 15 min
+- [x] Sentry DSNs set
+- [x] `NEXT_PUBLIC_SITE_URL=https://www.popupdrop.co` / `NEXT_PUBLIC_APP_ENV=production`
+- [x] VAPID + Resend keys set
 - [ ] CI green on `main`
+- [ ] Two-person dry-run drop completed (`docs/PRE_MARKETING_TEST.md`)

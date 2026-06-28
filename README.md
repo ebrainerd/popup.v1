@@ -8,7 +8,8 @@ This repository contains the **MVP web app** (Next.js + Supabase + Stripe),
 built in milestones. See `docs/ROADMAP.md` for what's shipped and what's next.
 
 > **Picking up the project?** Start with **`docs/HANDOFF.md`** — current status,
-> pending owner actions (e.g. custom-domain setup), and conventions.
+> production URL (`https://www.popupdrop.co`), and conventions.  
+> **Before marketing:** walk **`docs/PRE_MARKETING_TEST.md`** with a partner.
 
 ## Stack
 
