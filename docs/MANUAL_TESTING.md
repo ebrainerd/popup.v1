@@ -45,21 +45,23 @@ Record pass/fail and any notes in your PR or handoff comment.
 | - | ---- | -------- |
 | 11 | On an **open** shop (seller **not** live), as a logged-in buyer click **Notify me when live** | Button toggles to subscribed state |
 | 12 | Seller goes live | Subscriber receives email and/or push (if Resend/VAPID configured) |
-| 13 | Anonymous visitor clicks **Notify me when live** | Redirected to login with return URL |
+| 13 | Seller ends live, then goes live again without buyer re-subscribing | Subscriber does **not** get a second alert |
+| 14 | After step 12, seller ends live; buyer clicks **Notify me when live** again | Subscribed again; second go-live sends a new alert |
+| 15 | Anonymous visitor clicks **Notify me when live** | Redirected to login with return URL |
 
 ### External stream (regression)
 
 | # | Step | Expected |
 | - | ---- | -------- |
-| 14 | Wizard → choose **YouTube or Twitch**, paste a valid stream URL, publish | Manage shop shows URL-based **Go live** (not native publisher) |
-| 15 | Go live with external URL | Embedded player on shop page when live |
+| 16 | Wizard → choose **YouTube or Twitch**, paste a valid stream URL, publish | Manage shop shows URL-based **Go live** (not native publisher) |
+| 17 | Go live with external URL | Embedded player on shop page when live |
 
 ### Error / edge cases
 
 | # | Step | Expected |
 | - | ---- | -------- |
-| 16 | Deny camera permission, click **Go live** | Clear error message; no crash |
-| 17 | **End shop** while live | Shop ends; `is_live` cleared; buyers see ended state |
+| 18 | Deny camera permission, click **Go live** | Clear error message; no crash |
+| 19 | **End shop** while live | Shop ends; `is_live` cleared; buyers see ended state |
 
 **Note:** Camera/mic require `Permissions-Policy: camera=(self), microphone=(self)` in `next.config.ts`. If blocked at the HTTP header level, Chrome will not show a permission prompt.
 

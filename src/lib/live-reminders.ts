@@ -27,6 +27,7 @@ export async function getUserLiveReminder(
     .eq("shop_id", shopId)
     .eq("user_id", userId)
     .is("cancelled_at", null)
+    .is("notified_at", null)
     .maybeSingle();
   if (error) {
     console.error("getUserLiveReminder error", error.message);

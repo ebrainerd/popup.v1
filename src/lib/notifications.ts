@@ -174,12 +174,15 @@ export async function notifyLiveReminders(shopId: string): Promise<void> {
       .maybeSingle();
     if (!shop) return;
 
+    // Atomically claim pending reminders so rapid live/off/live only notifies once.
+    const notifiedAt = new Date().toISOString();
     const { data: reminders } = await supabase
       .from("live_reminders")
-      .select("id, user_id")
+      .update({ notified_at: notifiedAt, cancelled_at: notifiedAt })
       .eq("shop_id", shopId)
       .is("cancelled_at", null)
-      .is("notified_at", null);
+      .is("notified_at", null)
+      .select("id, user_id");
     if (!reminders?.length) return;
 
     const userIds = reminders.map((r) => r.user_id);
@@ -203,14 +206,6 @@ export async function notifyLiveReminders(shopId: string): Promise<void> {
       ),
     ]);
 
-    const notifiedAt = new Date().toISOString();
-    await supabase
-      .from("live_reminders")
-      .update({ notified_at: notifiedAt })
-      .in(
-        "id",
-        reminders.map((r) => r.id),
-      );
   } catch (err) {
     console.error("notifyLiveReminders failed", err);
     Sentry.captureException(err, { tags: { area: "notifications" }, extra: { shopId } });
