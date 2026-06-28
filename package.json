@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "load:shop-smoke": "bash scripts/load/run-shop-smoke.sh",
+    "load:shop-smoke": "node scripts/load/run-shop-smoke.mjs",
     "db:nuke": "bash scripts/db-nuke.sh",
     "db:nuke:production": "bash scripts/db-nuke-production.sh",
     "db:nuke:production:api": "node scripts/nuke-production-via-api.mjs",
