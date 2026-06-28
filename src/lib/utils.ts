@@ -106,3 +106,17 @@ export function computeEndShopTimes(
 
   return { start_at: start.toISOString(), end_at: nowIso };
 }
+
+/** Human-readable duration for countdown-style copy, e.g. "2h 14m" or "3d 5h". */
+export function formatDurationMs(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const days = Math.floor(total / 86400);
+  const hours = Math.floor((total % 86400) / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+
+  const parts: string[] = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+  return parts.join(" ");
+}

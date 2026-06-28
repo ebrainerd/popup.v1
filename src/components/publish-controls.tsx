@@ -4,18 +4,25 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, ExternalLink, Rocket } from "lucide-react";
-import { publishShop, unpublishShop } from "@/app/dashboard/actions";
+import { publishShop } from "@/app/dashboard/actions";
+import { CloseShopButton } from "@/components/close-shop-dialog";
 import { isInviteOnlyMode } from "@/lib/discovery";
 import { Button } from "@/components/ui/button";
 
 export function PublishControls({
   shopId,
   isDraft,
+  isEnded,
   productCount,
+  startAt,
+  endAt,
 }: {
   shopId: string;
   isDraft: boolean;
+  isEnded: boolean;
   productCount: number;
+  startAt: string;
+  endAt: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -29,13 +36,6 @@ export function PublishControls({
       const res = await publishShop(shopId);
       if (res.error) setError(res.error);
       else router.refresh();
-    });
-  }
-
-  function unpublish() {
-    startTransition(async () => {
-      await unpublishShop(shopId);
-      router.refresh();
     });
   }
 
@@ -78,18 +78,24 @@ export function PublishControls({
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-success/30 bg-success/10 p-4">
       <span className="flex items-center gap-2 text-sm font-medium text-success">
         <Eye className="size-4" />
-        {inviteOnly ? "Published — share your shop link from the checklist" : "Published & findable"}
+        {isEnded
+          ? "Shop closed"
+          : inviteOnly
+            ? "Published — share your shop link from the checklist"
+            : "Published & findable"}
       </span>
       <div className="flex flex-wrap items-center gap-2">
-        <Button asChild size="sm">
-          <Link href={`/shop/${shopId}`}>
-            <ExternalLink className="size-4" />
-            Go to shop
-          </Link>
-        </Button>
-        <Button variant="ghost" size="sm" onClick={unpublish} disabled={pending}>
-          Unpublish
-        </Button>
+        {!isEnded && (
+          <Button asChild size="sm">
+            <Link href={`/shop/${shopId}`}>
+              <ExternalLink className="size-4" />
+              Go to shop
+            </Link>
+          </Button>
+        )}
+        {!isEnded && (
+          <CloseShopButton shopId={shopId} startAt={startAt} endAt={endAt} />
+        )}
       </div>
     </div>
   );

@@ -133,6 +133,8 @@ export function ShopPageView({
         {isOwner && isOpen && !isDraftPreview && !isNativeStream && (
           <OwnerShopLiveBar
             shopId={shop.id}
+            startAt={shop.start_at}
+            endAt={shop.end_at}
             isLive={shop.is_live}
             isOpen={isOpen}
             isEnded={false}
