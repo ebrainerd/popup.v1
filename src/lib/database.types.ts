@@ -50,6 +50,7 @@ export interface Database {
           rating_avg: number | null;
           rating_count: number;
           follower_count: number;
+          seller_terms_accepted_at: string | null;
           created_at: string;
         };
         Insert: {
@@ -63,6 +64,7 @@ export interface Database {
           rating_avg?: number | null;
           rating_count?: number;
           follower_count?: number;
+          seller_terms_accepted_at?: string | null;
           created_at?: string;
         };
         Update: Partial<Database["public"]["Tables"]["profiles"]["Insert"]>;
