@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock, Share2, Radio, Wallet } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -57,7 +59,10 @@ const STEPS: Step[] = [
   },
 ];
 
-export default function SellPage() {
+export default async function SellPage() {
+  const user = await getCurrentUser();
+  const createShopHref = createShopPath(Boolean(user));
+
   return (
     <div className="overflow-hidden">
       {/* Intro */}
@@ -72,7 +77,7 @@ export default function SellPage() {
         </p>
         <div className="animate-fade-up animate-fade-up-delay-2 mt-8 flex justify-center">
           <Button asChild size="lg" className="group rounded-full px-8">
-            <Link href="/signup">
+            <Link href={createShopHref}>
               Create shop
               <ArrowRight className="transition-transform group-hover:translate-x-1" />
             </Link>
@@ -105,7 +110,7 @@ export default function SellPage() {
             size="lg"
             className="group mt-8 rounded-full bg-white px-8 text-base text-primary shadow-lg shadow-black/30 hover:bg-white"
           >
-            <Link href="/signup">
+            <Link href={createShopHref}>
               Create shop
               <ArrowRight className="transition-transform group-hover:translate-x-1" />
             </Link>

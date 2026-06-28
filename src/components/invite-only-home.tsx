@@ -8,6 +8,8 @@ import {
   Store,
   ArrowRight,
 } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
 import { Button } from "@/components/ui/button";
 
 const STEPS = [
@@ -43,7 +45,10 @@ const STEPS = [
   },
 ] as const;
 
-export function InviteOnlyHomePage() {
+export async function InviteOnlyHomePage() {
+  const user = await getCurrentUser();
+  const createShopHref = createShopPath(Boolean(user));
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-8">
       <section className="bg-brand-gradient relative mb-6 overflow-hidden rounded-3xl px-6 py-20 text-center text-white sm:px-12 sm:py-28">
@@ -61,7 +66,7 @@ export function InviteOnlyHomePage() {
             size="lg"
             className="group rounded-full bg-white px-8 text-base text-primary shadow-lg shadow-black/30 hover:bg-white"
           >
-            <Link href="/signup">
+            <Link href={createShopHref}>
               Create shop
               <ArrowRight className="transition-transform group-hover:translate-x-1" />
             </Link>
@@ -108,7 +113,7 @@ export function InviteOnlyHomePage() {
           Add your products, set your schedule, and share your link when you&apos;re ready.
         </p>
         <Button asChild size="lg" className="mt-6 rounded-full px-8">
-          <Link href="/signup">
+          <Link href={createShopHref}>
             Create shop
             <ArrowRight />
           </Link>
