@@ -21,25 +21,35 @@ sudo apt-get update && sudo apt-get install k6
 
 ## Quick start (shop URL only)
 
-Install k6 once (`brew install k6`), then from the repo root:
+Install **Grafana k6** once (this is **not** the Python `pip install k6` package):
+
+| OS | Command |
+| -- | ------- |
+| **Windows** | `winget install GrafanaLabs.k6` |
+| **macOS** | `brew install k6` |
+| **Linux** | see [k6 install docs](https://grafana.com/docs/k6/latest/set-up/install-k6/) |
+
+Verify: `k6 version`
+
+From the repo root (works in PowerShell, bash, and macOS/Linux):
 
 ```bash
 npm run load:shop-smoke -- https://www.popupdrop.co/shop/<your-shop-uuid>
 ```
 
-Or run the script directly:
-
-```bash
-./scripts/load/run-shop-smoke.sh https://www.popupdrop.co/shop/<your-shop-uuid>
-```
-
 Heavier run:
 
 ```bash
+# PowerShell
+$env:VUS=100; $env:DURATION="3m"; npm run load:shop-smoke -- https://www.popupdrop.co/shop/<uuid>
+
+# bash / macOS
 VUS=100 DURATION=3m npm run load:shop-smoke -- https://www.popupdrop.co/shop/<uuid>
 ```
 
-The script parses the shop URL into `BASE_URL` + `SHOP_ID` and runs `shop-smoke.js`.
+The runner parses the shop URL into `BASE_URL` + `SHOP_ID` and invokes `shop-smoke.js`.
+
+macOS/Linux can also use `./scripts/load/run-shop-smoke.sh` (bash wrapper).
 
 ## shop-smoke.js
 
