@@ -17,6 +17,8 @@ const bioSchema = z.object({
     .or(z.literal("")),
 });
 
+const avatarUrlSchema = z.string().url().optional().or(z.literal(""));
+
 async function requireUser() {
   const supabase = await createClient();
   const {
@@ -53,6 +55,41 @@ export async function updateProfileBio(
     return { error: error?.message ?? "Could not update profile." };
   }
 
+  revalidatePath(`/u/${profile.username}`);
+  revalidatePath("/dashboard");
+  return { error: null, success: true };
+}
+
+export async function updateProfileAvatar(
+  _prev: ProfileActionState,
+  formData: FormData,
+): Promise<ProfileActionState> {
+  const avatarRaw = String(formData.get("avatar_url") ?? "").trim();
+  return setProfileAvatar(avatarRaw || null);
+}
+
+export async function setProfileAvatar(avatarUrl: string | null): Promise<ProfileActionState> {
+  const { supabase, user } = await requireUser();
+
+  if (avatarUrl) {
+    const parsed = avatarUrlSchema.safeParse(avatarUrl);
+    if (!parsed.success) {
+      return { error: "Invalid avatar URL." };
+    }
+  }
+
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .update({ avatar_url: avatarUrl || null })
+    .eq("id", user.id)
+    .select("username")
+    .single();
+
+  if (error || !profile) {
+    return { error: error?.message ?? "Could not update avatar." };
+  }
+
+  revalidatePath("/", "layout");
   revalidatePath(`/u/${profile.username}`);
   revalidatePath("/dashboard");
   return { error: null, success: true };

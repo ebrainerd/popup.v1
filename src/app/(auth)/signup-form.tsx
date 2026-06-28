@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithGoogle } from "@/app/(auth)/actions";
-import { updateProfileAvatar } from "@/app/onboarding/actions";
+import { setProfileAvatar } from "@/app/u/actions";
 import { Turnstile } from "@/components/turnstile";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
@@ -106,7 +106,6 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
       }
 
       setShowAvatarStep(true);
-      router.refresh();
     } catch {
       setCaptchaToken(null);
       setError("Something went wrong creating your account. Please try again.");
@@ -117,7 +116,7 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
 
   async function finishSignup() {
     if (avatarUrl) {
-      await updateProfileAvatar(avatarUrl);
+      await setProfileAvatar(avatarUrl);
     }
     router.push(redirectTo ?? "/dashboard");
     router.refresh();

@@ -9,6 +9,7 @@ import { ShopCard } from "@/components/shop-card";
 import { FollowButton } from "@/components/follow-button";
 import { NotifyButton } from "@/components/notify-button";
 import { ProfileBioForm } from "@/components/profile-bio-form";
+import { ProfileAvatarForm } from "@/components/profile-avatar-form";
 import { deriveShopStatus } from "@/lib/utils";
 import type { ShopWithSeller } from "@/lib/shops";
 
@@ -114,7 +115,12 @@ export default async function ProfilePage({
           <p className="mt-4 max-w-xl text-pretty text-foreground/90">{profile.bio}</p>
         )}
 
-        {isOwner && <ProfileBioForm key={profile.bio ?? ""} bio={profile.bio} />}
+        {isOwner && (
+          <div className="mt-4 max-w-xl space-y-6">
+            <ProfileAvatarForm avatarUrl={profile.avatar_url} />
+            <ProfileBioForm key={profile.bio ?? ""} bio={profile.bio} />
+          </div>
+        )}
       </div>
 
       <ShopSections shops={(shops ?? []) as unknown as ShopWithSeller[]} inviteOnly={inviteOnly} />
