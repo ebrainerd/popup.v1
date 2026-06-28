@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
 import { isInviteOnlyMode } from "@/lib/discovery";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
@@ -10,6 +11,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 export async function SiteHeader() {
   const profile = await getCurrentProfile();
   const inviteOnly = isInviteOnlyMode();
+  const createShopHref = createShopPath(Boolean(profile));
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border/60 bg-background/60 backdrop-blur-xl supports-[backdrop-filter]:bg-background/50">
@@ -31,6 +33,11 @@ export async function SiteHeader() {
           <ThemeToggle />
           {profile ? (
             <>
+              {inviteOnly && (
+                <Button asChild size="sm" className="hidden rounded-full sm:inline-flex">
+                  <Link href={createShopHref}>Create shop</Link>
+                </Button>
+              )}
               <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
                 <Link href="/dashboard">Dashboard</Link>
               </Button>
@@ -42,7 +49,7 @@ export async function SiteHeader() {
                 <Link href="/login">Log in</Link>
               </Button>
               <Button asChild size="sm" className="rounded-full">
-                <Link href="/signup">{inviteOnly ? "Create shop" : "Start a Drop"}</Link>
+                <Link href={createShopHref}>{inviteOnly ? "Create shop" : "Start a Drop"}</Link>
               </Button>
             </>
           )}

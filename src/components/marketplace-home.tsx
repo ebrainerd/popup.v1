@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Store, Bell, Zap, ArrowRight } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
 import { getUpcomingDrops, getOpenShops } from "@/lib/shops";
 import { ShopCard } from "@/components/shop-card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +38,12 @@ const STEPS = [
 ];
 
 export async function MarketplaceHomePage() {
-  const [upcoming, liveNow] = await Promise.all([getUpcomingDrops(6), getOpenShops(6)]);
+  const [upcoming, liveNow, user] = await Promise.all([
+    getUpcomingDrops(6),
+    getOpenShops(6),
+    getCurrentUser(),
+  ]);
+  const createShopHref = createShopPath(Boolean(user));
   const liveCount = liveNow.filter((s) => s.is_live || s.live_url).length;
 
   return (
@@ -58,7 +65,7 @@ export async function MarketplaceHomePage() {
               size="lg"
               className="group rounded-full bg-white px-8 text-base text-primary shadow-lg shadow-black/30 hover:bg-white"
             >
-              <Link href="/signup">
+              <Link href={createShopHref}>
                 Start a Drop
                 <ArrowRight className="transition-transform group-hover:translate-x-1" />
               </Link>

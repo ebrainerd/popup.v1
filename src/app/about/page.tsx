@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getCurrentUser } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
 import { isInviteOnlyMode } from "@/lib/discovery";
 
 export const metadata: Metadata = {
@@ -8,8 +10,10 @@ export const metadata: Metadata = {
   description: "PopUp helps creators run timed online pop-up shops and share them in one link.",
 };
 
-export default function AboutPage() {
+export default async function AboutPage() {
   const inviteOnly = isInviteOnlyMode();
+  const user = await getCurrentUser();
+  const createShopHref = createShopPath(Boolean(user));
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
@@ -55,7 +59,7 @@ export default function AboutPage() {
 
       <div className="mt-10 flex gap-3">
         <Button asChild className="rounded-full">
-          <Link href={inviteOnly ? "/signup" : "/explore"}>
+          <Link href={inviteOnly ? createShopHref : "/explore"}>
             {inviteOnly ? "Create a pop-up shop" : "Explore drops"}
           </Link>
         </Button>

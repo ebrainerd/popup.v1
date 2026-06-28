@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Sparkles, Radio, Clock, Flame, CalendarClock, Heart } from "lucide-react";
-import { getExploreShops, type ExploreTab, type ExploreSort } from "@/lib/shops";
 import { getCurrentUser } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
+import { getExploreShops, type ExploreTab, type ExploreSort } from "@/lib/shops";
 import { ShopCard } from "@/components/shop-card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -35,9 +36,13 @@ export default async function MarketplaceExplorePage({
   const tab: ExploreTab =
     rawTab === "streaming" || rawTab === "soon" || rawTab === "following" ? rawTab : "all";
   const sort: ExploreSort = rawSort === "popular" ? "popular" : "soonest";
-  const user = tab === "following" ? await getCurrentUser() : null;
+  const user = await getCurrentUser();
+  const createShopHref = createShopPath(Boolean(user));
+  const followingUser = tab === "following" ? user : null;
   const shops =
-    tab === "following" && !user ? [] : await getExploreShops(tab, sort, user?.id);
+    tab === "following" && !followingUser
+      ? []
+      : await getExploreShops(tab, sort, followingUser?.id);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8">
@@ -93,7 +98,7 @@ export default async function MarketplaceExplorePage({
         <div className="rounded-lg border border-dashed border-border p-12 text-center">
           <p className="text-muted-foreground">
             {tab === "following"
-              ? user
+              ? followingUser
                 ? "No upcoming or live drops from creators you follow."
                 : "Log in to see drops from creators you follow."
               : tab === "streaming"
@@ -105,14 +110,14 @@ export default async function MarketplaceExplorePage({
           <Button asChild className="mt-4 rounded-full">
             <Link
               href={
-                tab === "following" && !user
+                tab === "following" && !followingUser
                   ? "/login?redirectTo=/explore?tab=following"
                   : tab === "soon" || tab === "streaming"
                     ? "/explore?tab=soon"
-                    : "/signup"
+                    : createShopHref
               }
             >
-              {tab === "following" && !user
+              {tab === "following" && !followingUser
                 ? "Log in"
                 : tab === "soon" || tab === "streaming"
                   ? "Browse upcoming"

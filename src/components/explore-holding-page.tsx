@@ -1,8 +1,13 @@
 import Link from "next/link";
 import { Link2, Store, ArrowRight } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { createShopPath } from "@/lib/auth-routes";
 import { Button } from "@/components/ui/button";
 
-export function ExploreHoldingPage() {
+export async function ExploreHoldingPage() {
+  const user = await getCurrentUser();
+  const createShopHref = createShopPath(Boolean(user));
+
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 text-center">
       <div className="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-primary/15 text-primary">
@@ -15,7 +20,7 @@ export function ExploreHoldingPage() {
       </p>
       <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
         <Button asChild className="rounded-full">
-          <Link href="/signup">
+          <Link href={createShopHref}>
             Create a pop-up shop
             <ArrowRight className="size-4" />
           </Link>
