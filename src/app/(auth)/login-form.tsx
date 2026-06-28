@@ -16,10 +16,10 @@ import { Label } from "@/components/ui/label";
 
 const initialState: AuthState = { error: null };
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" className="w-full" size="lg" disabled={pending}>
+    <Button type="submit" className="w-full" size="lg" disabled={pending || disabled}>
       {pending ? "Please wait…" : "Log in"}
     </Button>
   );
@@ -28,18 +28,8 @@ function SubmitButton() {
 export function LoginForm({ redirectTo }: { redirectTo?: string }) {
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0);
+  const [state, formAction] = useActionState(signInWithPassword, initialState);
 
-  async function loginAction(prev: AuthState, formData: FormData): Promise<AuthState> {
-    const next = await signInWithPassword(prev, formData);
-    if (next.error) {
-      setCaptchaToken(null);
-      setTurnstileResetKey((k) => k + 1);
-    }
-    return next;
-  }
-
-  const [state, formAction] = useActionState(loginAction, initialState);
   const submitDisabled = turnstileEnabled && !captchaToken;
 
   return (
@@ -61,6 +51,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       <form action={formAction} className="space-y-3">
         <input type="hidden" name="redirectTo" value={redirectTo ?? "/dashboard"} />
         <input type="hidden" name="captchaToken" value={captchaToken ?? ""} />
+
         <div className="space-y-1.5">
           <Label htmlFor="email">Email</Label>
           <Input id="email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" />
@@ -78,7 +69,10 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
           />
         </div>
 
-        <Turnstile onTokenChange={setCaptchaToken} resetKey={turnstileResetKey} />
+        <Turnstile
+          onTokenChange={setCaptchaToken}
+          resetKey={state.error ? state.error.length : 0}
+        />
 
         {state.error && (
           <p className="flex items-center gap-2 rounded-md bg-live/10 px-3 py-2 text-sm text-live">
@@ -86,7 +80,7 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
           </p>
         )}
 
-        <SubmitButton />
+        <SubmitButton disabled={submitDisabled} />
         {submitDisabled && (
           <p className="text-center text-xs text-muted-foreground">Complete captcha to continue.</p>
         )}
@@ -105,7 +99,6 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
 export function CheckEmailNotice() {
   return (
     <p className="flex items-center gap-2 rounded-md bg-accent/10 px-3 py-2 text-sm text-accent">
-      <Mail className="size-4" />
       Check your email to confirm your account, then log in.
     </p>
   );

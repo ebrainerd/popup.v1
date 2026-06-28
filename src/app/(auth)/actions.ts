@@ -134,7 +134,6 @@ export async function signUpWithPassword(
     return { error: null, needsEmailConfirm: true };
   }
 
-  revalidatePath("/", "layout");
   return { error: null, ok: true };
 }
 

@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
 import { SignupForm } from "@/app/(auth)/signup-form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Logo } from "@/components/logo";
-import { getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Sign up" };
 
@@ -13,7 +11,9 @@ export default async function SignupPage({
   searchParams: Promise<{ redirectTo?: string }>;
 }) {
   const { redirectTo } = await searchParams;
-  if (await getCurrentUser()) redirect(redirectTo || "/dashboard");
+
+  // Do not redirect logged-in users here — after email signup the optional avatar
+  // step runs on this page. Middleware sends incomplete OAuth profiles to /onboarding.
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-md flex-col justify-center px-4 py-10">

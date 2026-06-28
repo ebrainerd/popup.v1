@@ -61,13 +61,13 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user && !isOnboardingExempt(pathname)) {
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from("profiles")
       .select("profile_setup_complete")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (profile && !profile.profile_setup_complete) {
+    if (!error && profile && !profile.profile_setup_complete) {
       const url = request.nextUrl.clone();
       url.pathname = ONBOARDING_PATH;
       url.searchParams.set("redirectTo", pathname);
