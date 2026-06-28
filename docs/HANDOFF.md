@@ -23,6 +23,7 @@ Stripe. Stack: **Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + Ver
 | Testing & CI | `docs/TESTING.md` |
 | Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
+| Production launch & load testing | `docs/PRODUCTION_READINESS.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
 | DB schema | `supabase/migrations/*.sql` (apply in order) |
 
