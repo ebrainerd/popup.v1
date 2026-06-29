@@ -19,8 +19,21 @@ async function ownerClient() {
 }
 
 export type FlashDiscountResult =
-  | { ok: true; productId: string; discountPrice: number }
+  | { ok: true; productId: string; discountPrice: number; auctionStartingBid?: number }
   | { ok: false; error: string };
+
+async function productHasAuctionBids(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  productId: string,
+): Promise<boolean> {
+  const { count, error } = await supabase
+    .from("auction_runs")
+    .select("*", { count: "exact", head: true })
+    .eq("product_id", productId)
+    .gt("bid_count", 0);
+  if (error) return true;
+  return (count ?? 0) > 0;
+}
 
 /** Apply a temporary discount to an existing product. */
 export async function setFlashDiscount(
@@ -32,24 +45,69 @@ export async function setFlashDiscount(
 
   const discountPrice = toCents(discountDollars);
 
-  // RLS (owns_shop) restricts this update to the shop owner.
-  const { data, error } = await supabase
+  const { data: product, error: loadError } = await supabase
     .from("products")
-    .update({ discount_price: discountPrice })
+    .select("id, shop_id, price, sale_type, auction_starting_bid")
     .eq("id", productId)
-    .select("id, shop_id, price")
     .single();
 
-  if (error || !data) return { ok: false, error: error?.message ?? "Could not apply discount." };
-  if (discountPrice >= data.price) {
-    return { ok: false, error: "Discount must be lower than the current price." };
+  if (loadError || !product) {
+    return { ok: false, error: loadError?.message ?? "Product not found." };
+  }
+
+  const listPrice = product.price;
+  if (discountPrice >= listPrice) {
+    return {
+      ok: false,
+      error:
+        product.sale_type === "auction"
+          ? "Flash price must be lower than the starting bid."
+          : "Discount must be lower than the current price.",
+    };
   }
   if (discountPrice < 50) {
     return { ok: false, error: "Flash price must be at least $0.50 (the payment minimum)." };
   }
 
+  if (product.sale_type === "auction") {
+    if (await productHasAuctionBids(supabase, productId)) {
+      return {
+        ok: false,
+        error: "Flash deals can't apply after bidding has started on this auction.",
+      };
+    }
+  }
+
+  const updates =
+    product.sale_type === "auction"
+      ? { discount_price: discountPrice, auction_starting_bid: discountPrice }
+      : { discount_price: discountPrice };
+
+  const { data, error } = await supabase
+    .from("products")
+    .update(updates)
+    .eq("id", productId)
+    .select("id, shop_id, sale_type")
+    .single();
+
+  if (error || !data) return { ok: false, error: error?.message ?? "Could not apply discount." };
+
+  if (product.sale_type === "auction") {
+    await supabase
+      .from("auction_runs")
+      .update({ starting_bid: discountPrice, current_bid: discountPrice })
+      .eq("product_id", productId)
+      .eq("bid_count", 0)
+      .in("status", ["queued", "live"]);
+  }
+
   revalidatePath(`/shop/${data.shop_id}`);
-  return { ok: true, productId, discountPrice };
+  return {
+    ok: true,
+    productId,
+    discountPrice,
+    auctionStartingBid: product.sale_type === "auction" ? discountPrice : undefined,
+  };
 }
 
 export type FlashClearResult = { ok: boolean; error?: string; shopId?: string };
@@ -58,16 +116,34 @@ export async function clearFlashDiscount(productId: string): Promise<FlashClearR
   const { supabase, user } = await ownerClient();
   if (!user) return { ok: false, error: "Not authenticated." };
 
-  const { data, error } = await supabase
+  const { data: product, error: loadError } = await supabase
     .from("products")
-    .update({ discount_price: null })
+    .select("shop_id, price, sale_type")
     .eq("id", productId)
-    .select("shop_id")
     .single();
-  if (error || !data) return { ok: false, error: error?.message ?? "Could not clear discount." };
+  if (loadError || !product) {
+    return { ok: false, error: loadError?.message ?? "Product not found." };
+  }
 
-  revalidatePath(`/shop/${data.shop_id}`);
-  return { ok: true, shopId: data.shop_id };
+  const updates =
+    product.sale_type === "auction"
+      ? { discount_price: null, auction_starting_bid: product.price }
+      : { discount_price: null };
+
+  const { error } = await supabase.from("products").update(updates).eq("id", productId);
+  if (error) return { ok: false, error: error.message };
+
+  if (product.sale_type === "auction") {
+    await supabase
+      .from("auction_runs")
+      .update({ starting_bid: product.price, current_bid: product.price })
+      .eq("product_id", productId)
+      .eq("bid_count", 0)
+      .in("status", ["queued", "live"]);
+  }
+
+  revalidatePath(`/shop/${product.shop_id}`);
+  return { ok: true, shopId: product.shop_id };
 }
 
 const MIN_PRICE_USD = 0.5;

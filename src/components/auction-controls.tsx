@@ -8,12 +8,13 @@ import {
   startAuction,
   cancelAuction,
 } from "@/app/shop/auction-actions";
-import { ROOM_EVENTS, type AuctionStartedBroadcast, type FlashItemBroadcast } from "@/lib/realtime";
+import { ROOM_EVENTS, type AuctionStartedBroadcast, type FlashItemBroadcast, type FlashPriceBroadcast, type FlashClearBroadcast } from "@/lib/realtime";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/database.types";
 import type { AuctionRunWithProduct } from "@/lib/auctions";
 import { formatCurrency } from "@/lib/utils";
+import { productDisplayPrice } from "@/lib/product-pricing";
 
 export function AuctionControls({
   shopId,
@@ -35,6 +36,58 @@ export function AuctionControls({
     if (item.sale_type !== "auction") return;
     setProductList((prev) =>
       prev.some((p) => p.id === item.id) ? prev : [...prev, item as Product],
+    );
+  });
+
+  useShopEvent(ROOM_EVENTS.flashPrice, (payload) => {
+    const { productId, discountPrice, auctionStartingBid } = payload as FlashPriceBroadcast;
+    setProductList((prev) =>
+      prev.map((p) =>
+        p.id === productId
+          ? {
+              ...p,
+              discount_price: discountPrice,
+              auction_starting_bid: auctionStartingBid ?? discountPrice,
+            }
+          : p,
+      ),
+    );
+    setRuns((prev) =>
+      prev.map((r) =>
+        r.product_id === productId && r.bid_count === 0
+          ? {
+              ...r,
+              starting_bid: auctionStartingBid ?? discountPrice,
+              current_bid: auctionStartingBid ?? discountPrice,
+            }
+          : r,
+      ),
+    );
+  });
+
+  useShopEvent(ROOM_EVENTS.flashClear, (payload) => {
+    const { productId, restoreAuctionStartingBid } = payload as FlashClearBroadcast;
+    setProductList((prev) =>
+      prev.map((p) =>
+        p.id === productId
+          ? {
+              ...p,
+              discount_price: null,
+              auction_starting_bid: restoreAuctionStartingBid ?? p.price,
+            }
+          : p,
+      ),
+    );
+    setRuns((prev) =>
+      prev.map((r) =>
+        r.product_id === productId && r.bid_count === 0
+          ? {
+              ...r,
+              starting_bid: restoreAuctionStartingBid ?? r.starting_bid,
+              current_bid: restoreAuctionStartingBid ?? r.current_bid,
+            }
+          : r,
+      ),
     );
   });
 
@@ -205,7 +258,7 @@ export function AuctionControls({
               <div className="min-w-0">
                 <p className="truncate font-medium">{p.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  Starting {formatCurrency(p.auction_starting_bid ?? p.price)}
+                  Starting {formatCurrency(productDisplayPrice(p))}
                 </p>
               </div>
               <div className="flex gap-2">

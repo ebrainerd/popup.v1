@@ -47,10 +47,12 @@ export type SystemBroadcast = {
 export type FlashPriceBroadcast = {
   productId: string;
   discountPrice: number; // cents
+  auctionStartingBid?: number;
 };
 
 export type FlashClearBroadcast = {
   productId: string;
+  restoreAuctionStartingBid?: number;
 };
 
 export type FlashItemBroadcast = {

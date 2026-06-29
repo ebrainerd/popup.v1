@@ -15,6 +15,7 @@ import {
 } from "@/lib/realtime";
 import type { Product } from "@/lib/database.types";
 import { cn, formatCurrency } from "@/lib/utils";
+import { isFlashDiscounted, productDisplayPrice } from "@/lib/product-pricing";
 import { useShopOpen } from "@/hooks/use-shop-open";
 
 function photosOf(product: Product): string[] {
@@ -44,17 +45,35 @@ export function ProductsGridLive({
   const shopOpen = useShopOpen(startAt, endAt, isOpen);
 
   useShopEvent(ROOM_EVENTS.flashPrice, (payload) => {
-    const { productId, discountPrice } = payload as FlashPriceBroadcast;
+    const { productId, discountPrice, auctionStartingBid } = payload as FlashPriceBroadcast;
     setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, discount_price: discountPrice } : p)),
+      prev.map((p) => {
+        if (p.id !== productId) return p;
+        return {
+          ...p,
+          discount_price: discountPrice,
+          auction_starting_bid:
+            auctionStartingBid ?? (p.sale_type === "auction" ? discountPrice : p.auction_starting_bid),
+        };
+      }),
     );
     celebrate();
   });
 
   useShopEvent(ROOM_EVENTS.flashClear, (payload) => {
-    const { productId } = payload as FlashClearBroadcast;
+    const { productId, restoreAuctionStartingBid } = payload as FlashClearBroadcast;
     setProducts((prev) =>
-      prev.map((p) => (p.id === productId ? { ...p, discount_price: null } : p)),
+      prev.map((p) => {
+        if (p.id !== productId) return p;
+        return {
+          ...p,
+          discount_price: null,
+          auction_starting_bid:
+            p.sale_type === "auction"
+              ? (restoreAuctionStartingBid ?? p.price)
+              : p.auction_starting_bid,
+        };
+      }),
     );
   });
 
@@ -133,7 +152,7 @@ function ProductCard({
   onOpenDetails: () => void;
 }) {
   const photos = photosOf(product);
-  const discounted = product.discount_price != null && product.discount_price < product.price;
+  const discounted = isFlashDiscounted(product);
   const soldOut = product.quantity <= 0;
   const isAuction = product.sale_type === "auction";
 
@@ -270,15 +289,29 @@ function ProductDetailDialog({
 }
 
 function PriceBlock({ product }: { product: Product }) {
-  const discounted = product.discount_price != null && product.discount_price < product.price;
+  const discounted = isFlashDiscounted(product);
   const soldOut = product.quantity <= 0;
   const isAuction = product.sale_type === "auction";
+  const displayPrice = productDisplayPrice(product);
+
   return (
     <div>
       {isAuction ? (
-        <span className="text-lg font-bold">
-          Starting {formatCurrency(product.auction_starting_bid ?? product.price)}
-        </span>
+        discounted ? (
+          <div className="flex items-baseline gap-2">
+            <span
+              key={product.discount_price}
+              className="animate-price-pop text-lg font-bold text-live"
+            >
+              Starting {formatCurrency(displayPrice)}
+            </span>
+            <span className="text-sm text-muted-foreground line-through">
+              {formatCurrency(product.price)}
+            </span>
+          </div>
+        ) : (
+          <span className="text-lg font-bold">Starting {formatCurrency(displayPrice)}</span>
+        )
       ) : discounted ? (
         <div className="flex items-baseline gap-2">
           <span key={product.discount_price} className="animate-price-pop text-lg font-bold text-live">

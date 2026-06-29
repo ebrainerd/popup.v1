@@ -18,6 +18,7 @@ import {
 } from "@/components/auction-product-fields";
 import type { Product } from "@/lib/database.types";
 import { formatCurrency } from "@/lib/utils";
+import { isFlashDiscounted, productDisplayPrice } from "@/lib/product-pricing";
 
 const emptyItem = () => ({
   title: "",
@@ -57,15 +58,26 @@ export function FlashControls({ products }: { products: Product[] }) {
         setError(res.error);
         return;
       }
-      emit(ROOM_EVENTS.flashPrice, { productId: res.productId, discountPrice: res.discountPrice });
+      emit(ROOM_EVENTS.flashPrice, {
+        productId: res.productId,
+        discountPrice: res.discountPrice,
+        auctionStartingBid: res.auctionStartingBid,
+      });
       setDiscount("");
     });
   }
 
   function clearDiscount(id: string) {
+    const product = products.find((p) => p.id === id);
     startTransition(async () => {
       const res = await clearFlashDiscount(id);
-      if (res.ok) emit(ROOM_EVENTS.flashClear, { productId: id });
+      if (res.ok) {
+        emit(ROOM_EVENTS.flashClear, {
+          productId: id,
+          restoreAuctionStartingBid:
+            product?.sale_type === "auction" ? product.price : undefined,
+        });
+      }
     });
   }
 
@@ -102,9 +114,7 @@ export function FlashControls({ products }: { products: Product[] }) {
     });
   }
 
-  const activeDiscounts = products.filter(
-    (p) => p.discount_price != null && p.discount_price < p.price,
-  );
+  const activeDiscounts = products.filter((p) => isFlashDiscounted(p));
 
   const isAuction = item.auction.saleType === "auction";
 
@@ -128,7 +138,8 @@ export function FlashControls({ products }: { products: Product[] }) {
             {sellable.length === 0 && <option value="">No products</option>}
             {sellable.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.title} ({formatCurrency(p.price)})
+                {p.title} ({formatCurrency(productDisplayPrice(p))}
+                {p.sale_type === "auction" ? " starting" : ""})
               </option>
             ))}
           </select>
