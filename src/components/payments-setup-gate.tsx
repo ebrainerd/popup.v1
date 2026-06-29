@@ -24,8 +24,8 @@ export function PaymentsSetupGate({
           Set up payments first
         </CardTitle>
         <CardDescription>
-          Connect your payout account with Stripe before creating a shop. Buyers check out through
-          PopUp, and funds are released to you after you ship.
+          Connect your payout account with Stripe before creating a shop. This is a one-time setup
+          for your seller account and applies to all of your shops.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-3">

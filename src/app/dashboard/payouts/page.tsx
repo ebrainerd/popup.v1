@@ -5,7 +5,6 @@ import { ArrowLeft, CheckCircle2, CreditCard } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
 import { SetupPaymentsButton } from "@/components/setup-payments-button";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,8 +44,8 @@ export default async function PayoutsPage({
             <CreditCard className="size-5" /> Payouts
           </CardTitle>
           <CardDescription>
-            PopUp uses Stripe Connect to pay you. Funds are released after you ship an order
-            (held briefly to confirm it&apos;s on its way), minus the 9% platform fee.
+            One-time setup for your seller account — applies to every shop you open. PopUp uses
+            Stripe Connect to pay you after you ship (minus the 9% platform fee).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
