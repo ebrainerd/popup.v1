@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { ArrowLeft, CheckCircle2, CreditCard } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
-import { startStripeOnboarding, syncStripeStatus } from "@/app/dashboard/payouts/actions";
+import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
+import { SetupPaymentsButton } from "@/components/setup-payments-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,14 +15,20 @@ export const dynamic = "force-dynamic";
 export default async function PayoutsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; error?: string }>;
+  searchParams: Promise<{ status?: string; error?: string; redirectTo?: string }>;
 }) {
-  const { error } = await searchParams;
+  const { error, redirectTo } = await searchParams;
+  const safeRedirectTo =
+    redirectTo?.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : null;
   const stripeConfigured = Boolean(process.env.STRIPE_SECRET_KEY);
 
   // Refresh onboarding status from Stripe when returning from the flow.
   const onboarded = stripeConfigured ? await syncStripeStatus() : false;
   const profile = await getCurrentProfile();
+
+  if (onboarded && safeRedirectTo) {
+    redirect(safeRedirectTo);
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -77,11 +85,10 @@ export default async function PayoutsPage({
                     Connect your bank details to start receiving payouts.
                   </p>
                 </div>
-                <form action={startStripeOnboarding}>
-                  <Button type="submit">
-                    {profile?.stripe_account_id ? "Finish setup" : "Set up payouts"}
-                  </Button>
-                </form>
+                <SetupPaymentsButton
+                  redirectTo={safeRedirectTo ?? "/dashboard/payouts"}
+                  label={profile?.stripe_account_id ? "Finish setup" : "Set up payouts"}
+                />
               </div>
             </>
           )}

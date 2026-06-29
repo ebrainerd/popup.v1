@@ -7,10 +7,19 @@ import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe";
 import { getSiteUrl } from "@/lib/env";
 
+function safeRedirectPath(input: FormDataEntryValue | null, fallback = "/dashboard/payouts"): string {
+  const value = typeof input === "string" ? input : "";
+  if (value.startsWith("/") && !value.startsWith("//")) return value;
+  return fallback;
+}
+
 /** Create (if needed) the seller's Stripe Express account and start onboarding. */
-export async function startStripeOnboarding() {
+export async function startStripeOnboarding(formData: FormData) {
   const stripe = getStripe();
-  if (!stripe) redirect("/dashboard/payouts?error=not_configured");
+  const redirectTo = safeRedirectPath(formData.get("redirectTo"));
+  const payoutsReturn = `/dashboard/payouts?status=return&redirectTo=${encodeURIComponent(redirectTo)}`;
+
+  if (!stripe) redirect(`/dashboard/payouts?error=not_configured&redirectTo=${encodeURIComponent(redirectTo)}`);
 
   const supabase = await createClient();
   const {
@@ -47,15 +56,15 @@ export async function startStripeOnboarding() {
 
     const link = await stripe.accountLinks.create({
       account: accountId,
-      refresh_url: `${getSiteUrl()}/dashboard/payouts?status=refresh`,
-      return_url: `${getSiteUrl()}/dashboard/payouts?status=return`,
+      refresh_url: `${getSiteUrl()}/dashboard/payouts?status=refresh&redirectTo=${encodeURIComponent(redirectTo)}`,
+      return_url: `${getSiteUrl()}${payoutsReturn}`,
       type: "account_onboarding",
     });
     onboardingUrl = link.url;
   } catch (err) {
     console.error("startStripeOnboarding failed", err);
     Sentry.captureException(err, { tags: { area: "stripe_onboarding" } });
-    redirect("/dashboard/payouts?error=onboarding_failed");
+    redirect(`/dashboard/payouts?error=onboarding_failed&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
   redirect(onboardingUrl);
@@ -85,6 +94,7 @@ export async function syncStripeStatus(): Promise<boolean> {
     if (onboarded !== profile.stripe_onboarded) {
       await supabase.from("profiles").update({ stripe_onboarded: onboarded }).eq("id", user.id);
       revalidatePath("/dashboard", "layout");
+      revalidatePath("/dashboard/shops/new");
     }
     return onboarded;
   } catch {

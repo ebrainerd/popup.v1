@@ -17,12 +17,15 @@ import { ProductManager } from "@/components/product-manager";
 import { LiveControlsCard } from "@/components/live-controls-card";
 import { PublishControls } from "@/components/publish-controls";
 import { LaunchChecklist } from "@/components/launch-checklist";
+import { PaymentsSetupBanner } from "@/components/payments-setup-banner";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { DropReportCard } from "@/components/drop-report";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
 import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
 import { derivePublishedShopWindow } from "@/lib/utils";
 import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
+import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
+import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
 
 export const metadata: Metadata = { title: "Manage shop" };
 export const dynamic = "force-dynamic";
@@ -44,6 +47,10 @@ export default async function ManageShopPage({
   const { id } = await params;
   const { created } = await searchParams;
   const profile = (await getCurrentProfile())!;
+  const stripeOnboarded = isStripePaymentsRequired()
+    ? await syncStripeStatus()
+    : profile.stripe_onboarded;
+  const sellerProfile = { ...profile, stripe_onboarded: stripeOnboarded };
   const shop = await getOwnedShopWithProducts(id, profile.id);
   if (!shop) notFound();
 
@@ -56,7 +63,9 @@ export default async function ManageShopPage({
     getDropReminderCount(shop.id),
   ]);
 
-  const health = computeDropHealth(shop, profile, reminderCount);
+  const health = computeDropHealth(shop, sellerProfile, reminderCount);
+  const payoutsConnected = arePayoutsConnected(sellerProfile);
+  const paymentsRequired = isStripePaymentsRequired();
   const report = window.isEnded ? await getDropReport(shop.id, profile.id) : null;
   const streamProvider = effectiveStreamProvider(shop);
   const nativeLiveEnabled = isNativeLiveEnabled();
@@ -117,7 +126,15 @@ export default async function ManageShopPage({
         </div>
       </div>
 
-      <LaunchChecklist health={health} shopId={shop.id} isDraft={isDraft} />
+      <LaunchChecklist
+        health={health}
+        shopId={shop.id}
+        isDraft={isDraft}
+        paymentsRequired={paymentsRequired}
+        payoutsConnected={payoutsConnected}
+      />
+
+      {paymentsRequired && !payoutsConnected && <PaymentsSetupBanner shopId={shop.id} />}
 
       {isDraft && !justCreated && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
@@ -142,6 +159,8 @@ export default async function ManageShopPage({
         productCount={shop.products.length}
         startAt={shop.start_at}
         endAt={shop.end_at}
+        payoutsConnected={payoutsConnected}
+        paymentsRequired={paymentsRequired}
       />
 
       <div className="space-y-4">

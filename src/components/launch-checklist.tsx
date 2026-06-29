@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Check, Circle } from "lucide-react";
 import { CopyLink } from "@/components/copy-link";
+import { SetupPaymentsButton } from "@/components/setup-payments-button";
 import { cn } from "@/lib/utils";
 import type { DropHealth } from "@/lib/drop-readiness";
 
@@ -12,10 +13,14 @@ export function LaunchChecklist({
   health,
   shopId,
   isDraft,
+  paymentsRequired = false,
+  payoutsConnected = true,
 }: {
   health: DropHealth;
   shopId: string;
   isDraft: boolean;
+  paymentsRequired?: boolean;
+  payoutsConnected?: boolean;
 }) {
   const [shareCopied, setShareCopied] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -55,6 +60,13 @@ export function LaunchChecklist({
           <div onClick={markShareCopied}>
             <CopyLink path={`/shop/${shopId}`} label="Share shop link" />
           </div>
+        )}
+        {paymentsRequired && !payoutsConnected && (
+          <SetupPaymentsButton
+            redirectTo={`/dashboard/shops/${shopId}`}
+            size="sm"
+            className="shrink-0"
+          />
         )}
       </div>
       <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5">

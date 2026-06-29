@@ -17,6 +17,8 @@ export function PublishControls({
   productCount,
   startAt,
   endAt,
+  payoutsConnected = true,
+  paymentsRequired = false,
 }: {
   shopId: string;
   isDraft: boolean;
@@ -25,11 +27,13 @@ export function PublishControls({
   productCount: number;
   startAt: string;
   endAt: string;
+  payoutsConnected?: boolean;
+  paymentsRequired?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-  const canPublish = productCount >= 1;
+  const canPublish = productCount >= 1 && (!paymentsRequired || payoutsConnected);
   const inviteOnly = isInviteOnlyMode();
 
   function publish() {
@@ -63,7 +67,9 @@ export function PublishControls({
                   ? inviteOnly
                     ? "Preview your shop, then publish when you're ready for buyers."
                     : "Preview your shop — it's hidden from Explore and search until you publish."
-                  : "Add at least one product, then preview and publish so buyers can check out."}
+                  : !payoutsConnected && paymentsRequired
+                    ? "Set up payments, then add at least one product before publishing."
+                    : "Add at least one product, then preview and publish so buyers can check out."}
               </p>
             </div>
           </div>

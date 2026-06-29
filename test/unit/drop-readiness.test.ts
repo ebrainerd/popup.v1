@@ -74,4 +74,14 @@ describe("computeDropHealth", () => {
     expect(health.items.find((i) => i.id === "published")?.done).toBe(true);
     expect(health.readyCount).toBe(5);
   });
+
+  it("marks payouts incomplete when Stripe is required", () => {
+    const prev = process.env.STRIPE_SECRET_KEY;
+    process.env.STRIPE_SECRET_KEY = "sk_test_example";
+
+    const health = computeDropHealth(baseShop, { stripe_onboarded: false, follower_count: 0 }, 0);
+    expect(health.items.find((i) => i.id === "payouts")?.done).toBe(false);
+
+    process.env.STRIPE_SECRET_KEY = prev;
+  });
 });

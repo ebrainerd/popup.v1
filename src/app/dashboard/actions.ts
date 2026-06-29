@@ -12,6 +12,7 @@ import {
 } from "@/lib/auction-bidding";
 import { shopThemeToJson } from "@/lib/shop-theme";
 import { isNativeLiveEnabled, shopLiveKitRoomName } from "@/lib/live-stream";
+import { isStripePaymentsRequired } from "@/lib/payments";
 import type { StreamProvider } from "@/lib/database.types";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
@@ -83,6 +84,23 @@ async function requireSellerTermsAccepted(
   return null;
 }
 
+async function requirePayoutsConnected(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<ActionState | null> {
+  if (!isStripePaymentsRequired()) return null;
+
+  const { data } = await supabase
+    .from("profiles")
+    .select("stripe_onboarded")
+    .eq("id", userId)
+    .maybeSingle();
+  if (!data?.stripe_onboarded) {
+    return { error: "Set up payments before creating or publishing a shop." };
+  }
+  return null;
+}
+
 /** Persist seller acceptance of the Terms of Service (required before opening a shop). */
 export async function acceptSellerTerms(): Promise<ActionState> {
   const { supabase, user } = await requireUser();
@@ -101,6 +119,9 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
 
   const termsError = await requireSellerTermsAccepted(supabase, user.id);
   if (termsError) return termsError;
+
+  const payoutsError = await requirePayoutsConnected(supabase, user.id);
+  if (payoutsError) return payoutsError;
 
   const parsed = shopSchema.safeParse({
     name: formData.get("name"),
@@ -250,6 +271,9 @@ export async function publishShop(shopId: string): Promise<ActionState> {
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const payoutsError = await requirePayoutsConnected(supabase, user.id);
+  if (payoutsError) return payoutsError;
 
   const { count } = await supabase
     .from("products")
@@ -762,6 +786,11 @@ export async function finishShopSetup(
     };
   }
 
+  if (!parsed.data.shopId) {
+    const payoutsError = await requirePayoutsConnected(supabase, user.id);
+    if (payoutsError) return payoutsError;
+  }
+
   const d = parsed.data;
   const startIso = new Date(d.startAt).toISOString();
   const endIso = new Date(d.endAt).toISOString();
@@ -978,6 +1007,11 @@ export async function saveShopDraft(
         parsed.error.issues.map((i) => [i.path.join(".") || "form", i.message]),
       ),
     };
+  }
+
+  if (!parsed.data.shopId) {
+    const payoutsError = await requirePayoutsConnected(supabase, user.id);
+    if (payoutsError) return payoutsError;
   }
 
   const d = parsed.data;

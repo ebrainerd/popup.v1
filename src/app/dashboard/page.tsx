@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus, Store, Star, DollarSign, CalendarDays } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
+import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
+import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
 import { getSellerShops } from "@/lib/shops";
+import { SetupPaymentsButton } from "@/components/setup-payments-button";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +18,11 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const profile = (await getCurrentProfile())!;
+  const stripeOnboarded = isStripePaymentsRequired()
+    ? await syncStripeStatus()
+    : profile.stripe_onboarded;
+  const payoutsConnected = arePayoutsConnected({ stripe_onboarded: stripeOnboarded });
+  const paymentsRequired = isStripePaymentsRequired();
   const shops = await getSellerShops(profile.id);
 
   const supabase = await createClient();
@@ -51,18 +59,16 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      {process.env.STRIPE_SECRET_KEY && !profile.stripe_onboarded && (
+      {paymentsRequired && !payoutsConnected && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
-              <p className="font-medium">Set up payouts to get paid</p>
+              <p className="font-medium">Set up payments before creating a shop</p>
               <p className="text-sm text-muted-foreground">
-                Connect a Stripe payout account before your shops start selling.
+                Connect your Stripe payout account so buyers can check out and you can get paid.
               </p>
             </div>
-            <Button asChild>
-              <Link href="/dashboard/payouts">Set up payouts</Link>
-            </Button>
+            <SetupPaymentsButton redirectTo="/dashboard/shops/new" label="Setup Payments" />
           </CardContent>
         </Card>
       )}

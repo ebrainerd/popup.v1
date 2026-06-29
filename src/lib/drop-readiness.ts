@@ -1,5 +1,6 @@
 import type { ShopWithDetails } from "@/lib/shops";
 import { canSellerGoLive } from "@/lib/live-stream";
+import { arePayoutsConnected } from "@/lib/payments";
 
 export type DropReadinessItem = {
   id: string;
@@ -38,14 +39,14 @@ export function computeDropHealth(
   const hasStreamConfigured = canSellerGoLive(shop);
   const isPublished = shop.status !== "draft";
   const hasProducts = productCount > 0;
-  const payoutsConnected = seller.stripe_onboarded || !process.env.STRIPE_SECRET_KEY;
+  const payoutsConnected = arePayoutsConnected(seller);
 
   const items: DropReadinessItem[] = [
     { id: "details", label: "Shop details complete", done: hasDetails },
     { id: "products", label: "At least one product added", done: hasProducts },
     { id: "cover", label: "Cover image added", done: hasCover },
     { id: "live", label: "Stream source configured", done: hasStreamConfigured, optional: true },
-    { id: "payouts", label: "Stripe payouts connected", done: payoutsConnected },
+    { id: "payouts", label: "Payments set up", done: payoutsConnected },
     { id: "published", label: "Drop published", done: isPublished },
     { id: "share", label: "Share your shop link copied", done: false, optional: true },
   ];
