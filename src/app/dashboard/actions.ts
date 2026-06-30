@@ -13,6 +13,7 @@ import {
 import { shopThemeToJson } from "@/lib/shop-theme";
 import { isNativeLiveEnabled, shopLiveKitRoomName } from "@/lib/live-stream";
 import { isStripePaymentsRequired } from "@/lib/payments";
+import { PLACEHOLDER_SCHEDULE } from "@/lib/shop-schedule";
 import type { StreamProvider } from "@/lib/database.types";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
@@ -49,16 +50,22 @@ const shopSchema = z
     name: z.string().trim().min(1, "Name is required.").max(120),
     description: z.string().trim().max(2000).optional().or(z.literal("")),
     cover_url: z.string().url().optional().or(z.literal("")),
-    start_at: z.string().min(1, "Start time is required."),
-    end_at: z.string().min(1, "End time is required."),
+    start_at: z.string().min(1).optional(),
+    end_at: z.string().min(1).optional(),
     visibility: z.enum(["public", "private"]),
     shipping_rate: z.coerce.number().min(0).max(100000),
     live_url: z.string().url().optional().or(z.literal("")),
   })
-  .refine((d) => new Date(d.end_at) > new Date(d.start_at), {
-    message: "End time must be after start time.",
-    path: ["end_at"],
-  });
+  .refine(
+    (d) => {
+      if (!d.start_at || !d.end_at) return true;
+      return new Date(d.end_at) > new Date(d.start_at);
+    },
+    {
+      message: "End time must be after start time.",
+      path: ["end_at"],
+    },
+  );
 
 async function requireUser() {
   const supabase = await createClient();
@@ -138,8 +145,6 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
   }
 
   const d = parsed.data;
-  const startIso = new Date(d.start_at).toISOString();
-  const endIso = new Date(d.end_at).toISOString();
   const visibility = resolveShopVisibility(d.visibility);
 
   const { data: shop, error } = await supabase
@@ -150,8 +155,9 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
       slug: slugify(d.name),
       description: d.description || null,
       cover_url: d.cover_url || null,
-      start_at: startIso,
-      end_at: endIso,
+      start_at: PLACEHOLDER_SCHEDULE.start_at,
+      end_at: PLACEHOLDER_SCHEDULE.end_at,
+      schedule_set: false,
       visibility,
       shipping_rate: toCents(d.shipping_rate),
       live_url: d.live_url || null,
@@ -193,19 +199,31 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
   }
 
   const d = parsed.data;
-  const startIso = new Date(d.start_at).toISOString();
-  const endIso = new Date(d.end_at).toISOString();
   const visibility = resolveShopVisibility(d.visibility);
 
-  // Editing must not auto-publish a draft; only refresh the schedule-derived
-  // status for already-published shops.
   const { data: current } = await supabase
     .from("shops")
-    .select("status")
+    .select("status, schedule_set, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
-  const nextStatus = current?.status === "draft" ? "draft" : computeStatus(startIso, endIso);
+  if (!current) return { error: "Shop not found." };
+
+  const hasScheduleInput = Boolean(d.start_at && d.end_at);
+  let startIso = current.start_at;
+  let endIso = current.end_at;
+  let scheduleSet = current.schedule_set;
+
+  if (hasScheduleInput) {
+    startIso = new Date(d.start_at!).toISOString();
+    endIso = new Date(d.end_at!).toISOString();
+    scheduleSet = true;
+  } else if (current.status !== "draft") {
+    return { error: "Start and end times are required." };
+  }
+
+  const nextStatus =
+    current.status === "draft" ? "draft" : computeStatus(startIso, endIso);
 
   const { error } = await supabase
     .from("shops")
@@ -216,6 +234,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
       cover_url: d.cover_url || null,
       start_at: startIso,
       end_at: endIso,
+      schedule_set: scheduleSet,
       visibility,
       shipping_rate: toCents(d.shipping_rate),
       status: nextStatus,
@@ -260,7 +279,7 @@ export async function publishShop(shopId: string): Promise<ActionState> {
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id, start_at, end_at, status")
+    .select("id, start_at, end_at, status, schedule_set")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
@@ -268,6 +287,10 @@ export async function publishShop(shopId: string): Promise<ActionState> {
 
   const termsError = await requireSellerTermsAccepted(supabase, user.id);
   if (termsError) return termsError;
+
+  if (!shop.schedule_set) {
+    return { error: "Set your drop schedule in Shop details before publishing." };
+  }
 
   const payoutsError = await requirePayoutsConnected(supabase, user.id);
   if (payoutsError) return payoutsError;
@@ -729,18 +752,12 @@ const finishShopSetupSchema = z
     name: z.string().trim().min(1, "Name is required.").max(120),
     description: z.string().trim().max(2000).optional().or(z.literal("")),
     coverUrl: z.string().url().optional().or(z.literal("")),
-    startAt: z.string().min(1, "Start time is required."),
-    endAt: z.string().min(1, "End time is required."),
     visibility: z.enum(["public", "private"]),
     streamSource: z.enum(["native", "external"]).default("native"),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     products: z.array(finishProductSchema).min(1, "Add at least one product."),
     theme: shopThemeSchema,
-  })
-  .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
-    message: "End time must be after start time.",
-    path: ["endAt"],
   });
 
 function finishProductInsert(
@@ -782,16 +799,12 @@ export async function finishShopSetup(
   }
 
   const d = parsed.data;
-  const startIso = new Date(d.startAt).toISOString();
-  const endIso = new Date(d.endAt).toISOString();
   const visibility = resolveShopVisibility(d.visibility);
   const shopPayload = {
     name: d.name,
     slug: slugify(d.name),
     description: d.description || null,
     cover_url: d.coverUrl || null,
-    start_at: startIso,
-    end_at: endIso,
     visibility,
     shipping_rate: 0,
     stream_provider: streamProviderFromWizard(
@@ -809,16 +822,25 @@ export async function finishShopSetup(
   if (shopId) {
     const { data: current } = await supabase
       .from("shops")
-      .select("status")
+      .select("status, schedule_set")
       .eq("id", shopId)
       .eq("seller_id", user.id)
       .maybeSingle();
     if (!current) return { error: "Shop not found." };
     if (current.status !== "draft") return { error: "Only draft shops can be edited in setup." };
 
+    const updatePayload = current.schedule_set
+      ? { ...shopPayload, status: "draft" as const }
+      : {
+          ...shopPayload,
+          ...PLACEHOLDER_SCHEDULE,
+          schedule_set: false,
+          status: "draft" as const,
+        };
+
     const { error } = await supabase
       .from("shops")
-      .update({ ...shopPayload, status: "draft" })
+      .update(updatePayload)
       .eq("id", shopId)
       .eq("seller_id", user.id);
     if (error) return { error: error.message };
@@ -828,6 +850,8 @@ export async function finishShopSetup(
       .insert({
         seller_id: user.id,
         ...shopPayload,
+        ...PLACEHOLDER_SCHEDULE,
+        schedule_set: false,
         status: "draft",
       })
       .select("id")
@@ -894,14 +918,11 @@ const saveDraftProductSchema = z.object({
   auction_sudden_death: z.boolean().optional(),
 });
 
-const saveShopDraftSchema = z
-  .object({
+const saveShopDraftSchema = z.object({
     shopId: z.string().uuid().optional(),
     name: z.string().trim().min(1, "Add a shop name before saving.").max(120),
     description: z.string().trim().max(2000).optional().or(z.literal("")),
     coverUrl: z.string().optional().or(z.literal("")),
-    startAt: z.string().min(1),
-    endAt: z.string().min(1),
     visibility: z.enum(["public", "private"]),
     streamSource: z.enum(["native", "external"]).default("native"),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
@@ -911,10 +932,6 @@ const saveShopDraftSchema = z
       .array(z.enum(["details", "products", "layout", "live", "schedule"]))
       .default([]),
     theme: shopThemeSchema,
-  })
-  .refine((d) => new Date(d.endAt) > new Date(d.startAt), {
-    message: "End time must be after start time.",
-    path: ["endAt"],
   });
 
 function saveDraftProductRow(shopId: string, product: z.infer<typeof saveDraftProductSchema>) {
@@ -1004,8 +1021,6 @@ export async function saveShopDraft(
     slug: slugify(d.name),
     description: d.description || null,
     cover_url: coverUrl,
-    start_at: new Date(d.startAt).toISOString(),
-    end_at: new Date(d.endAt).toISOString(),
     visibility: resolveShopVisibility(d.visibility),
     shipping_rate: 0,
     stream_provider: streamProviderFromWizard(
@@ -1025,16 +1040,25 @@ export async function saveShopDraft(
     if (shopId) {
       const { data: current } = await supabase
         .from("shops")
-        .select("status")
+        .select("status, schedule_set")
         .eq("id", shopId)
         .eq("seller_id", user.id)
         .maybeSingle();
       if (!current) return { error: "Shop not found." };
       if (current.status !== "draft") return { error: "Only draft shops can be saved here." };
 
+      const updatePayload = current.schedule_set
+        ? { ...shopPayload, status: "draft" as const }
+        : {
+            ...shopPayload,
+            ...PLACEHOLDER_SCHEDULE,
+            schedule_set: false,
+            status: "draft" as const,
+          };
+
       const { error } = await supabase
         .from("shops")
-        .update({ ...shopPayload, status: "draft" })
+        .update(updatePayload)
         .eq("id", shopId)
         .eq("seller_id", user.id);
       if (error) return { error: error.message };
@@ -1044,6 +1068,8 @@ export async function saveShopDraft(
         .insert({
           seller_id: user.id,
           ...shopPayload,
+          ...PLACEHOLDER_SCHEDULE,
+          schedule_set: false,
           status: "draft",
         })
         .select("id")

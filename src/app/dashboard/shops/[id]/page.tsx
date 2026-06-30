@@ -24,6 +24,7 @@ import { DropReportCard } from "@/components/drop-report";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
 import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
 import { derivePublishedShopWindow } from "@/lib/utils";
+import { isShopScheduleSet } from "@/lib/shop-schedule";
 import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
 import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
 import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
@@ -68,6 +69,7 @@ export default async function ManageShopPage({
   const payoutsConnected = arePayoutsConnected(sellerProfile);
   const paymentsRequired = isStripePaymentsRequired();
   const termsAccepted = Boolean(profile.seller_terms_accepted_at);
+  const scheduleSet = isShopScheduleSet(shop);
   const report = window.isEnded ? await getDropReport(shop.id, profile.id) : null;
   const streamProvider = effectiveStreamProvider(shop);
   const nativeLiveEnabled = isNativeLiveEnabled();
@@ -105,15 +107,19 @@ export default async function ManageShopPage({
             {shop.is_live && window.isOpen && <Badge variant="live">LIVE</Badge>}
           </div>
           <div className="flex flex-col items-end gap-1">
-            <Countdown
-              startAt={shop.start_at}
-              endAt={shop.end_at}
-              draft={isDraft}
-            />
-            {isDraft && window.schedule === "open" && (
+            {scheduleSet ? (
+              <Countdown
+                startAt={shop.start_at}
+                endAt={shop.end_at}
+                draft={isDraft}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">Drop schedule not set</p>
+            )}
+            {isDraft && scheduleSet && window.schedule === "open" && (
               <p className="text-xs text-muted-foreground">Publish to open for buyers</p>
             )}
-            {isDraft && window.schedule === "scheduled" && (
+            {isDraft && scheduleSet && window.schedule === "scheduled" && (
               <p className="text-xs text-muted-foreground">Won&apos;t open until you publish</p>
             )}
             {isDraft && (
@@ -143,11 +149,13 @@ export default async function ManageShopPage({
       {isDraft && !justCreated && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
           <p className="text-muted-foreground">
-            {window.schedule === "open"
-              ? "Your scheduled window has started, but this drop is still a draft. Publish to open for buyers."
-              : window.schedule === "ended"
-                ? "Your planned window has ended. Update the schedule in Shop details below."
-                : "This drop is still in setup. It won't open automatically — publish when you're ready."}
+            {scheduleSet
+              ? window.schedule === "open"
+                ? "Your scheduled window has started, but this drop is still a draft. Publish to open for buyers."
+                : window.schedule === "ended"
+                  ? "Your planned window has ended. Update the schedule in Shop details below."
+                  : "This drop is still in setup. It won't open automatically — publish when you're ready."
+              : "Set your drop schedule in Shop details when you're ready to publish."}
           </p>
           <Button asChild variant="outline" size="sm">
             <Link href={`/dashboard/shops/${shop.id}/setup`}>Continue setup</Link>
@@ -166,6 +174,7 @@ export default async function ManageShopPage({
         payoutsConnected={payoutsConnected}
         paymentsRequired={paymentsRequired}
         termsAccepted={termsAccepted}
+        scheduleSet={scheduleSet}
       />
 
       <div className="space-y-4">

@@ -82,6 +82,7 @@ export interface Database {
           cover_url: string | null;
           start_at: string;
           end_at: string;
+          schedule_set: boolean;
           visibility: ShopVisibility;
           shipping_rate: number;
           is_live: boolean;
@@ -109,6 +110,7 @@ export interface Database {
           cover_url?: string | null;
           start_at: string;
           end_at: string;
+          schedule_set?: boolean;
           visibility?: ShopVisibility;
           shipping_rate?: number;
           is_live?: boolean;

@@ -13,6 +13,7 @@ import { ImageUpload } from "@/components/image-upload";
 import { VisibilityPicker } from "@/components/visibility-picker";
 import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
 import type { Shop } from "@/lib/database.types";
+import { isShopScheduleSet } from "@/lib/shop-schedule";
 
 const initialState: ActionState = { error: null };
 const NEW_SHOP_DRAFT_KEY = "popup-new-shop-form";
@@ -76,25 +77,36 @@ function SubmitButton({
 export function ShopForm({ shop }: { shop: Shop }) {
   const [state, formAction] = useActionState(updateShop, initialState);
   const inviteOnly = isInviteOnlyMode();
+  const scheduleUnset = shop.status === "draft" && !isShopScheduleSet(shop);
 
   const [name, setName] = useState(shop.name);
   const [description, setDescription] = useState(shop.description ?? "");
-  const [startLocal, setStartLocal] = useState(isoToLocalInput(shop.start_at));
-  const [endLocal, setEndLocal] = useState(isoToLocalInput(shop.end_at));
+  const [startLocal, setStartLocal] = useState(
+    scheduleUnset ? "" : isoToLocalInput(shop.start_at),
+  );
+  const [endLocal, setEndLocal] = useState(scheduleUnset ? "" : isoToLocalInput(shop.end_at));
   const [visibility, setVisibility] = useState<"public" | "private">(
     inviteOnly ? "private" : shop.visibility,
   );
 
   const timeError =
-    startLocal && endLocal && new Date(endLocal) <= new Date(startLocal)
+    startLocal &&
+    endLocal &&
+    new Date(endLocal) <= new Date(startLocal)
       ? "Closing time must be after the opening time."
       : null;
+
+  const includeSchedule = !scheduleUnset || Boolean(startLocal && endLocal && !timeError);
 
   return (
     <form action={formAction} className="space-y-6">
       <input type="hidden" name="shop_id" value={shop.id} />
-      <input type="hidden" name="start_at" value={localInputToIso(startLocal)} />
-      <input type="hidden" name="end_at" value={localInputToIso(endLocal)} />
+      {includeSchedule && (
+        <>
+          <input type="hidden" name="start_at" value={localInputToIso(startLocal)} />
+          <input type="hidden" name="end_at" value={localInputToIso(endLocal)} />
+        </>
+      )}
       <input type="hidden" name="visibility" value={visibility} />
 
       <ShopFields
@@ -122,6 +134,7 @@ export function ShopForm({ shop }: { shop: Shop }) {
         showVisibility={!inviteOnly}
         visibility={visibility}
         setVisibility={setVisibility}
+        scheduleUnset={scheduleUnset}
       />
 
       {state.error && (
@@ -289,6 +302,7 @@ function ScheduleFields({
   liveUrl,
   setLiveUrl,
   showLiveUrl = false,
+  scheduleUnset = false,
 }: {
   startLocal: string;
   setStartLocal: (v: string) => void;
@@ -301,9 +315,16 @@ function ScheduleFields({
   liveUrl?: string;
   setLiveUrl?: (v: string) => void;
   showLiveUrl?: boolean;
+  scheduleUnset?: boolean;
 }) {
   return (
     <>
+      {scheduleUnset && (
+        <p className="rounded-lg border border-dashed border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          Pick when your drop opens and closes when you&apos;re ready to publish. You can save
+          other shop details first and come back to this later.
+        </p>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">

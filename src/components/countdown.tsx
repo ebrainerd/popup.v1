@@ -61,6 +61,7 @@ export function Countdown({
   className,
   compact = false,
   draft = false,
+  scheduleUnset = false,
 }: {
   startAt: string;
   endAt: string;
@@ -68,8 +69,18 @@ export function Countdown({
   compact?: boolean;
   /** When true, labels reflect a draft that will not open until published. */
   draft?: boolean;
+  /** When true, the seller has not chosen drop times yet. */
+  scheduleUnset?: boolean;
 }) {
   const now = useNow();
+
+  if (scheduleUnset) {
+    return (
+      <span className={cn("text-sm text-muted-foreground", className)}>
+        Schedule not set
+      </span>
+    );
+  }
 
   // Avoid hydration mismatch: render a stable placeholder until mounted.
   if (now === null) {

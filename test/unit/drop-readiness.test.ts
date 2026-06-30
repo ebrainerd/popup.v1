@@ -22,6 +22,7 @@ const baseShop: ShopWithDetails = {
   native_live_ended_at: null,
   native_live_tos_accepted_at: null,
   status: "draft",
+  schedule_set: false,
   peak_viewers: 0,
   featured_at: null,
   wizard_completed_steps: [],
@@ -56,7 +57,11 @@ describe("computeDropHealth", () => {
   it("marks required checklist items from shop state", () => {
     const health = computeDropHealth(
       baseShop,
-      { stripe_onboarded: true, follower_count: 10, seller_terms_accepted_at: new Date().toISOString() },
+      {
+        stripe_onboarded: true,
+        follower_count: 10,
+        seller_terms_accepted_at: new Date().toISOString(),
+      },
       3,
     );
     expect(health.productCount).toBe(1);
@@ -64,20 +69,34 @@ describe("computeDropHealth", () => {
     expect(health.items.find((i) => i.id === "details")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "products")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "cover")?.done).toBe(true);
+    expect(health.items.find((i) => i.id === "schedule")?.done).toBe(false);
     expect(health.items.find((i) => i.id === "terms")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "published")?.done).toBe(false);
     expect(health.readyCount).toBe(5);
-    expect(health.totalRequired).toBe(6);
+    expect(health.totalRequired).toBe(7);
   });
 
   it("counts published shop as ready for publish step", () => {
     const health = computeDropHealth(
-      { ...baseShop, status: "scheduled" },
-      { stripe_onboarded: true, follower_count: 0, seller_terms_accepted_at: new Date().toISOString() },
+      { ...baseShop, status: "scheduled", schedule_set: true },
+      {
+        stripe_onboarded: true,
+        follower_count: 0,
+        seller_terms_accepted_at: new Date().toISOString(),
+      },
       0,
     );
     expect(health.items.find((i) => i.id === "published")?.done).toBe(true);
-    expect(health.readyCount).toBe(6);
+    expect(health.readyCount).toBe(7);
+  });
+
+  it("marks schedule complete when set", () => {
+    const health = computeDropHealth(
+      { ...baseShop, schedule_set: true },
+      { stripe_onboarded: true, follower_count: 0 },
+      0,
+    );
+    expect(health.items.find((i) => i.id === "schedule")?.done).toBe(true);
   });
 
   it("marks terms incomplete when not accepted", () => {

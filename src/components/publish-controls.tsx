@@ -20,6 +20,7 @@ export function PublishControls({
   payoutsConnected = true,
   paymentsRequired = false,
   termsAccepted = true,
+  scheduleSet = true,
 }: {
   shopId: string;
   isDraft: boolean;
@@ -31,6 +32,7 @@ export function PublishControls({
   payoutsConnected?: boolean;
   paymentsRequired?: boolean;
   termsAccepted?: boolean;
+  scheduleSet?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -38,6 +40,7 @@ export function PublishControls({
   const canPublish =
     productCount >= 1 &&
     termsAccepted &&
+    scheduleSet &&
     (!paymentsRequired || payoutsConnected);
   const inviteOnly = isInviteOnlyMode();
 
@@ -74,7 +77,9 @@ export function PublishControls({
                     : "Preview your shop — it's hidden from Explore and search until you publish."
                   : !termsAccepted
                     ? "Accept seller terms before publishing."
-                    : !payoutsConnected && paymentsRequired
+                    : !scheduleSet
+                      ? "Set your drop schedule in Shop details before publishing."
+                      : !payoutsConnected && paymentsRequired
                       ? "Set up payments, then add at least one product before publishing."
                       : "Add at least one product, then preview and publish so buyers can check out."}
               </p>
