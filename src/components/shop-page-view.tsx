@@ -13,7 +13,8 @@ import { RemindMeButton } from "@/components/remind-me-button";
 import { ShareDropCard } from "@/components/share-drop-card";
 import { WaitingRoomBanner } from "@/components/waiting-room-banner";
 import { ShopAnnouncements } from "@/components/shop-announcements";
-import { LiveEmbed as LiveEmbedPlayer } from "@/components/live-embed";
+import { ExternalLiveNotice } from "@/components/external-live-notice";
+import { OpeningReminderTrigger } from "@/components/opening-reminder-trigger";
 import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
 import { ShopRoom } from "@/components/shop-room";
 import { StreamSlot } from "@/components/stream-slot";
@@ -111,6 +112,12 @@ export function ShopPageView({
       )}
 
       <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={isOwner}>
+        <OpeningReminderTrigger
+          shopId={shop.id}
+          startAt={shop.start_at}
+          endAt={shop.end_at}
+          initiallyOpen={isOpen}
+        />
         <StreamChatRow
           shop={shop}
           theme={theme}
@@ -188,9 +195,7 @@ export function ShopPageView({
         )}
 
         {embed && !embed.embeddable && (
-          <div className="mb-8">
-            <LiveEmbedPlayer embed={embed} />
-          </div>
+          <ExternalLiveNotice embed={embed} initialIsLive={isOpen && shop.is_live} />
         )}
 
         {isOwner && isOpen && (

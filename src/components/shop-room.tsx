@@ -41,6 +41,11 @@ export function useShopRoom(): ShopRoomContextValue {
   return ctx;
 }
 
+/** Same as useShopRoom but returns null outside ShopRoom (e.g. dashboard live controls). */
+export function useShopRoomOptional(): ShopRoomContextValue | null {
+  return useContext(ShopRoomContext);
+}
+
 /** Subscribe a handler to a room broadcast event for the lifetime of a component. */
 export function useShopEvent(event: RoomEvent, handler: Listener) {
   const { on } = useShopRoom();

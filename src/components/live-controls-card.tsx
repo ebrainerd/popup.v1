@@ -70,6 +70,7 @@ export function LiveControlsCard({
           isOpen={isOpen}
           isEnded={isEnded}
           hasLiveUrl={Boolean(liveUrl || twitchUrl)}
+          streamProvider={provider}
         />
       )}
     </div>

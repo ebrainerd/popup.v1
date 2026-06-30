@@ -17,9 +17,15 @@ export function NativeLivePlayer({
   const containerRef = useRef<HTMLDivElement>(null);
   const roomRef = useRef<Room | null>(null);
   const [isLive, setIsLive] = useState(initialIsLive);
+  const [prevInitialIsLive, setPrevInitialIsLive] = useState(initialIsLive);
   const [muted, setMuted] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+
+  if (prevInitialIsLive !== initialIsLive) {
+    setPrevInitialIsLive(initialIsLive);
+    setIsLive(initialIsLive);
+  }
 
   useShopEvent(ROOM_EVENTS.live, (payload) => {
     const data = payload as LiveBroadcast;

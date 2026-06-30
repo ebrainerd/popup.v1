@@ -54,13 +54,25 @@ export function StreamSlot({
   className?: string;
 }) {
   const [isLive, setIsLive] = useState(initialIsLive);
+  const [prevInitialIsLive, setPrevInitialIsLive] = useState(initialIsLive);
   const [publisherState, setPublisherState] = useState<PublisherState>(
     initialIsLive ? "live" : "idle",
   );
+  const [prevPublisherInitial, setPrevPublisherInitial] = useState(initialIsLive);
+
+  if (prevInitialIsLive !== initialIsLive) {
+    setPrevInitialIsLive(initialIsLive);
+    setIsLive(initialIsLive);
+  }
+  if (prevPublisherInitial !== initialIsLive) {
+    setPrevPublisherInitial(initialIsLive);
+    if (!initialIsLive) setPublisherState("idle");
+  }
 
   useShopEvent(ROOM_EVENTS.live, (payload) => {
     const data = payload as LiveBroadcast;
     setIsLive(data.isLive);
+    if (!data.isLive) setPublisherState("idle");
   });
 
   const showNative = nativeEnabled && streamProvider === "native";
@@ -220,7 +232,7 @@ function StreamCover({
           </div>
         </div>
       )}
-      {isOpen && !isLive && !isOwner && showNative && (
+      {isOpen && !isLive && !isOwner && (
         <div className="absolute bottom-4 left-4 right-4 flex justify-center sm:justify-start">
           <NotifyWhenLiveButton
             shopId={shop.id}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Bell, BellOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toggleLiveReminder } from "@/app/shop/live-reminder-actions";
+import { ensureBrowserPushSubscription } from "@/lib/push-client";
 import { cn } from "@/lib/utils";
 
 export function NotifyWhenLiveButton({
@@ -34,6 +35,9 @@ export function NotifyWhenLiveButton({
         setSubscribed(initialSubscribed);
       } else {
         setSubscribed(res.subscribed);
+        if (res.subscribed && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+          await ensureBrowserPushSubscription();
+        }
         router.refresh();
       }
     });
