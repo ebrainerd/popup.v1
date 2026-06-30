@@ -1,10 +1,11 @@
 // PopUp service worker — minimal offline shell for PWA installability.
-// Realtime features (chat, live, flash drops) require a network connection,
-// so we use a network-first strategy and only fall back to cache for the
-// app shell.
+// Realtime features (chat, live, flash drops) require a network connection.
+//
+// IMPORTANT: do not cache HTML or /_next/ assets. Caching those after a deploy
+// leaves users on stale JS with invalid Server Action IDs.
 
-const CACHE = "popup-shell-v1";
-const SHELL = ["/", "/manifest.webmanifest", "/icons/icon.svg"];
+const CACHE = "popup-shell-v2";
+const SHELL = ["/manifest.webmanifest", "/icons/icon.svg", "/icons/maskable.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
@@ -58,18 +59,28 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Never cache API / auth / Supabase realtime calls.
-  if (url.pathname.startsWith("/auth") || url.pathname.startsWith("/api")) return;
+  // Never intercept navigations, RSC, API, auth, or Next.js build assets.
+  if (
+    request.mode === "navigate" ||
+    url.pathname.startsWith("/auth") ||
+    url.pathname.startsWith("/api") ||
+    url.pathname.startsWith("/_next")
+  ) {
+    return;
+  }
+
+  // Cache only static install metadata (not HTML).
+  if (!SHELL.includes(url.pathname)) return;
 
   event.respondWith(
     fetch(request)
       .then((response) => {
-        if (response.ok && request.headers.get("accept")?.includes("text/html")) {
+        if (response.ok) {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy));
         }
         return response;
       })
-      .catch(() => caches.match(request).then((cached) => cached || caches.match("/"))),
+      .catch(() => caches.match(request)),
   );
 });

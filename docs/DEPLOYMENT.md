@@ -49,6 +49,7 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | `SENTRY_DSN` | Sentry → Project → Client Keys (DSN) | `https://…@o…ingest.sentry.io/…` |
 | `NEXT_PUBLIC_SENTRY_DSN` | Same DSN value (browser) | `https://…@o…ingest.sentry.io/…` |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile → site key (secret goes in Supabase) | `0x4AAAA…` |
+| `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | `openssl rand -base64 32` — **build-time** secret so Server Action IDs stay stable across deploys and server instances | `…` |
 
 ### Optional — notifications
 
@@ -89,6 +90,7 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 [ ] SENTRY_DSN
 [ ] NEXT_PUBLIC_SENTRY_DSN
 [ ] NEXT_PUBLIC_TURNSTILE_SITE_KEY
+[ ] NEXT_SERVER_ACTIONS_ENCRYPTION_KEY   # openssl rand -base64 32; redeploy after set
 # Optional (notifications)
 [ ] RESEND_API_KEY
 [ ] RESEND_FROM
@@ -212,6 +214,11 @@ These take the app from "deployed" to "ready for real users and real money."
       the current domain is missing from this list.
 
 ### Secrets / config
+- [ ] Set **`NEXT_SERVER_ACTIONS_ENCRYPTION_KEY`** in Vercel (generate once with
+      `openssl rand -base64 32`). Must be present at **build time** so Server Action
+      IDs do not rotate unpredictably across deploys. After a deploy, users on stale
+      cached JS may see `UnrecognizedActionError` until they reload; the service worker
+      no longer caches HTML/`/_next/` assets, and the app auto-reloads once on that error.
 - [ ] Set **`CRON_SECRET`** in Vercel (required — cron routes fail closed without it).
 - [ ] Set **Sentry** DSNs (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`) so errors are
       actually captured (no-ops until set).

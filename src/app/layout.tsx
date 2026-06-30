@@ -7,6 +7,7 @@ import { AnimatedBackground } from "@/components/animated-background";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { DeployRefreshGuard } from "@/components/deploy-refresh-guard";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getSiteUrl } from "@/lib/env";
 
@@ -54,6 +55,7 @@ export default function RootLayout({
       <body className="relative min-h-full flex flex-col">
         <ThemeProvider>
           <AnimatedBackground />
+          <DeployRefreshGuard />
           <ServiceWorkerRegister />
           <SiteHeader />
           <main className="relative flex-1">{children}</main>
