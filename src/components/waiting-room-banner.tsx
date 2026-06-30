@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Clock, DoorOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/** Urgent countdown treatment for the final 10 minutes before a drop opens. */
+/** Status banner for non–Drop Clock layouts; countdown hero owns the timer (§5.3). */
 export function WaitingRoomBanner({
   startAt,
   hasReminder,

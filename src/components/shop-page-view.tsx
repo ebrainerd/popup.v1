@@ -21,8 +21,11 @@ import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
 import { ShopRoom } from "@/components/shop-room";
 import { StreamSlot } from "@/components/stream-slot";
 import { ViewerCount } from "@/components/viewer-count";
+import { LiveStreamBadge } from "@/components/live-stream-badge";
+import { BroadcastChatPanel } from "@/components/broadcast-chat-panel";
 import { ShopChat } from "@/components/shop-chat";
 import { ProductsGridLive } from "@/components/products-grid-live";
+import { CountdownLayoutPanel } from "@/components/countdown-layout-panel";
 import { FlashControls } from "@/components/flash-controls";
 import { AuctionControls } from "@/components/auction-controls";
 import { AuctionLivePanel } from "@/components/auction-live-panel";
@@ -102,6 +105,182 @@ export function ShopPageView({
     }) === "native";
   const allSoldOut =
     isOpen && shop.products.length > 0 && shop.products.every((p) => p.quantity === 0);
+  const isBroadcast = layout === "broadcast";
+  const isCatalog = layout === "catalog";
+  const isCountdown = layout === "countdown";
+  const chatBelowProducts = isBroadcast || isCatalog;
+
+  const streamRow = (
+    <StreamChatRow
+      shop={shop}
+      theme={theme}
+      layout={layout}
+      isOpen={isOpen}
+      isScheduled={isScheduled}
+      isOwner={isOwner}
+      isDraftPreview={isDraftPreview}
+      streamProvider={streamProvider}
+      nativeEnabled={nativeLiveEnabled}
+      needsTosAcceptance={!shop.native_live_tos_accepted_at}
+      embed={embed}
+      profileId={profileId}
+      hasLiveReminder={hasLiveReminder}
+      liveReminderCount={liveReminderCount}
+      initialMessages={initialMessages}
+      announcements={announcements}
+      chatPlacement={chatBelowProducts ? "below" : "sidebar"}
+      streamPlacement={isCatalog ? "secondary" : "primary"}
+    />
+  );
+
+  const shopHeader = (
+    <ShopHeader
+      shop={shop}
+      theme={theme}
+      seller={seller}
+      isOpen={isOpen}
+      isScheduled={isScheduled}
+      isOwner={isOwner}
+      isFollowing={isFollowing}
+      hasReminder={hasReminder}
+      reminderCount={reminderCount}
+      reminderDeliveryConfigured={reminderDeliveryConfigured}
+      profileId={profileId}
+      layout={layout}
+      isDraftPreview={isDraftPreview}
+      initialIsLive={shop.is_live}
+    />
+  );
+
+  const ownerLiveBar =
+    isOwner && isOpen && !isDraftPreview && !isNativeStream ? (
+      <OwnerShopLiveBar
+        shopId={shop.id}
+        isLive={shop.is_live}
+        isOpen={isOpen}
+        isEnded={false}
+        streamProvider={streamProvider}
+        liveUrl={shop.live_url}
+        twitchUrl={shop.twitch_url}
+        nativeEnabled={nativeLiveEnabled}
+        needsTosAcceptance={!shop.native_live_tos_accepted_at}
+      />
+    ) : null;
+
+  const shareDropCard =
+    isOwner && isScheduled && seller && layout !== "countdown" && !isDraftPreview ? (
+      <div className="mb-8 grid gap-4 lg:grid-cols-2">
+        <ShareDropCard
+          shopId={shop.id}
+          shopName={shop.name}
+          sellerHandle={seller.username}
+          startAt={shop.start_at}
+        />
+      </div>
+    ) : null;
+
+  const soldOutBanner =
+    allSoldOut && !isOwner && seller ? (
+      <div className="mb-8 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center">
+        <p className="font-medium">Sold out!</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Follow @{seller.username} and set a reminder for their next drop.
+        </p>
+        <div className="mt-4 flex justify-center gap-2">
+          <FollowButton
+            sellerId={seller.id}
+            initialFollowing={isFollowing}
+            isAuthed={Boolean(profileId)}
+          />
+        </div>
+      </div>
+    ) : null;
+
+  const externalLiveNotice =
+    embed && !embed.embeddable ? (
+      <ExternalLiveNotice embed={embed} initialIsLive={isOpen && shop.is_live} />
+    ) : null;
+
+  const ownerSellingTools =
+    isOwner && isOpen ? (
+      <OwnerSellingTools>
+        <AuctionControls shopId={shop.id} products={shop.products} runs={auctionRuns} />
+        <FlashControls products={shop.products} />
+      </OwnerSellingTools>
+    ) : null;
+
+  const auctionPanelSection = (
+    <AuctionLivePanel
+      shopId={shop.id}
+      initial={auctionPanel}
+      isAuthed={Boolean(profileId)}
+      isOwner={isOwner}
+      userId={profileId ?? null}
+    />
+  );
+
+  const mainContent = (
+    <MainContent
+      shop={shop}
+      theme={theme}
+      isOpen={isOpen}
+      isScheduled={isScheduled}
+      profileId={profileId}
+      isOwner={isOwner}
+      auctionProductStates={auctionProductStates}
+    />
+  );
+
+  const chatBelowProductsSection =
+    chatBelowProducts && theme.showChat ? (
+      <BroadcastChatBelow
+        shop={shop}
+        isOpen={isOpen}
+        isScheduled={isScheduled}
+        isOwner={isOwner}
+        initialMessages={initialMessages}
+        announcements={announcements}
+      />
+    ) : null;
+
+  const catalogReminderFooter =
+    isCatalog && isScheduled && !isOwner && theme.showReminderCta && seller ? (
+      <CatalogReminderFooter
+        shop={shop}
+        seller={seller}
+        profileId={profileId}
+        isFollowing={isFollowing}
+        hasReminder={hasReminder}
+        reminderCount={reminderCount}
+        reminderDeliveryConfigured={reminderDeliveryConfigured}
+      />
+    ) : null;
+
+  const countdownReminderFooter =
+    isCountdown && isScheduled && !isOwner && theme.showReminderCta && seller ? (
+      <CountdownReminderFooter
+        shop={shop}
+        seller={seller}
+        profileId={profileId}
+        isFollowing={isFollowing}
+        hasReminder={hasReminder}
+        reminderCount={reminderCount}
+        reminderDeliveryConfigured={reminderDeliveryConfigured}
+      />
+    ) : null;
+
+  const countdownLayoutPanel = isCountdown ? (
+    <CountdownLayoutPanel
+      shop={shop}
+      isOpen={isOpen}
+      isScheduled={isScheduled}
+      isDraftPreview={isDraftPreview}
+      isOwner={isOwner}
+      showChat={theme.showChat}
+      initialMessages={initialMessages}
+      announcements={announcements}
+    />
+  ) : null;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
@@ -111,7 +290,7 @@ export function ShopPageView({
         <DraftPreviewBanner shopId={shop.id} scheduleLabel={draftPreviewScheduleLabel} />
       )}
 
-      {isScheduled && !isDraftPreview && (
+      {isScheduled && !isDraftPreview && !isCountdown && (
         <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
       )}
 
@@ -128,110 +307,65 @@ export function ShopPageView({
           endAt={shop.end_at}
           initiallyOpen={isOpen}
         />
-        <StreamChatRow
-          shop={shop}
-          theme={theme}
-          layout={layout}
-          isOpen={isOpen}
-          isScheduled={isScheduled}
-          isOwner={isOwner}
-          isDraftPreview={isDraftPreview}
-          streamProvider={streamProvider}
-          nativeEnabled={nativeLiveEnabled}
-          needsTosAcceptance={!shop.native_live_tos_accepted_at}
-          embed={embed}
-          profileId={profileId}
-          hasLiveReminder={hasLiveReminder}
-          liveReminderCount={liveReminderCount}
-          initialMessages={initialMessages}
-          announcements={announcements}
-        />
 
-        {isOwner && isOpen && !isDraftPreview && !isNativeStream && (
-          <OwnerShopLiveBar
-            shopId={shop.id}
-            isLive={shop.is_live}
-            isOpen={isOpen}
-            isEnded={false}
-            streamProvider={streamProvider}
-            liveUrl={shop.live_url}
-            twitchUrl={shop.twitch_url}
-            nativeEnabled={nativeLiveEnabled}
-            needsTosAcceptance={!shop.native_live_tos_accepted_at}
-          />
+        {isBroadcast ? (
+          <>
+            {/* Live Stage §5.1: header → stream hero → auction → products → chat */}
+            {shopHeader}
+            {streamRow}
+            {ownerLiveBar}
+            {shareDropCard}
+            {soldOutBanner}
+            {externalLiveNotice}
+            {ownerSellingTools}
+            {auctionPanelSection}
+            {mainContent}
+            {chatBelowProductsSection}
+          </>
+        ) : isCatalog ? (
+          <>
+            {/* Lookbook §5.2: header → products → stream band → reminders → chat */}
+            {shopHeader}
+            {shareDropCard}
+            {soldOutBanner}
+            {externalLiveNotice}
+            {ownerSellingTools}
+            {auctionPanelSection}
+            {mainContent}
+            {ownerLiveBar}
+            {streamRow}
+            {catalogReminderFooter}
+            {chatBelowProductsSection}
+          </>
+        ) : isCountdown ? (
+          <>
+            {/* Drop Clock §5.3: header → hero countdown → reminders → products → announcements/chat */}
+            {shopHeader}
+            {streamRow}
+            {countdownReminderFooter}
+            {shareDropCard}
+            {soldOutBanner}
+            {externalLiveNotice}
+            {ownerSellingTools}
+            {auctionPanelSection}
+            {mainContent}
+            {ownerLiveBar}
+            {countdownLayoutPanel}
+          </>
+        ) : (
+          <>
+            {/* The Room §5.4: header (seller bio) → stream + chat sidebar → auction → products */}
+            {shopHeader}
+            {streamRow}
+            {ownerLiveBar}
+            {shareDropCard}
+            {soldOutBanner}
+            {externalLiveNotice}
+            {ownerSellingTools}
+            {auctionPanelSection}
+            {mainContent}
+          </>
         )}
-
-        <ShopHeader
-          shop={shop}
-          theme={theme}
-          seller={seller}
-          isOpen={isOpen}
-          isScheduled={isScheduled}
-          isOwner={isOwner}
-          isFollowing={isFollowing}
-          hasReminder={hasReminder}
-          reminderCount={reminderCount}
-          reminderDeliveryConfigured={reminderDeliveryConfigured}
-          profileId={profileId}
-          layout={layout}
-          isDraftPreview={isDraftPreview}
-        />
-
-        {isOwner && isScheduled && seller && layout !== "countdown" && !isDraftPreview && (
-          <div className="mb-8 grid gap-4 lg:grid-cols-2">
-            <ShareDropCard
-              shopId={shop.id}
-              shopName={shop.name}
-              sellerHandle={seller.username}
-              startAt={shop.start_at}
-            />
-          </div>
-        )}
-
-        {allSoldOut && !isOwner && seller && (
-          <div className="mb-8 rounded-xl border border-dashed border-border bg-muted/40 p-6 text-center">
-            <p className="font-medium">Sold out!</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Follow @{seller.username} and set a reminder for their next drop.
-            </p>
-            <div className="mt-4 flex justify-center gap-2">
-              <FollowButton
-                sellerId={seller.id}
-                initialFollowing={isFollowing}
-                isAuthed={Boolean(profileId)}
-              />
-            </div>
-          </div>
-        )}
-
-        {embed && !embed.embeddable && (
-          <ExternalLiveNotice embed={embed} initialIsLive={isOpen && shop.is_live} />
-        )}
-
-        {isOwner && isOpen && (
-          <OwnerSellingTools>
-            <AuctionControls shopId={shop.id} products={shop.products} runs={auctionRuns} />
-            <FlashControls products={shop.products} />
-          </OwnerSellingTools>
-        )}
-
-        <AuctionLivePanel
-          shopId={shop.id}
-          initial={auctionPanel}
-          isAuthed={Boolean(profileId)}
-          isOwner={isOwner}
-          userId={profileId ?? null}
-        />
-
-        <MainContent
-          shop={shop}
-          theme={theme}
-          isOpen={isOpen}
-          isScheduled={isScheduled}
-          profileId={profileId}
-          isOwner={isOwner}
-          auctionProductStates={auctionProductStates}
-        />
       </ShopRoom>
     </div>
   );
@@ -251,6 +385,7 @@ function ShopHeader({
   profileId,
   layout,
   isDraftPreview,
+  initialIsLive = false,
 }: {
   shop: ShopWithDetails;
   theme: ShopTheme;
@@ -265,8 +400,12 @@ function ShopHeader({
   profileId?: string;
   layout: ShopTheme["layout"];
   isDraftPreview: boolean;
+  initialIsLive?: boolean;
 }) {
-  const compact = layout === "broadcast" || layout === "countdown";
+  const compact = layout === "broadcast" || layout === "countdown" || layout === "catalog";
+  const remindersInHeader =
+    !(layout === "catalog" && isScheduled) && !(layout === "countdown" && isScheduled);
+  const titleInHeader = !(layout === "countdown" && isScheduled);
 
   return (
     <div
@@ -276,14 +415,16 @@ function ShopHeader({
       )}
     >
       <div className="space-y-2">
-        <h1
-          className={cn(
-            "font-extrabold tracking-tight text-foreground",
-            layout === "countdown" ? "text-2xl" : "text-3xl",
-          )}
-        >
-          {shop.name}
-        </h1>
+        {titleInHeader && (
+          <h1
+            className={cn(
+              "font-extrabold tracking-tight text-foreground",
+              layout === "countdown" ? "text-2xl" : "text-3xl",
+            )}
+          >
+            {shop.name}
+          </h1>
+        )}
         {theme.showSellerBio && seller && (
           <Link
             href={`/u/${seller.username}`}
@@ -317,13 +458,16 @@ function ShopHeader({
       </div>
 
       <div className="flex flex-col items-start gap-3 sm:items-end">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {layout === "broadcast" && isOpen && (
+            <LiveStreamBadge initialIsLive={initialIsLive} />
+          )}
           {isOpen && <ViewerCount />}
           {layout !== "countdown" && isOpen && (
             <Countdown startAt={shop.start_at} endAt={shop.end_at} draft={isDraftPreview} />
           )}
         </div>
-        {isScheduled && !isOwner && theme.showReminderCta && (
+        {remindersInHeader && isScheduled && !isOwner && theme.showReminderCta && (
           <div className="flex flex-wrap items-center gap-2">
             <RemindMeButton
               shopId={shop.id}
@@ -378,6 +522,8 @@ function StreamChatRow({
   liveReminderCount,
   initialMessages,
   announcements,
+  chatPlacement = "sidebar",
+  streamPlacement = "primary",
 }: {
   shop: ShopWithDetails;
   theme: ShopTheme;
@@ -395,10 +541,14 @@ function StreamChatRow({
   liveReminderCount: number;
   initialMessages: ChatMessage[];
   announcements: Announcement[];
+  chatPlacement?: "sidebar" | "below";
+  streamPlacement?: "primary" | "secondary";
 }) {
   const chatFillClass = "h-full min-h-[16rem] lg:min-h-0";
+  const showSidebarChat = chatPlacement === "sidebar" && layout !== "countdown";
 
   const chatPanel =
+    showSidebarChat &&
     theme.showChat &&
     (isScheduled ? (
       <ShopAnnouncements
@@ -422,7 +572,9 @@ function StreamChatRow({
     <div
       className={cn(
         "mb-6 grid gap-4",
-        chatPanel && "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch",
+        // The Room §5.4: give the desktop chat sidebar a comfortable floor so it
+        // stays usable beside a short banner/stream without scrolling.
+        chatPanel && "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch lg:min-h-[20rem]",
       )}
     >
       <StreamSlot
@@ -440,6 +592,7 @@ function StreamChatRow({
         profileId={profileId}
         hasLiveReminder={hasLiveReminder}
         liveReminderCount={liveReminderCount}
+        streamPlacement={streamPlacement}
         className="h-full"
       />
       {chatPanel && <aside className="flex min-h-0 flex-col">{chatPanel}</aside>}
@@ -482,6 +635,136 @@ function MainContent({
         endAt={shop.end_at}
         gridColumns={theme.productGridColumns}
       />
+      {isOpen && !isOwner && shop.products.length > 0 && (
+        <p className="mt-6 text-pretty text-center text-xs text-muted-foreground">
+          Purchases and winning bids are contracts directly with the seller; PopUp is not the seller
+          of record. By buying or bidding you agree to PopUp&apos;s{" "}
+          <Link
+            href="/legal/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            Terms of Service
+          </Link>
+          .
+        </p>
+      )}
     </section>
+  );
+}
+
+/** Drop Clock scheduled reminders — below hero countdown. See shop-theme-preview countdown branch. */
+function CountdownReminderFooter({
+  shop,
+  seller,
+  profileId,
+  isFollowing,
+  hasReminder,
+  reminderCount,
+  reminderDeliveryConfigured,
+}: {
+  shop: ShopWithDetails;
+  seller: NonNullable<ShopWithDetails["seller"]>;
+  profileId?: string;
+  isFollowing: boolean;
+  hasReminder: boolean;
+  reminderCount: number;
+  reminderDeliveryConfigured: boolean;
+}) {
+  return (
+    <div className="mb-6 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <RemindMeButton
+        shopId={shop.id}
+        initialSubscribed={hasReminder}
+        isAuthed={Boolean(profileId)}
+        reminderCount={reminderCount}
+        deliveryConfigured={reminderDeliveryConfigured}
+      />
+      <FollowButton
+        sellerId={seller.id}
+        initialFollowing={isFollowing}
+        isAuthed={Boolean(profileId)}
+      />
+    </div>
+  );
+}
+
+/** Lookbook scheduled reminders — below slim countdown footer. See shop-theme-preview catalog branch. */
+function CatalogReminderFooter({
+  shop,
+  seller,
+  profileId,
+  isFollowing,
+  hasReminder,
+  reminderCount,
+  reminderDeliveryConfigured,
+}: {
+  shop: ShopWithDetails;
+  seller: NonNullable<ShopWithDetails["seller"]>;
+  profileId?: string;
+  isFollowing: boolean;
+  hasReminder: boolean;
+  reminderCount: number;
+  reminderDeliveryConfigured: boolean;
+}) {
+  return (
+    <div className="mt-6 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <RemindMeButton
+        shopId={shop.id}
+        initialSubscribed={hasReminder}
+        isAuthed={Boolean(profileId)}
+        reminderCount={reminderCount}
+        deliveryConfigured={reminderDeliveryConfigured}
+      />
+      <FollowButton
+        sellerId={seller.id}
+        initialFollowing={isFollowing}
+        isAuthed={Boolean(profileId)}
+      />
+    </div>
+  );
+}
+
+/** Live Stage / Lookbook chat — full width below products. See shop-theme-preview broadcast/catalog branches. */
+function BroadcastChatBelow({
+  shop,
+  isOpen,
+  isScheduled,
+  isOwner,
+  initialMessages,
+  announcements,
+}: {
+  shop: ShopWithDetails;
+  isOpen: boolean;
+  isScheduled: boolean;
+  isOwner: boolean;
+  initialMessages: ChatMessage[];
+  announcements: Announcement[];
+}) {
+  const chatFillClass = "h-full min-h-[16rem]";
+
+  const panel = isScheduled ? (
+    <ShopAnnouncements
+      shopId={shop.id}
+      initialAnnouncements={announcements}
+      isOwner={isOwner}
+      isScheduled
+      className={chatFillClass}
+    />
+  ) : (
+    <ShopChat
+      initialMessages={initialMessages}
+      isOpen={isOpen}
+      startAt={shop.start_at}
+      endAt={shop.end_at}
+      className={chatFillClass}
+    />
+  );
+
+  return (
+    <BroadcastChatPanel isScheduled={isScheduled}>
+      {panel}
+    </BroadcastChatPanel>
   );
 }

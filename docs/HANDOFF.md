@@ -20,7 +20,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | **Discovery mode** | `invite_only` (default) — link-only shops; Explore is a holding page |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations** | Through **`0021_profile_setup_username.sql`** |
+| **Migrations** | Through **`0022_auto_queue_shop_auctions.sql`** |
 
 ## Where to look
 
@@ -34,6 +34,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | Live auctions PRD (shipped) | `docs/AUCTIONS_PRD.md` |
 | Native live streaming | `docs/NATIVE_LIVE_STREAMING.md` |
 | Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
+| **Shop layout archetypes (customization spec)** | **`docs/SHOP_LAYOUT_ARCHETYPES.md`** |
 | Testing & CI | `docs/TESTING.md` |
 | Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
 | Auth & profile signup flows | `docs/AUTH_PROFILE_ROADMAP.md` |
@@ -56,6 +57,51 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–5 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, Drop Clock / `countdown`, The Room / `classic` buyer-page parity). **Remaining: Phase 6 — QA & docs** — see handoff section below.
+
+## Shop layout archetypes — next agent (Phase 6)
+
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §7 Phase 6 and §10 testing matrix.
+
+**Baseline on `main`:** All four per-layout parity phases have landed.
+Phase 4 added Drop Clock (`countdown`) — oversized hero countdown with shop name,
+reminder CTAs below hero, announcements pre-open / chat when open, hero shrink at
+`start_at` via `useShopPhase`, `WaitingRoomBanner` skipped for countdown layout.
+Phase 5 added The Room (`classic`) — header (with seller bio) leads, then the
+stream + chat sidebar row (with a desktop min-height floor), auction panel, and
+products; the editor preview mirrors that order.
+
+### Phase 6 scope — QA & docs
+
+| Task | Detail |
+| ---- | ------ |
+| Manual matrix | Walk `docs/PRE_MARKETING_TEST.md` Phase 17 (theme & customize) |
+| Smoke matrix | `docs/MANUAL_TESTING.md` — four layouts × two presets |
+| Cross-link | Update `docs/PRODUCT_UX_REVIEW.md` (optional) |
+
+### Key files
+
+```
+src/components/shop-page-view.tsx
+src/components/shop-theme-preview.tsx
+src/components/stream-slot.tsx
+```
+
+### Done (Phases 4–5 acceptance)
+
+- Drop Clock: scheduled countdown is the largest hero element; hero shrinks at
+  `start_at` without a full reload; `WaitingRoomBanner` no longer duplicates it.
+- The Room: desktop chat visible beside the stream without scrolling; seller bio
+  appears in the header when `showSellerBio`; preview ≈ buyer page.
+
+### Before opening PR
+
+```bash
+npm run typecheck && npm run lint && npm run test && npm run build
+```
+
+Branch: `cursor/shop-layout-qa-phase6-<suffix>`. One PR per phase; keep preview and
+buyer page in sync (comment cross-links like Phases 2–5).
 
 ### Infrastructure (owner — done)
 

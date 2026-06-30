@@ -63,13 +63,13 @@ export default async function DashboardPage() {
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
-              <p className="font-medium">Set up payments before publishing</p>
+              <p className="font-medium">Set up payments before publishing a drop</p>
               <p className="text-sm text-muted-foreground">
-                Connect your Stripe payout account when you&apos;re ready to go live — you can
-                build draft shops first.
+                You can draft shops anytime. Connect Stripe when you&apos;re ready to publish and
+                accept checkout.
               </p>
             </div>
-            <SetupPaymentsButton redirectTo="/dashboard" label="Setup Payments" />
+            <SetupPaymentsButton redirectTo="/dashboard/payouts" label="Setup Payments" />
           </CardContent>
         </Card>
       )}

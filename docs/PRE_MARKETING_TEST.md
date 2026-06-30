@@ -168,7 +168,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
 | 3.11 | Try each theme preset (Neon PopUp, Gallery, Dark Room, Market Stall) | Preview updates | |
-| 3.12 | Change layout mode, accent color, grid 2 vs 3 columns | Preview reflects changes | |
+| 3.12 | Change layout (Live Stage, Lookbook, Drop Clock, The Room), accent color, grid 2 vs 3 columns | Preview reflects changes; switching layout offers "Apply recommended settings" | |
 | 3.13 | Toggle sections: chat, seller bio, reminder CTA | Toggles persist | |
 
 ### Step 4 — Live stream
@@ -177,7 +177,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 | - | ---- | -------- | - |
 | 3.14 | **PopUp Live** selected by default | YouTube/Twitch fields hidden | |
 | 3.15 | Switch to **YouTube or Twitch**, paste valid URL, switch back | Native mode restores | |
-| 3.16 | Choose stream layout (classic, broadcast, countdown, catalog) | Selection saves | |
+| 3.16 | Choose layout (Live Stage, Lookbook, Drop Clock, The Room); toggle preview phase Scheduled/Open/Live | Selection saves; preview phase toggle updates hero/reminders | |
 
 ### Step 5 — Schedule
 
