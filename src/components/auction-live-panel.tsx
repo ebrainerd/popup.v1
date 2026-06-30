@@ -12,6 +12,7 @@ import { createAuctionCheckoutSession } from "@/app/shop/checkout-actions";
 import {
   ROOM_EVENTS,
   type AuctionStartedBroadcast,
+  type AuctionQueuedBroadcast,
   type AuctionBidBroadcast,
   type AuctionEndedBroadcast,
 } from "@/lib/realtime";
@@ -80,6 +81,44 @@ export function AuctionLivePanel({
       setTimeout(() => setExtendedPulse(false), 3000);
     }
   }, []);
+
+  useShopEvent(ROOM_EVENTS.auctionQueued, (payload) => {
+    const p = payload as AuctionQueuedBroadcast;
+    setEnded(null);
+    setState({
+      run: {
+        id: p.auctionId,
+        shop_id: shopId,
+        product_id: p.productId,
+        seller_id: "",
+        status: "queued",
+        starting_bid: p.startingBid,
+        min_increment: p.minIncrement,
+        current_bid: p.startingBid,
+        current_winner_id: null,
+        winning_bid_id: null,
+        bid_count: 0,
+        starts_at: null,
+        ends_at: null,
+        soft_close_seconds: 10,
+        sudden_death: p.suddenDeath,
+        checkout_expires_at: null,
+        stripe_session_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        product: {
+          id: p.productId,
+          title: p.productTitle,
+          auction_allow_prebids: p.allowPrebids,
+          auction_sudden_death: p.suddenDeath,
+        } as AuctionRunWithProduct["product"],
+      },
+      nextMinimumBid: p.startingBid,
+      viewerState: "none",
+      yourMaxBid: null,
+      winnerName: null,
+    });
+  });
 
   useShopEvent(ROOM_EVENTS.auctionStarted, (payload) => {
     const p = payload as AuctionStartedBroadcast;
@@ -259,6 +298,7 @@ export function AuctionLivePanel({
 
   return (
     <div
+      id="auction-live-panel"
       className={cn(
         "mb-8 overflow-hidden rounded-2xl border-2 border-primary/50 bg-gradient-to-br from-primary/10 to-accent/5 p-5 shadow-lg",
         isLive && secondsLeft <= 10 && "animate-live-pulse",

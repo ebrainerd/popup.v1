@@ -8,7 +8,7 @@ import {
   startAuction,
   cancelAuction,
 } from "@/app/shop/auction-actions";
-import { ROOM_EVENTS, type AuctionStartedBroadcast, type FlashItemBroadcast, type FlashPriceBroadcast, type FlashClearBroadcast } from "@/lib/realtime";
+import { ROOM_EVENTS, type AuctionStartedBroadcast, type AuctionQueuedBroadcast, type FlashItemBroadcast, type FlashPriceBroadcast, type FlashClearBroadcast } from "@/lib/realtime";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/database.types";
@@ -137,6 +137,15 @@ export function AuctionControls({
         product,
       };
       setRuns((prev) => [newRun, ...prev.filter((r) => r.product_id !== productId)]);
+      emit(ROOM_EVENTS.auctionQueued, {
+        auctionId: newRun.id,
+        productId,
+        productTitle: product.title,
+        startingBid: newRun.starting_bid,
+        minIncrement: newRun.min_increment,
+        allowPrebids: product.auction_allow_prebids,
+        suddenDeath: product.auction_sudden_death,
+      } satisfies AuctionQueuedBroadcast);
     });
   }
 

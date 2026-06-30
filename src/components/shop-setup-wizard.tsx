@@ -334,6 +334,7 @@ export function ShopSetupWizard({
                   name="cover_url"
                   bucket="covers"
                   defaultValue={draft.coverUrl}
+                  cropAspect={16 / 6}
                   onChange={(coverUrl) => patch({ coverUrl })}
                   label="Upload or drag a banner image here"
                 />

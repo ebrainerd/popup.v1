@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Package, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useShopEvent } from "@/components/shop-room";
+import { AuctionProductActions } from "@/components/auction-product-actions";
 import { BuyButton } from "@/components/buy-button";
 import { Badge } from "@/components/ui/badge";
 import { celebrate } from "@/lib/confetti";
@@ -14,9 +16,18 @@ import {
   type FlashItemBroadcast,
 } from "@/lib/realtime";
 import type { Product } from "@/lib/database.types";
+import type { AuctionRunWithProduct } from "@/lib/auctions";
 import { cn, formatCurrency } from "@/lib/utils";
 import { isFlashDiscounted, productDisplayPrice } from "@/lib/product-pricing";
 import { useShopOpen } from "@/hooks/use-shop-open";
+
+type AuctionPanelState = {
+  run: AuctionRunWithProduct;
+  nextMinimumBid: number;
+  viewerState: "winning" | "outbid" | "none";
+  yourMaxBid: number | null;
+  winnerName: string | null;
+} | null;
 
 function photosOf(product: Product): string[] {
   if (product.photo_urls && product.photo_urls.length > 0) return product.photo_urls;
@@ -28,6 +39,9 @@ export function ProductsGridLive({
   initialProducts,
   isOpen,
   isAuthed,
+  isOwner,
+  userId,
+  initialAuction,
   startAt,
   endAt,
   gridColumns = 2,
@@ -36,6 +50,9 @@ export function ProductsGridLive({
   initialProducts: Product[];
   isOpen: boolean;
   isAuthed: boolean;
+  isOwner: boolean;
+  userId: string | null;
+  initialAuction: AuctionPanelState;
   startAt: string;
   endAt: string;
   gridColumns?: 2 | 3;
@@ -104,6 +121,14 @@ export function ProductsGridLive({
   }
 
   const openProduct = products.find((p) => p.id === openId) ?? null;
+  const auctionForActions = initialAuction
+    ? {
+        run: initialAuction.run,
+        nextMinimumBid: initialAuction.nextMinimumBid,
+        viewerState: initialAuction.viewerState,
+        yourMaxBid: initialAuction.yourMaxBid,
+      }
+    : null;
 
   return (
     <>
@@ -118,8 +143,11 @@ export function ProductsGridLive({
             key={product.id}
             product={product}
             shopId={shopId}
-            isOpen={shopOpen}
+            shopOpen={shopOpen}
             isAuthed={isAuthed}
+            isOwner={isOwner}
+            userId={userId}
+            initialAuction={auctionForActions}
             onOpenDetails={() => setOpenId(product.id)}
           />
         ))}
@@ -129,8 +157,11 @@ export function ProductsGridLive({
         <ProductDetailDialog
           product={openProduct}
           shopId={shopId}
-          isOpen={isOpen}
+          shopOpen={shopOpen}
           isAuthed={isAuthed}
+          isOwner={isOwner}
+          userId={userId}
+          initialAuction={auctionForActions}
           onClose={() => setOpenId(null)}
         />
       )}
@@ -141,14 +172,20 @@ export function ProductsGridLive({
 function ProductCard({
   product,
   shopId,
-  isOpen,
+  shopOpen,
   isAuthed,
+  isOwner,
+  userId,
+  initialAuction,
   onOpenDetails,
 }: {
   product: Product;
   shopId: string;
-  isOpen: boolean;
+  shopOpen: boolean;
   isAuthed: boolean;
+  isOwner: boolean;
+  userId: string | null;
+  initialAuction: Omit<NonNullable<AuctionPanelState>, "winnerName"> | null;
   onOpenDetails: () => void;
 }) {
   const photos = photosOf(product);
@@ -200,17 +237,23 @@ function ProductCard({
         {product.description && (
           <p className="line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
         )}
-        <div className="mt-auto flex items-end justify-between pt-2">
+        <div className="mt-auto flex items-end justify-between gap-3 pt-2">
           <PriceBlock product={product} />
           {isAuction ? (
-            <span className="text-xs text-muted-foreground">
-              {product.auction_allow_prebids ? "Pre-bids welcome" : "Bidding opens live"}
-            </span>
+            <AuctionProductActions
+              product={product}
+              shopId={shopId}
+              shopOpen={shopOpen}
+              isAuthed={isAuthed}
+              isOwner={isOwner}
+              userId={userId}
+              initial={initialAuction}
+            />
           ) : (
             <BuyButton
               shopId={shopId}
               productId={product.id}
-              isOpen={isOpen}
+              isOpen={shopOpen}
               soldOut={soldOut}
               isAuthed={isAuthed}
             />
@@ -224,18 +267,33 @@ function ProductCard({
 function ProductDetailDialog({
   product,
   shopId,
-  isOpen,
+  shopOpen,
   isAuthed,
+  isOwner,
+  userId,
+  initialAuction,
   onClose,
 }: {
   product: Product;
   shopId: string;
-  isOpen: boolean;
+  shopOpen: boolean;
   isAuthed: boolean;
+  isOwner: boolean;
+  userId: string | null;
+  initialAuction: Omit<NonNullable<AuctionPanelState>, "winnerName"> | null;
   onClose: () => void;
 }) {
   const photos = photosOf(product);
   const soldOut = product.quantity <= 0;
+  const isAuction = product.sale_type === "auction";
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -245,15 +303,18 @@ function ProductDetailDialog({
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 pt-20 pb-24"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      aria-label={product.title}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card"
+        className="max-h-full w-full max-w-lg overflow-y-auto rounded-xl border border-border bg-card shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
@@ -266,25 +327,43 @@ function ProductDetailDialog({
           >
             <X className="size-4" />
           </button>
+          {isAuction && (
+            <Badge variant="accent" className="absolute left-2 top-2">
+              Auction
+            </Badge>
+          )}
         </div>
         <div className="space-y-3 p-5">
           <h2 className="text-xl font-bold">{product.title}</h2>
           {product.description && (
             <p className="whitespace-pre-wrap text-sm text-foreground/90">{product.description}</p>
           )}
-          <div className="flex items-end justify-between border-t border-border pt-3">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border pt-3">
             <PriceBlock product={product} />
-            <BuyButton
-              shopId={shopId}
-              productId={product.id}
-              isOpen={isOpen}
-              soldOut={soldOut}
-              isAuthed={isAuthed}
-            />
+            {isAuction ? (
+              <AuctionProductActions
+                product={product}
+                shopId={shopId}
+                shopOpen={shopOpen}
+                isAuthed={isAuthed}
+                isOwner={isOwner}
+                userId={userId}
+                initial={initialAuction}
+              />
+            ) : (
+              <BuyButton
+                shopId={shopId}
+                productId={product.id}
+                isOpen={shopOpen}
+                soldOut={soldOut}
+                isAuthed={isAuthed}
+              />
+            )}
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

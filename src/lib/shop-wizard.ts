@@ -13,8 +13,8 @@ import { effectiveStreamProvider } from "@/lib/live-stream";
 export const WIZARD_STEPS = [
   { id: "details", label: "Shop details", shortLabel: "Details" },
   { id: "products", label: "Products", shortLabel: "Products" },
+  { id: "live", label: "Banner & live stream", shortLabel: "Banner" },
   { id: "layout", label: "Layout & theme", shortLabel: "Layout" },
-  { id: "live", label: "Live stream", shortLabel: "Live" },
   { id: "schedule", label: "Schedule", shortLabel: "Schedule" },
 ] as const;
 

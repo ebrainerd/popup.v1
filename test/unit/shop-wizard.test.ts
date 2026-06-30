@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  WIZARD_STEPS,
   canNavigateToStep,
   defaultWizardDraft,
   getStepValidation,
@@ -10,6 +11,16 @@ import {
 } from "@/lib/shop-wizard";
 
 describe("shop wizard", () => {
+  it("orders banner and live stream before layout selection", () => {
+    expect(WIZARD_STEPS.map((s) => s.id)).toEqual([
+      "details",
+      "products",
+      "live",
+      "layout",
+      "schedule",
+    ]);
+  });
+
   it("requires a shop name on the details step", () => {
     const draft = defaultWizardDraft();
     expect(getStepValidation("details", draft).valid).toBe(false);
