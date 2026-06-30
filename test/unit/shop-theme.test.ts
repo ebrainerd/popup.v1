@@ -3,8 +3,12 @@ import {
   contrastRatio,
   defaultShopTheme,
   parseShopTheme,
+  recommendedThemeForLayout,
   relativeLuminance,
   shopThemeRootClassName,
+  SHOP_LAYOUT_DEFAULTS,
+  SHOP_LAYOUT_MODE_META,
+  SHOP_LAYOUT_MODES,
   SHOP_PRESET_VISUAL,
   SHOP_THEME_PRESET_META,
   validateShopThemeContrast,
@@ -83,5 +87,78 @@ describe("shop theme", () => {
     };
     const warnings = validateShopThemeContrast(theme);
     expect(warnings).toHaveLength(0);
+  });
+});
+
+describe("shop layout archetypes", () => {
+  it("uses archetype display labels for every layout slug", () => {
+    expect(SHOP_LAYOUT_MODE_META.broadcast.label).toBe("Live Stage");
+    expect(SHOP_LAYOUT_MODE_META.catalog.label).toBe("Lookbook");
+    expect(SHOP_LAYOUT_MODE_META.countdown.label).toBe("Drop Clock");
+    expect(SHOP_LAYOUT_MODE_META.classic.label).toBe("The Room");
+  });
+
+  it("provides bestFor copy and a recommended preset per layout", () => {
+    for (const id of SHOP_LAYOUT_MODES) {
+      const meta = SHOP_LAYOUT_MODE_META[id];
+      expect(meta.bestFor.length).toBeGreaterThan(0);
+      expect(SHOP_THEME_PRESET_META[meta.recommendedPreset]).toBeTruthy();
+    }
+  });
+
+  it("keeps the original enum slugs for backward compatibility", () => {
+    expect([...SHOP_LAYOUT_MODES].sort()).toEqual(
+      ["broadcast", "catalog", "classic", "countdown"].sort(),
+    );
+  });
+
+  it("returns the expected default toggles per layout", () => {
+    expect(SHOP_LAYOUT_DEFAULTS.broadcast).toMatchObject({
+      preset: "default",
+      showChat: true,
+      showSellerBio: false,
+      showReminderCta: false,
+      productGridColumns: 2,
+    });
+    expect(SHOP_LAYOUT_DEFAULTS.catalog).toMatchObject({
+      preset: "gallery",
+      showChat: true,
+      showSellerBio: true,
+      showReminderCta: true,
+      productGridColumns: 3,
+    });
+    expect(SHOP_LAYOUT_DEFAULTS.countdown).toMatchObject({
+      preset: "dark_room",
+      showChat: false,
+      showSellerBio: false,
+      showReminderCta: true,
+      productGridColumns: 2,
+    });
+    expect(SHOP_LAYOUT_DEFAULTS.classic).toMatchObject({
+      preset: "market_stall",
+      showChat: true,
+      showSellerBio: true,
+      showReminderCta: true,
+      productGridColumns: 2,
+    });
+  });
+
+  it("aligns recommended preset metadata with the default bundle", () => {
+    for (const id of SHOP_LAYOUT_MODES) {
+      expect(SHOP_LAYOUT_DEFAULTS[id].preset).toBe(SHOP_LAYOUT_MODE_META[id].recommendedPreset);
+      expect(SHOP_LAYOUT_DEFAULTS[id].accent).toBe(
+        SHOP_THEME_PRESET_META[SHOP_LAYOUT_MODE_META[id].recommendedPreset].defaultAccent,
+      );
+    }
+  });
+
+  it("merges recommended settings onto a theme while forcing the layout", () => {
+    const base = defaultShopTheme();
+    const result = recommendedThemeForLayout("countdown", base);
+    expect(result.layout).toBe("countdown");
+    expect(result.preset).toBe("dark_room");
+    expect(result.showChat).toBe(false);
+    expect(result.showReminderCta).toBe(true);
+    expect(result.accent).toBe(SHOP_THEME_PRESET_META.dark_room.defaultAccent);
   });
 });

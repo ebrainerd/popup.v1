@@ -4,7 +4,9 @@ Living handoff doc for redesigning PopUp’s **page layout** customization aroun
 seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) and
 `docs/PRODUCT_UX_REVIEW.md` for broader UX context.
 
-**Status:** Spec only — implementation not started (June 2026).  
+**Status:** Phase 0 (metadata + defaults) and Phase 1 (editor archetype picker +
+preview phase toggle) implemented (June 2026). Phases 2–5 (per-layout buyer-page
+parity) not started.  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
 drop”), not four interchangeable skins of the same page.
 
@@ -362,10 +364,10 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 ### Phase 0 — Spec & metadata (small PR)
 
 - [x] This document
-- [ ] Update `SHOP_LAYOUT_MODE_META` labels/taglines/descriptions to archetype copy
-- [ ] Add `SHOP_LAYOUT_DEFAULTS: Record<ShopLayoutMode, Partial<ShopTheme>>` in `shop-theme.ts`
-- [ ] Unit tests for new metadata and defaults helper
-- [ ] Link from `docs/HANDOFF.md` → here
+- [x] Update `SHOP_LAYOUT_MODE_META` labels/taglines/descriptions to archetype copy
+- [x] Add `SHOP_LAYOUT_DEFAULTS: Record<ShopLayoutMode, Partial<ShopTheme>>` in `shop-theme.ts`
+- [x] Unit tests for new metadata and defaults helper
+- [x] Link from `docs/HANDOFF.md` → here
 
 **Files:** `src/lib/shop-theme.ts`, `test/unit/shop-theme.test.ts`, `docs/HANDOFF.md`
 
@@ -373,14 +375,20 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ### Phase 1 — Theme editor archetype picker
 
-- [ ] Archetype cards with recommended preset chips
-- [ ] Optional “Apply recommended settings” when changing layout
-- [ ] Phase toggle in preview (scheduled / open / live mock)
-- [ ] `docs/PRE_MARKETING_TEST.md` §17 — update layout names
+- [x] Archetype cards with recommended preset chips
+- [x] Optional “Apply recommended settings” when changing layout
+- [x] Phase toggle in preview (scheduled / open / live mock)
+- [x] `docs/PRE_MARKETING_TEST.md` §3 — update layout names
 
 **Files:** `shop-theme-editor.tsx`, `shop-theme-preview.tsx`
 
 **Risks:** Preview/prod drift — add comment cross-links between preview and page view.
+
+> **Note (Phase 1, June 2026):** The preview phase toggle is a *mock* — it
+> swaps the hero treatment (countdown overlay / LIVE badge), shows the reminder
+> CTA when scheduled, and tints products as "soon". Full per-phase **section
+> reordering** per §5 lands in Phases 2–5 alongside `shop-page-view.tsx`; until
+> then the preview keeps each layout's existing section order.
 
 ---
 

@@ -5,12 +5,15 @@ import { Monitor, Smartphone } from "lucide-react";
 import {
   SHOP_BACKGROUND_META,
   SHOP_BACKGROUND_STYLES,
+  SHOP_LAYOUT_DEFAULTS,
   SHOP_LAYOUT_MODE_META,
   SHOP_LAYOUT_MODES,
   SHOP_THEME_PRESET_META,
   SHOP_THEME_PRESETS,
   presetAccent,
+  recommendedThemeForLayout,
   type ShopBackgroundStyle,
+  type ShopLayoutMode,
   validateShopThemeContrast,
   type ShopTheme,
   type ShopThemePreset,
@@ -26,6 +29,24 @@ type PreviewProduct = {
   price: string;
   photoUrl?: string;
 };
+
+export type ShopPreviewPhase = "scheduled" | "open" | "live";
+
+const PREVIEW_PHASES: { id: ShopPreviewPhase; label: string }[] = [
+  { id: "scheduled", label: "Scheduled" },
+  { id: "open", label: "Open" },
+  { id: "live", label: "Live" },
+];
+
+/** Human summary of a layout's recommended settings for the consent prompt. */
+function recommendedSummary(layout: ShopLayoutMode): string {
+  const defaults = SHOP_LAYOUT_DEFAULTS[layout];
+  const parts: string[] = [];
+  if (defaults.preset) parts.push(`${SHOP_THEME_PRESET_META[defaults.preset].label} theme`);
+  if (typeof defaults.showChat === "boolean") parts.push(defaults.showChat ? "chat on" : "chat off");
+  if (defaults.productGridColumns) parts.push(`${defaults.productGridColumns}-column grid`);
+  return parts.join(", ");
+}
 
 export function ShopThemeEditor({
   theme,
@@ -47,6 +68,8 @@ export function ShopThemeEditor({
   showSave?: boolean;
 }) {
   const [viewport, setViewport] = useState<"desktop" | "mobile">("desktop");
+  const [phase, setPhase] = useState<ShopPreviewPhase>("open");
+  const [pendingRecommend, setPendingRecommend] = useState<ShopLayoutMode | null>(null);
   const [pending, startTransition] = useTransition();
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
@@ -73,6 +96,20 @@ export function ShopThemeEditor({
       preset,
       accent: presetAccent(preset),
     });
+    setSaveMessage(null);
+  }
+
+  function selectLayout(layout: ShopLayoutMode) {
+    if (layout !== theme.layout) {
+      // Change the layout immediately; offer (don't force) the recommended bundle.
+      patch({ layout });
+      setPendingRecommend(layout);
+    }
+  }
+
+  function applyRecommended(layout: ShopLayoutMode) {
+    onChange(recommendedThemeForLayout(layout, theme));
+    setPendingRecommend(null);
     setSaveMessage(null);
   }
 
@@ -139,28 +176,86 @@ export function ShopThemeEditor({
         <section className="space-y-3">
           <SectionHeader
             title="Page layout"
-            description="Controls what buyers see first — banner, products, chat, or countdown."
+            description="Pick the layout that matches how you sell — each one orders the page around a different kind of drop."
           />
           <div className="space-y-2">
             {SHOP_LAYOUT_MODES.map((id) => {
               const layout = SHOP_LAYOUT_MODE_META[id];
               const active = theme.layout === id;
+              const recommendedPreset = SHOP_THEME_PRESET_META[layout.recommendedPreset];
+              const presetMatched = theme.preset === layout.recommendedPreset;
               return (
-                <button
+                <div
                   key={id}
-                  type="button"
-                  onClick={() => patch({ layout: id })}
                   className={cn(
-                    "w-full rounded-xl border px-3 py-3 text-left transition-all",
+                    "rounded-xl border transition-all",
                     active
                       ? "border-primary bg-primary/5 ring-2 ring-primary/40"
                       : "border-border hover:border-primary/30",
                   )}
                 >
-                  <p className="font-semibold">{layout.label}</p>
-                  <p className="text-xs font-medium text-primary">{layout.tagline}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{layout.description}</p>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => selectLayout(id)}
+                    aria-pressed={active}
+                    className="w-full rounded-t-xl px-3 pt-3 text-left"
+                  >
+                    <p className="font-semibold">{layout.label}</p>
+                    <p className="text-xs font-medium text-primary">{layout.tagline}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{layout.description}</p>
+                    <p className="mt-1.5 text-[11px] font-medium text-foreground/80">
+                      Best for {layout.bestFor}
+                    </p>
+                  </button>
+                  <div className="flex items-center gap-2 px-3 pb-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => selectPreset(layout.recommendedPreset)}
+                      title={`Apply the ${recommendedPreset.label} color theme`}
+                      className={cn(
+                        "inline-flex items-center gap-1.5 rounded-full border px-2 py-1 text-[11px] font-medium transition-colors",
+                        presetMatched
+                          ? "border-primary/40 bg-primary/10 text-primary"
+                          : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground",
+                      )}
+                    >
+                      <span
+                        className="size-3 rounded-full border border-black/10"
+                        style={{ background: recommendedPreset.swatch }}
+                        aria-hidden
+                      />
+                      {presetMatched
+                        ? `Theme: ${recommendedPreset.label}`
+                        : `Recommended theme: ${recommendedPreset.label}`}
+                    </button>
+                  </div>
+                  {pendingRecommend === id && active && (
+                    <div className="border-t border-primary/20 bg-primary/[0.04] px-3 py-2.5 text-xs">
+                      <p className="text-foreground">
+                        Apply recommended settings for {layout.label}? ({recommendedSummary(id)})
+                      </p>
+                      <div className="mt-2 flex gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-7 px-3 text-xs"
+                          onClick={() => applyRecommended(id)}
+                        >
+                          Apply
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-3 text-xs"
+                          onClick={() => setPendingRecommend(null)}
+                        >
+                          Keep my settings
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>
@@ -265,7 +360,7 @@ export function ShopThemeEditor({
             />
             <ToggleRow
               label="Reminder button"
-              description="“Remind me” CTA for scheduled drops (best with Waiting room layout)."
+              description="“Remind me” CTA for scheduled drops (best with the Drop Clock layout)."
               checked={theme.showReminderCta}
               onChange={(showReminderCta) => patch({ showReminderCta })}
             />
@@ -291,27 +386,44 @@ export function ShopThemeEditor({
               Changes update instantly. This is how buyers will see your drop page.
             </p>
           </div>
-          <div className="flex rounded-lg border border-border p-1">
-            <button
-              type="button"
-              onClick={() => setViewport("desktop")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
-                viewport === "desktop" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-              )}
-            >
-              <Monitor className="size-4" /> Desktop
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewport("mobile")}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
-                viewport === "mobile" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
-              )}
-            >
-              <Smartphone className="size-4" /> Mobile
-            </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-lg border border-border p-1">
+              {PREVIEW_PHASES.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPhase(p.id)}
+                  className={cn(
+                    "rounded-md px-3 py-1.5 text-sm font-medium",
+                    phase === p.id ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex rounded-lg border border-border p-1">
+              <button
+                type="button"
+                onClick={() => setViewport("desktop")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
+                  viewport === "desktop" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                )}
+              >
+                <Monitor className="size-4" /> Desktop
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewport("mobile")}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium",
+                  viewport === "mobile" ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                )}
+              >
+                <Smartphone className="size-4" /> Mobile
+              </button>
+            </div>
           </div>
         </div>
 
@@ -327,6 +439,7 @@ export function ShopThemeEditor({
             coverUrl={coverUrl}
             products={previewProducts}
             viewport={viewport}
+            phase={phase}
           />
         </div>
       </div>
