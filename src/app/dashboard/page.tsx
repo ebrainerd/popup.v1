@@ -59,7 +59,7 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      {paymentsRequired && !payoutsConnected && (
+      {paymentsRequired && !payoutsConnected && shops.length > 0 && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>

@@ -6,10 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
 import { DeleteDraftButton } from "@/components/delete-draft-button";
 import { deriveShopStatus } from "@/lib/utils";
+import { isShopScheduleSet } from "@/lib/shop-schedule";
 
 export function SellerShopRow({ shop }: { shop: Shop }) {
   const status = deriveShopStatus(shop.start_at, shop.end_at);
   const isDraft = shop.status === "draft";
+  const scheduleUnset = isDraft && !isShopScheduleSet(shop);
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
       <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md bg-muted">
@@ -30,7 +32,13 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
           {shop.visibility === "private" && <Badge variant="muted">Private</Badge>}
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <Countdown startAt={shop.start_at} endAt={shop.end_at} compact draft={isDraft} />
+          <Countdown
+            startAt={shop.start_at}
+            endAt={shop.end_at}
+            compact
+            draft={isDraft}
+            scheduleUnset={scheduleUnset}
+          />
         </div>
       </div>
 

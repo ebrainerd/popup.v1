@@ -2,11 +2,10 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "lucide-react";
 import { finishShopSetup, saveShopDraft } from "@/app/dashboard/actions";
 import { trackActiveDraftShop } from "@/components/continue-draft-shop";
 import { isInviteOnlyMode } from "@/lib/discovery";
-import { isoToLocalInput } from "@/lib/datetime";
 import {
   WIZARD_STEPS,
   canNavigateToStep,
@@ -32,10 +31,6 @@ import { WizardThemeStep } from "@/components/wizard-theme-step";
 import { StreamSourcePicker } from "@/components/stream-source-picker";
 import { getPublicLiveKitUrl } from "@/lib/live-stream";
 import { cn } from "@/lib/utils";
-
-function nowLocal(): string {
-  return isoToLocalInput(new Date().toISOString());
-}
 
 export function ShopSetupWizard({
   initialDraft,
@@ -171,7 +166,8 @@ export function ShopSetupWizard({
         <div>
           <h1 className="text-2xl font-bold">{shopId ? "Continue shop setup" : "Create a shop"}</h1>
           <p className="mt-1 text-muted-foreground">
-            Save a draft anytime to pick up later from your dashboard.
+            Save a draft anytime. Set your drop schedule on the manage page when you&apos;re ready to
+            publish.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -384,40 +380,6 @@ export function ShopSetupWizard({
                 You can go live anytime while your shop is open. Test your camera from manage shop
                 before the drop starts.
               </p>
-            </div>
-          )}
-
-          {currentStep.id === "schedule" && (
-            <div className="space-y-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="start_local">Opens at</Label>
-                    <button
-                      type="button"
-                      onClick={() => patch({ startLocal: nowLocal() })}
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                    >
-                      <Zap className="size-3" /> Open now
-                    </button>
-                  </div>
-                  <Input
-                    id="start_local"
-                    type="datetime-local"
-                    value={draft.startLocal}
-                    onChange={(e) => patch({ startLocal: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="end_local">Closes at</Label>
-                  <Input
-                    id="end_local"
-                    type="datetime-local"
-                    value={draft.endLocal}
-                    onChange={(e) => patch({ endLocal: e.target.value })}
-                  />
-                </div>
-              </div>
             </div>
           )}
 

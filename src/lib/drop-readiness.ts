@@ -24,6 +24,7 @@ export type DropHealth = {
 type SellerContext = {
   stripe_onboarded: boolean;
   follower_count: number;
+  seller_terms_accepted_at?: string | null;
 };
 
 /** Compute launch checklist and drop health for the seller dashboard. */
@@ -40,12 +41,16 @@ export function computeDropHealth(
   const isPublished = shop.status !== "draft";
   const hasProducts = productCount > 0;
   const payoutsConnected = arePayoutsConnected(seller);
+  const termsAccepted = Boolean(seller.seller_terms_accepted_at);
+  const scheduleSet = shop.schedule_set === true;
 
   const items: DropReadinessItem[] = [
     { id: "details", label: "Shop details complete", done: hasDetails },
     { id: "products", label: "At least one product added", done: hasProducts },
     { id: "cover", label: "Cover image added", done: hasCover },
     { id: "live", label: "Stream source configured", done: hasStreamConfigured, optional: true },
+    { id: "schedule", label: "Drop schedule set", done: scheduleSet },
+    { id: "terms", label: "Seller terms accepted", done: termsAccepted },
     { id: "payouts", label: "Payments set up", done: payoutsConnected },
     { id: "published", label: "Drop published", done: isPublished },
     { id: "share", label: "Share your shop link copied", done: false, optional: true },

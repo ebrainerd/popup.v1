@@ -17,7 +17,6 @@ describe("shop wizard", () => {
       "products",
       "live",
       "layout",
-      "schedule",
     ]);
   });
 

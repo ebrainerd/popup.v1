@@ -1,7 +1,7 @@
 import type { Product, Shop } from "@/lib/database.types";
 import type { AuctionFieldState } from "@/components/auction-product-fields";
 import { defaultAuctionFields } from "@/components/auction-product-fields";
-import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
+import { isoToLocalInput } from "@/lib/datetime";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { defaultShopTheme, parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
 import {
@@ -15,7 +15,6 @@ export const WIZARD_STEPS = [
   { id: "products", label: "Products", shortLabel: "Products" },
   { id: "live", label: "Banner & live stream", shortLabel: "Banner" },
   { id: "layout", label: "Layout & theme", shortLabel: "Layout" },
-  { id: "schedule", label: "Schedule", shortLabel: "Schedule" },
 ] as const;
 
 export type WizardStepId = (typeof WIZARD_STEPS)[number]["id"];
@@ -214,15 +213,6 @@ export function getStepValidation(
         }
       }
       return { valid: true };
-    case "schedule": {
-      if (!draft.startLocal || !draft.endLocal) {
-        return { valid: false, message: "Set both opening and closing times." };
-      }
-      if (new Date(draft.endLocal) <= new Date(draft.startLocal)) {
-        return { valid: false, message: "Closing time must be after opening time." };
-      }
-      return { valid: true };
-    }
     default:
       return { valid: true };
   }
@@ -240,7 +230,7 @@ export function markStepComplete(draft: ShopWizardDraft, stepId: WizardStepId): 
 export function inferCompletedSteps(draft: ShopWizardDraft): WizardStepId[] {
   const completed: WizardStepId[] = [];
   for (const step of WIZARD_STEPS) {
-    if (step.id === "layout" || step.id === "live" || step.id === "schedule") continue;
+    if (step.id === "layout" || step.id === "live") continue;
     if (getStepValidation(step.id, draft).valid) completed.push(step.id);
     else break;
   }
@@ -281,20 +271,6 @@ function buildWizardPersistPayload(
   draft: ShopWizardDraft,
   options?: { draftMode?: boolean },
 ) {
-  const defaults = defaultWizardDraft();
-  const startLocal =
-    draft.startLocal &&
-    draft.endLocal &&
-    new Date(draft.endLocal) > new Date(draft.startLocal)
-      ? draft.startLocal
-      : defaults.startLocal;
-  const endLocal =
-    draft.startLocal &&
-    draft.endLocal &&
-    new Date(draft.endLocal) > new Date(draft.startLocal)
-      ? draft.endLocal
-      : defaults.endLocal;
-
   return {
     shopId: draft.shopId,
     name: draft.name.trim(),
@@ -304,8 +280,6 @@ function buildWizardPersistPayload(
     streamSource: draft.streamSource,
     youtubeUrl: draft.streamSource === "external" ? draft.youtubeUrl.trim() : "",
     twitchUrl: draft.streamSource === "external" ? draft.twitchUrl.trim() : "",
-    startAt: localInputToIso(startLocal),
-    endAt: localInputToIso(endLocal),
     products: mapWizardProducts(draft, Boolean(options?.draftMode)),
     completedSteps: draft.completedSteps,
     theme: draft.theme,

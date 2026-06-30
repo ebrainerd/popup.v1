@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { acceptSellerTerms } from "@/app/dashboard/actions";
 import { TermsOfServiceContent } from "@/components/legal/terms-of-service-content";
 import { Button } from "@/components/ui/button";
@@ -59,7 +58,7 @@ export function SellerTermsAgreementDialog({
             Seller Terms of Service
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Read the full agreement below before opening a shop. Last updated: {LEGAL_LAST_UPDATED}
+            Read the full agreement below before publishing a shop. Last updated: {LEGAL_LAST_UPDATED}
           </p>
         </div>
 
