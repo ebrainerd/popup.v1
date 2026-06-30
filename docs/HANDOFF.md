@@ -20,7 +20,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | **Discovery mode** | `invite_only` (default) — link-only shops; Explore is a holding page |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations** | Through **`0021_profile_setup_username.sql`** |
+| **Migrations** | Through **`0022_auto_queue_shop_auctions.sql`** |
 
 ## Where to look
 
@@ -34,6 +34,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | Live auctions PRD (shipped) | `docs/AUCTIONS_PRD.md` |
 | Native live streaming | `docs/NATIVE_LIVE_STREAMING.md` |
 | Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
+| **Shop layout archetypes (customization spec)** | **`docs/SHOP_LAYOUT_ARCHETYPES.md`** |
 | Testing & CI | `docs/TESTING.md` |
 | Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
 | Auth & profile signup flows | `docs/AUTH_PROFILE_ROADMAP.md` |
@@ -56,6 +57,7 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
+- **Shop layout archetypes spec** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign (not yet implemented)
 
 ### Infrastructure (owner — done)
 
