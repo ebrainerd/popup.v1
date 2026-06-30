@@ -265,7 +265,7 @@ export function ShopThemeEditor({
             />
             <ToggleRow
               label="Reminder button"
-              description="“Remind me” CTA for scheduled drops (best with Waiting room layout)."
+              description="“Remind me” CTA for scheduled drops (best with the Drop Clock layout)."
               checked={theme.showReminderCta}
               onChange={(showReminderCta) => patch({ showReminderCta })}
             />

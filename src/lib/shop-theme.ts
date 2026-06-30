@@ -110,31 +110,74 @@ export const SHOP_THEME_PRESET_META: Record<ShopThemePreset, ShopThemePresetMeta
 export const SHOP_LAYOUT_MODE_META: Record<ShopLayoutMode, ShopLayoutModeMeta> = {
   classic: {
     id: "classic",
-    label: "Classic",
-    tagline: "Balanced storefront",
+    label: "The Room",
+    tagline: "Your regulars’ hangout",
     description:
-      "Banner at the top, shop details, then products with chat in a side panel. The default PopUp room layout.",
+      "A balanced community room — banner or stream on the left, chat alongside, and a scannable product grid. Best for vintage dealers and sellers whose regulars show up to hang out and ask questions.",
   },
   broadcast: {
     id: "broadcast",
-    label: "Stream first",
-    tagline: "Live-forward",
+    label: "Live Stage",
+    tagline: "Built for live selling",
     description:
-      "Your live video (or banner) fills the top. Products stack below and chat spans the full width — built for watch-and-buy.",
+      "Your live video takes over the top of the page, products sit one tap below, and chat spans the full width. Best for creators whose drop is a live event.",
   },
   countdown: {
     id: "countdown",
-    label: "Waiting room",
-    tagline: "Hype the opener",
+    label: "Drop Clock",
+    tagline: "Hype the opening",
     description:
-      "Oversized countdown on the hero, reminder button up front, and a lighter product preview until doors open.",
+      "An oversized countdown and reminder button own the pre-open hero, then the page snaps to a full shop the moment doors open. Best for scarce, timed drops where the clock is the hook.",
   },
   catalog: {
     id: "catalog",
-    label: "Catalog",
-    tagline: "Products first",
+    label: "Lookbook",
+    tagline: "Let your work lead",
     description:
-      "Your product grid leads the page. Live stream and chat sit underneath as supporting panels.",
+      "Your product grid leads with big imagery and room to read, while stream and chat sit quietly below. Best for artists and makers selling a few considered pieces.",
+  },
+};
+
+/**
+ * Recommended theme settings per layout archetype (see
+ * `docs/SHOP_LAYOUT_ARCHETYPES.md` §3 + §5). The editor offers these as
+ * "Apply recommended settings" when a seller picks a layout — they are
+ * suggestions, never silently forced. Kept as `Partial<ShopTheme>` so callers
+ * can merge over an existing theme without clobbering `layout`/`accent` choices
+ * they want to keep.
+ */
+export const SHOP_LAYOUT_DEFAULTS: Record<ShopLayoutMode, Partial<ShopTheme>> = {
+  classic: {
+    preset: "market_stall",
+    accent: SHOP_THEME_PRESET_META.market_stall.defaultAccent,
+    productGridColumns: 2,
+    showChat: true,
+    showSellerBio: true,
+    showReminderCta: true,
+  },
+  broadcast: {
+    preset: "default",
+    accent: SHOP_THEME_PRESET_META.default.defaultAccent,
+    productGridColumns: 2,
+    showChat: true,
+    showSellerBio: false,
+    showReminderCta: false,
+  },
+  countdown: {
+    preset: "dark_room",
+    accent: SHOP_THEME_PRESET_META.dark_room.defaultAccent,
+    productGridColumns: 2,
+    showChat: false,
+    showSellerBio: false,
+    showReminderCta: true,
+  },
+  catalog: {
+    preset: "gallery",
+    accent: SHOP_THEME_PRESET_META.gallery.defaultAccent,
+    productGridColumns: 3,
+    showChat: true,
+    showSellerBio: true,
+    showReminderCta: true,
   },
 };
 
@@ -272,6 +315,15 @@ export function parseShopTheme(raw: unknown): ShopTheme {
 
 export function shopThemeToJson(theme: ShopTheme): ShopTheme {
   return parseShopTheme(theme);
+}
+
+/**
+ * Returns `theme` switched to `layout` with that layout's recommended settings
+ * applied (`SHOP_LAYOUT_DEFAULTS`). Use for the editor's "Apply recommended
+ * settings" action; to only change the layout, set `theme.layout` directly.
+ */
+export function applyLayoutDefaults(theme: ShopTheme, layout: ShopLayoutMode): ShopTheme {
+  return parseShopTheme({ ...theme, layout, ...SHOP_LAYOUT_DEFAULTS[layout] });
 }
 
 export function shopThemeCssVars(theme: ShopTheme): Record<string, string> {

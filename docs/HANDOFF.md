@@ -57,7 +57,7 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes spec** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign (not yet implemented)
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. **Phase 0 done**: archetype metadata + `SHOP_LAYOUT_DEFAULTS` in `src/lib/shop-theme.ts`. Phases 1–6 (editor cards, per-layout buyer-page parity) pending.
 
 ### Infrastructure (owner — done)
 

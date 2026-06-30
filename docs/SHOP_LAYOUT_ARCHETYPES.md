@@ -4,7 +4,8 @@ Living handoff doc for redesigning PopUp’s **page layout** customization aroun
 seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) and
 `docs/PRODUCT_UX_REVIEW.md` for broader UX context.
 
-**Status:** Spec only — implementation not started (June 2026).  
+**Status:** Phase 0 landed (archetype metadata + layout defaults in
+`src/lib/shop-theme.ts`); editor/buyer-page phases (1–6) not started (June 2026).  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
 drop”), not four interchangeable skins of the same page.
 
@@ -362,10 +363,10 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 ### Phase 0 — Spec & metadata (small PR)
 
 - [x] This document
-- [ ] Update `SHOP_LAYOUT_MODE_META` labels/taglines/descriptions to archetype copy
-- [ ] Add `SHOP_LAYOUT_DEFAULTS: Record<ShopLayoutMode, Partial<ShopTheme>>` in `shop-theme.ts`
-- [ ] Unit tests for new metadata and defaults helper
-- [ ] Link from `docs/HANDOFF.md` → here
+- [x] Update `SHOP_LAYOUT_MODE_META` labels/taglines/descriptions to archetype copy
+- [x] Add `SHOP_LAYOUT_DEFAULTS: Record<ShopLayoutMode, Partial<ShopTheme>>` in `shop-theme.ts` (+ `applyLayoutDefaults()` helper)
+- [x] Unit tests for new metadata and defaults helper
+- [x] Link from `docs/HANDOFF.md` → here
 
 **Files:** `src/lib/shop-theme.ts`, `test/unit/shop-theme.test.ts`, `docs/HANDOFF.md`
 
