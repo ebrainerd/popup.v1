@@ -96,7 +96,7 @@ async function requirePayoutsConnected(
     .eq("id", userId)
     .maybeSingle();
   if (!data?.stripe_onboarded) {
-    return { error: "Set up payments before creating or publishing a shop." };
+    return { error: "Set up payments before publishing a shop." };
   }
   return null;
 }
@@ -119,9 +119,6 @@ export async function createShop(_prev: ActionState, formData: FormData): Promis
 
   const termsError = await requireSellerTermsAccepted(supabase, user.id);
   if (termsError) return termsError;
-
-  const payoutsError = await requirePayoutsConnected(supabase, user.id);
-  if (payoutsError) return payoutsError;
 
   const parsed = shopSchema.safeParse({
     name: formData.get("name"),
@@ -786,11 +783,6 @@ export async function finishShopSetup(
     };
   }
 
-  if (!parsed.data.shopId) {
-    const payoutsError = await requirePayoutsConnected(supabase, user.id);
-    if (payoutsError) return payoutsError;
-  }
-
   const d = parsed.data;
   const startIso = new Date(d.startAt).toISOString();
   const endIso = new Date(d.endAt).toISOString();
@@ -1007,11 +999,6 @@ export async function saveShopDraft(
         parsed.error.issues.map((i) => [i.path.join(".") || "form", i.message]),
       ),
     };
-  }
-
-  if (!parsed.data.shopId) {
-    const payoutsError = await requirePayoutsConnected(supabase, user.id);
-    if (payoutsError) return payoutsError;
   }
 
   const d = parsed.data;
