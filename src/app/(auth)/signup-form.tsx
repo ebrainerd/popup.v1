@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signInWithGoogle } from "@/app/(auth)/actions";
 import { setProfileAvatar } from "@/app/u/actions";
 import { Turnstile } from "@/components/turnstile";
+import { LegalConsentNotice } from "@/components/legal/legal-consent-notice";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -245,6 +246,8 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
           <p className="text-center text-xs text-muted-foreground">Complete captcha to continue.</p>
         )}
       </form>
+
+      <LegalConsentNotice action="creating an account or continuing with Google" confirmAge />
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
