@@ -85,6 +85,14 @@ However, several issues **block or confuse new users**, especially on mobile and
 
 ## Layout & visual critique
 
+> **Update (June 2026):** Shop **page layout** customization has since been
+> rebuilt around four seller archetypes — **Live Stage**, **Lookbook**,
+> **Drop Clock**, and **The Room** — each reordering the buyer page for a
+> different kind of drop. See `docs/SHOP_LAYOUT_ARCHETYPES.md` for the spec and
+> `docs/MANUAL_TESTING.md` for the four-layout smoke matrix. The single
+> "Shop page grid" treatment described below is now the **The Room** (`classic`)
+> archetype.
+
 ### What works well
 
 1. **Hero gradient** (coral → purple) — distinctive, energetic, matches "pop-up event" positioning.

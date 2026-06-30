@@ -57,51 +57,48 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–5 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, Drop Clock / `countdown`, The Room / `classic` buyer-page parity). **Remaining: Phase 6 — QA & docs** — see handoff section below.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. **All phases (0–6) complete** (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, Drop Clock / `countdown`, The Room / `classic` buyer-page parity, plus Phase 6 QA & docs). Smoke matrix lives in `docs/MANUAL_TESTING.md` → "Shop layout archetypes"; pre-marketing checks in `docs/PRE_MARKETING_TEST.md` Phase 17.
 
-## Shop layout archetypes — next agent (Phase 6)
+## Shop layout archetypes — COMPLETE (Phases 0–6)
 
-**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §7 Phase 6 and §10 testing matrix.
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md`. All six phases have landed; there is
+no remaining layout work queued.
 
-**Baseline on `main`:** All four per-layout parity phases have landed.
-Phase 4 added Drop Clock (`countdown`) — oversized hero countdown with shop name,
-reminder CTAs below hero, announcements pre-open / chat when open, hero shrink at
-`start_at` via `useShopPhase`, `WaitingRoomBanner` skipped for countdown layout.
-Phase 5 added The Room (`classic`) — header (with seller bio) leads, then the
-stream + chat sidebar row (with a desktop min-height floor), auction panel, and
-products; the editor preview mirrors that order.
-
-### Phase 6 scope — QA & docs
-
-| Task | Detail |
-| ---- | ------ |
-| Manual matrix | Walk `docs/PRE_MARKETING_TEST.md` Phase 17 (theme & customize) |
-| Smoke matrix | `docs/MANUAL_TESTING.md` — four layouts × two presets |
-| Cross-link | Update `docs/PRODUCT_UX_REVIEW.md` (optional) |
+- **Phases 0–3, 5:** metadata + defaults, editor archetype picker + preview phase
+  toggle, and buyer-page parity for Live Stage (`broadcast`), Lookbook
+  (`catalog`), and The Room (`classic`).
+- **Phase 4 — Drop Clock (`countdown`):** oversized hero countdown with shop name,
+  reminder CTAs below hero, announcements pre-open / chat when open, hero shrink at
+  `start_at`, `WaitingRoomBanner` skipped for the countdown layout.
+- **Phase 6 — QA & docs (this PR):** four layouts × two presets smoke matrix added
+  to `docs/MANUAL_TESTING.md`; `docs/PRE_MARKETING_TEST.md` Phase 17 expanded to
+  17.1–17.10; `docs/PRODUCT_UX_REVIEW.md` cross-linked. Automated gate
+  (`typecheck`/`lint`/`test`/`build`) green and a manual GUI smoke of all four
+  layouts × phases in the customize preview passed (no preview drift / errors).
 
 ### Key files
 
 ```
-src/components/shop-page-view.tsx
+src/lib/shop-theme.ts
+src/components/shop-theme-editor.tsx
 src/components/shop-theme-preview.tsx
+src/components/shop-page-view.tsx
 src/components/stream-slot.tsx
 ```
 
-### Done (Phases 4–5 acceptance)
-
-- Drop Clock: scheduled countdown is the largest hero element; hero shrinks at
-  `start_at` without a full reload; `WaitingRoomBanner` no longer duplicates it.
-- The Room: desktop chat visible beside the stream without scrolling; seller bio
-  appears in the header when `showSellerBio`; preview ≈ buyer page.
-
-### Before opening PR
+### Re-verifying layout work
 
 ```bash
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Branch: `cursor/shop-layout-qa-phase6-<suffix>`. One PR per phase; keep preview and
-buyer page in sync (comment cross-links like Phases 2–5).
+Then walk `docs/MANUAL_TESTING.md` → "Shop layout archetypes". Local-stack
+gotcha hit during Phase 6 QA: a stale DB volume can leave migrations partially
+applied (e.g. missing `profiles.follower_count`), which makes owner shop pages
+404 on otherwise-valid shops — run `supabase db reset` to re-apply all
+migrations + `seed.sql` grants. Keep the customize preview and buyer page in
+sync if you touch any layout (comment cross-links exist in `shop-page-view.tsx`
+↔ `shop-theme-preview.tsx`).
 
 ### Infrastructure (owner — done)
 

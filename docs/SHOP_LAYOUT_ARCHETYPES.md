@@ -4,11 +4,11 @@ Living handoff doc for redesigning PopUp’s **page layout** customization aroun
 seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) and
 `docs/PRODUCT_UX_REVIEW.md` for broader UX context.
 
-**Status:** Phase 0 (metadata + defaults), Phase 1 (editor archetype picker +
-preview phase toggle), Phase 2 (Live Stage / `broadcast` buyer-page parity),
-Phase 3 (Lookbook / `catalog` buyer-page parity), and Phase 5 (The Room /
-`classic` polish) implemented (June 2026). **Phase 4 (Drop Clock / `countdown`)
-remains** the only per-layout parity phase not started.  
+**Status:** **All phases complete (June 2026).** Phase 0 (metadata + defaults),
+Phase 1 (editor archetype picker + preview phase toggle), Phase 2 (Live Stage /
+`broadcast`), Phase 3 (Lookbook / `catalog`), Phase 4 (Drop Clock / `countdown`),
+and Phase 5 (The Room / `classic`) shipped the buyer-page parity work; **Phase 6
+(QA & docs)** is now done — see §7 below.  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
 drop”), not four interchangeable skins of the same page.
 
@@ -443,11 +443,27 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ---
 
-### Phase 6 — QA & docs
+### Phase 6 — QA & docs — DONE
 
-- [ ] Walk `docs/PRE_MARKETING_TEST.md` Phase 17 (theme & customize)
-- [ ] `docs/MANUAL_TESTING.md` — four layouts × two presets smoke matrix
-- [ ] Update `docs/PRODUCT_UX_REVIEW.md` cross-link (optional)
+- [x] Walk `docs/PRE_MARKETING_TEST.md` Phase 17 (theme & customize) — expanded
+      to 17.1–17.10 covering all four layouts, phase toggles, recommended-settings
+      prompt, and preview ≈ buyer-page parity
+- [x] `docs/MANUAL_TESTING.md` — added a **Shop layout archetypes** section with a
+      four layouts × two presets editor smoke matrix (L1–L11) plus buyer-page
+      parity checks (B1–B6)
+- [x] Update `docs/PRODUCT_UX_REVIEW.md` cross-link — note added under Layout &
+      visual critique pointing at this spec and the smoke matrix
+
+**QA performed (June 2026):** `npm run typecheck`, `npm run lint`, `npm run test`
+(134 passed / 9 skipped), and `npm run build` all pass. Manual GUI smoke on a
+seeded scheduled shop walked all four layouts × Scheduled/Open/Live in the
+customize **Live preview**: each layout reordered/restyled per §5, the phase
+toggle swapped the hero (countdown → open → LIVE badge), and the "Apply
+recommended settings" prompt fired on layout change. No errors or broken/blank
+previews. Local-stack note: a stale DB volume can leave migrations partially
+applied (`profiles.follower_count` missing → shop queries fail with `column
+… does not exist`, surfacing as a 404 on owner pages); `supabase db reset`
+re-applies all migrations + `seed.sql` grants and resolves it.
 
 ---
 
@@ -528,7 +544,9 @@ Before starting implementation:
 6. Do not change `ShopLayoutMode` union without migration plan
 7. Update `SHOP_LAYOUT_MODE_META` in the same PR as any buyer-facing layout behavior change
 
-**Suggested next PR:** Phase 4 — Drop Clock (`countdown`) buyer-page parity (Phases 2/3/5 merged).
+**Suggested next PR:** None — all phases (0–6) are complete. Future layout work
+would be net-new scope (e.g. per-layout custom CSS, layout badges on Explore
+cards — see §11 open questions).
 
 ---
 
