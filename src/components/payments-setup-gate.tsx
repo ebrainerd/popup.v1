@@ -4,7 +4,7 @@ import { SetupPaymentsButton } from "@/components/setup-payments-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-/** Blocks shop creation until Stripe Connect onboarding is complete. */
+/** Blocks publishing until Stripe Connect onboarding is complete. */
 export function PaymentsSetupGate({
   paymentsReady,
   returnTo,
@@ -24,8 +24,8 @@ export function PaymentsSetupGate({
           Set up payments first
         </CardTitle>
         <CardDescription>
-          Connect your payout account with Stripe before creating a shop. This is a one-time setup
-          for your seller account and applies to all of your shops.
+          Connect your payout account with Stripe before publishing a shop. This is a one-time
+          setup for your seller account and applies to all of your shops.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-3">

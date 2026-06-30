@@ -18,6 +18,7 @@ import { LiveControlsCard } from "@/components/live-controls-card";
 import { PublishControls } from "@/components/publish-controls";
 import { LaunchChecklist } from "@/components/launch-checklist";
 import { PaymentsSetupBanner } from "@/components/payments-setup-banner";
+import { SellerTermsBanner } from "@/components/seller-terms-banner";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { DropReportCard } from "@/components/drop-report";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
@@ -66,6 +67,7 @@ export default async function ManageShopPage({
   const health = computeDropHealth(shop, sellerProfile, reminderCount);
   const payoutsConnected = arePayoutsConnected(sellerProfile);
   const paymentsRequired = isStripePaymentsRequired();
+  const termsAccepted = Boolean(profile.seller_terms_accepted_at);
   const report = window.isEnded ? await getDropReport(shop.id, profile.id) : null;
   const streamProvider = effectiveStreamProvider(shop);
   const nativeLiveEnabled = isNativeLiveEnabled();
@@ -136,6 +138,8 @@ export default async function ManageShopPage({
 
       {paymentsRequired && !payoutsConnected && <PaymentsSetupBanner shopId={shop.id} />}
 
+      {!termsAccepted && <SellerTermsBanner />}
+
       {isDraft && !justCreated && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
           <p className="text-muted-foreground">
@@ -161,6 +165,7 @@ export default async function ManageShopPage({
         endAt={shop.end_at}
         payoutsConnected={payoutsConnected}
         paymentsRequired={paymentsRequired}
+        termsAccepted={termsAccepted}
       />
 
       <div className="space-y-4">

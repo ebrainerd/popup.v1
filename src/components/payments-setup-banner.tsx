@@ -9,7 +9,7 @@ export function PaymentsSetupBanner({ shopId }: { shopId: string }) {
         <div>
           <p className="font-medium">Payments not set up yet</p>
           <p className="text-sm text-muted-foreground">
-            Connect Stripe to receive payouts and publish this drop for buyers.
+            Connect Stripe to receive payouts when you publish this drop for buyers.
           </p>
         </div>
       </div>

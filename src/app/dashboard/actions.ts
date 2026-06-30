@@ -79,7 +79,7 @@ async function requireSellerTermsAccepted(
     .eq("id", userId)
     .maybeSingle();
   if (!data?.seller_terms_accepted_at) {
-    return { error: "You must accept the Terms of Service before creating a shop." };
+    return { error: "You must accept the Terms of Service before publishing a shop." };
   }
   return null;
 }
@@ -96,12 +96,12 @@ async function requirePayoutsConnected(
     .eq("id", userId)
     .maybeSingle();
   if (!data?.stripe_onboarded) {
-    return { error: "Set up payments before creating or publishing a shop." };
+    return { error: "Set up payments before publishing a shop." };
   }
   return null;
 }
 
-/** Persist seller acceptance of the Terms of Service (required before opening a shop). */
+/** Persist seller acceptance of the Terms of Service (required before publishing). */
 export async function acceptSellerTerms(): Promise<ActionState> {
   const { supabase, user } = await requireUser();
   const { error } = await supabase
@@ -116,12 +116,6 @@ export async function acceptSellerTerms(): Promise<ActionState> {
 
 export async function createShop(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const { supabase, user } = await requireUser();
-
-  const termsError = await requireSellerTermsAccepted(supabase, user.id);
-  if (termsError) return termsError;
-
-  const payoutsError = await requirePayoutsConnected(supabase, user.id);
-  if (payoutsError) return payoutsError;
 
   const parsed = shopSchema.safeParse({
     name: formData.get("name"),
@@ -271,6 +265,9 @@ export async function publishShop(shopId: string): Promise<ActionState> {
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const termsError = await requireSellerTermsAccepted(supabase, user.id);
+  if (termsError) return termsError;
 
   const payoutsError = await requirePayoutsConnected(supabase, user.id);
   if (payoutsError) return payoutsError;
@@ -773,8 +770,6 @@ export async function finishShopSetup(
   input: z.infer<typeof finishShopSetupSchema>,
 ): Promise<ActionState> {
   const { supabase, user } = await requireUser();
-  const termsError = await requireSellerTermsAccepted(supabase, user.id);
-  if (termsError) return termsError;
 
   const parsed = finishShopSetupSchema.safeParse(input);
   if (!parsed.success) {
@@ -784,11 +779,6 @@ export async function finishShopSetup(
         parsed.error.issues.map((i) => [i.path.join(".") || "form", i.message]),
       ),
     };
-  }
-
-  if (!parsed.data.shopId) {
-    const payoutsError = await requirePayoutsConnected(supabase, user.id);
-    if (payoutsError) return payoutsError;
   }
 
   const d = parsed.data;
@@ -996,8 +986,6 @@ export async function saveShopDraft(
   input: z.infer<typeof saveShopDraftSchema>,
 ): Promise<ActionState & { shopId?: string }> {
   const { supabase, user } = await requireUser();
-  const termsError = await requireSellerTermsAccepted(supabase, user.id);
-  if (termsError) return termsError;
 
   const parsed = saveShopDraftSchema.safeParse(input);
   if (!parsed.success) {
@@ -1007,11 +995,6 @@ export async function saveShopDraft(
         parsed.error.issues.map((i) => [i.path.join(".") || "form", i.message]),
       ),
     };
-  }
-
-  if (!parsed.data.shopId) {
-    const payoutsError = await requirePayoutsConnected(supabase, user.id);
-    if (payoutsError) return payoutsError;
   }
 
   const d = parsed.data;

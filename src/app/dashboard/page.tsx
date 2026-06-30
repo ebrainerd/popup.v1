@@ -59,16 +59,17 @@ export default async function DashboardPage() {
         </Button>
       </div>
 
-      {paymentsRequired && !payoutsConnected && (
+      {paymentsRequired && !payoutsConnected && shops.length > 0 && (
         <Card className="border-primary/40 bg-primary/5">
           <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
             <div>
-              <p className="font-medium">Set up payments before creating a shop</p>
+              <p className="font-medium">Set up payments before publishing</p>
               <p className="text-sm text-muted-foreground">
-                Connect your Stripe payout account so buyers can check out and you can get paid.
+                Connect your Stripe payout account when you&apos;re ready to go live — you can
+                build draft shops first.
               </p>
             </div>
-            <SetupPaymentsButton redirectTo="/dashboard/shops/new" label="Setup Payments" />
+            <SetupPaymentsButton redirectTo="/dashboard" label="Setup Payments" />
           </CardContent>
         </Card>
       )}

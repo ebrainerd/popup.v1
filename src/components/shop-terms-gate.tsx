@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { SellerTermsAgreementDialog } from "@/components/legal/seller-terms-agreement-dialog";
 
-/** Blocks shop creation until the seller has scrolled through and accepted the Terms. */
+/** Blocks publishing until the seller has scrolled through and accepted the Terms. */
 export function ShopTermsGate({
   termsAccepted,
   children,

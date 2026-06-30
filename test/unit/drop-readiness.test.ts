@@ -54,25 +54,35 @@ const baseShop: ShopWithDetails = {
 
 describe("computeDropHealth", () => {
   it("marks required checklist items from shop state", () => {
-    const health = computeDropHealth(baseShop, { stripe_onboarded: true, follower_count: 10 }, 3);
+    const health = computeDropHealth(
+      baseShop,
+      { stripe_onboarded: true, follower_count: 10, seller_terms_accepted_at: new Date().toISOString() },
+      3,
+    );
     expect(health.productCount).toBe(1);
     expect(health.reminderCount).toBe(3);
     expect(health.items.find((i) => i.id === "details")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "products")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "cover")?.done).toBe(true);
+    expect(health.items.find((i) => i.id === "terms")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "published")?.done).toBe(false);
-    expect(health.readyCount).toBe(4);
-    expect(health.totalRequired).toBe(5);
+    expect(health.readyCount).toBe(5);
+    expect(health.totalRequired).toBe(6);
   });
 
   it("counts published shop as ready for publish step", () => {
     const health = computeDropHealth(
       { ...baseShop, status: "scheduled" },
-      { stripe_onboarded: true, follower_count: 0 },
+      { stripe_onboarded: true, follower_count: 0, seller_terms_accepted_at: new Date().toISOString() },
       0,
     );
     expect(health.items.find((i) => i.id === "published")?.done).toBe(true);
-    expect(health.readyCount).toBe(5);
+    expect(health.readyCount).toBe(6);
+  });
+
+  it("marks terms incomplete when not accepted", () => {
+    const health = computeDropHealth(baseShop, { stripe_onboarded: true, follower_count: 0 }, 0);
+    expect(health.items.find((i) => i.id === "terms")?.done).toBe(false);
   });
 
   it("marks payouts incomplete when Stripe is required", () => {
