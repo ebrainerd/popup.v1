@@ -16,7 +16,7 @@ import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream"
 import { derivePublishedShopWindow } from "@/lib/utils";
 import { ShopThemeShell } from "@/components/shop-theme-shell";
 import { ShopPageView } from "@/components/shop-page-view";
-import { getShopAuctionRuns, getLiveAuctionPanelState } from "@/lib/auctions";
+import { getShopAuctionRuns, getLiveAuctionPanelState, autoQueueShopAuctions, getAuctionProductStates } from "@/lib/auctions";
 import type { ChatSender } from "@/lib/realtime";
 
 export const dynamic = "force-dynamic";
@@ -121,7 +121,11 @@ export default async function ShopPage({
           ? parseLiveEmbed(shop.live_url)
           : null
       : null;
-  const [initialMessages, announcements, reminderCount, liveReminderCount, auctionRuns, auctionPanel] =
+  if (isOpen) {
+    await autoQueueShopAuctions(shop.id);
+  }
+
+  const [initialMessages, announcements, reminderCount, liveReminderCount, auctionRuns, auctionPanel, auctionProductStates] =
     await Promise.all([
       getChatMessages(shop.id),
       getShopAnnouncements(shop.id),
@@ -129,6 +133,7 @@ export default async function ShopPage({
       getLiveReminderCount(shop.id),
       getShopAuctionRuns(shop.id),
       getLiveAuctionPanelState(shop.id, profile?.id ?? null),
+      getAuctionProductStates(shop.id, profile?.id ?? null),
     ]);
 
   const currentUser: ChatSender | null = profile
@@ -165,6 +170,7 @@ export default async function ShopPage({
         announcements={announcements}
         auctionRuns={auctionRuns}
         auctionPanel={auctionPanel}
+        auctionProductStates={auctionProductStates}
         currentUser={currentUser}
         checkoutCanceled={checkout === "canceled"}
       />

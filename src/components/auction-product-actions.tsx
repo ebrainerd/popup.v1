@@ -316,11 +316,17 @@ export function AuctionProductActions({
     <div className="flex flex-col items-end gap-1 text-right">
       <Button size="sm" variant="outline" disabled>
         <Gavel className="size-4" />
-        {product.auction_allow_prebids ? "Pre-bids soon" : "Bidding opens live"}
+        {product.auction_allow_prebids
+          ? shopOpen
+            ? "Pre-bids loading"
+            : "Pre-bids soon"
+          : "Bidding opens live"}
       </Button>
       <span className="text-[11px] text-muted-foreground">
         {product.auction_allow_prebids
-          ? "Seller will open pre-bidding before the drop."
+          ? shopOpen
+            ? "Pre-bids open while the shop is live."
+            : "Place a pre-bid before the seller starts this lot."
           : "Place bids when the seller starts this auction."}
       </span>
     </div>

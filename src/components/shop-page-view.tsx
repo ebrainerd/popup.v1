@@ -4,6 +4,7 @@ import { Star, Package } from "lucide-react";
 import type { StreamProvider } from "@/lib/database.types";
 import type { ShopWithDetails } from "@/lib/shops";
 type AuctionPanelState = Awaited<ReturnType<typeof import("@/lib/auctions").getLiveAuctionPanelState>>;
+type AuctionProductStates = Awaited<ReturnType<typeof import("@/lib/auctions").getAuctionProductStates>>;
 import type { ChatSender } from "@/lib/realtime";
 import type { LiveEmbed as LiveEmbedInfo } from "@/lib/embeds";
 import { parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
@@ -15,6 +16,7 @@ import { WaitingRoomBanner } from "@/components/waiting-room-banner";
 import { ShopAnnouncements } from "@/components/shop-announcements";
 import { ExternalLiveNotice } from "@/components/external-live-notice";
 import { OpeningReminderTrigger } from "@/components/opening-reminder-trigger";
+import { AuctionAutoQueueTrigger } from "@/components/auction-auto-queue-trigger";
 import { ReleaseHoldOnCancel } from "@/components/release-hold-on-cancel";
 import { ShopRoom } from "@/components/shop-room";
 import { StreamSlot } from "@/components/stream-slot";
@@ -59,6 +61,7 @@ export function ShopPageView({
   announcements,
   auctionRuns,
   auctionPanel,
+  auctionProductStates,
   currentUser,
   checkoutCanceled,
 }: {
@@ -84,6 +87,7 @@ export function ShopPageView({
   announcements: Announcement[];
   auctionRuns: AuctionRun[];
   auctionPanel: AuctionPanelState;
+  auctionProductStates: AuctionProductStates;
   currentUser: ChatSender | null;
   checkoutCanceled: boolean;
 }) {
@@ -113,6 +117,12 @@ export function ShopPageView({
 
       <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={isOwner}>
         <OpeningReminderTrigger
+          shopId={shop.id}
+          startAt={shop.start_at}
+          endAt={shop.end_at}
+          initiallyOpen={isOpen}
+        />
+        <AuctionAutoQueueTrigger
           shopId={shop.id}
           startAt={shop.start_at}
           endAt={shop.end_at}
@@ -220,7 +230,7 @@ export function ShopPageView({
           isScheduled={isScheduled}
           profileId={profileId}
           isOwner={isOwner}
-          auctionPanel={auctionPanel}
+          auctionProductStates={auctionProductStates}
         />
       </ShopRoom>
     </div>
@@ -444,7 +454,7 @@ function MainContent({
   isScheduled,
   profileId,
   isOwner,
-  auctionPanel,
+  auctionProductStates,
 }: {
   shop: ShopWithDetails;
   theme: ShopTheme;
@@ -452,7 +462,7 @@ function MainContent({
   isScheduled: boolean;
   profileId?: string;
   isOwner: boolean;
-  auctionPanel: AuctionPanelState;
+  auctionProductStates: AuctionProductStates;
 }) {
   return (
     <section>
@@ -467,7 +477,7 @@ function MainContent({
         isAuthed={Boolean(profileId)}
         isOwner={isOwner}
         userId={profileId ?? null}
-        initialAuction={auctionPanel}
+        initialAuctionsByProductId={auctionProductStates}
         startAt={shop.start_at}
         endAt={shop.end_at}
         gridColumns={theme.productGridColumns}

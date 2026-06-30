@@ -16,23 +16,22 @@ import {
   type FlashItemBroadcast,
 } from "@/lib/realtime";
 import type { Product } from "@/lib/database.types";
-import type { AuctionRunWithProduct } from "@/lib/auctions";
+import type { AuctionRunWithProduct, AuctionProductState } from "@/lib/auctions";
 import { cn, formatCurrency } from "@/lib/utils";
 import { isFlashDiscounted, productDisplayPrice } from "@/lib/product-pricing";
 import { useShopOpen } from "@/hooks/use-shop-open";
-
-type AuctionPanelState = {
-  run: AuctionRunWithProduct;
-  nextMinimumBid: number;
-  viewerState: "winning" | "outbid" | "none";
-  yourMaxBid: number | null;
-  winnerName: string | null;
-} | null;
 
 function photosOf(product: Product): string[] {
   if (product.photo_urls && product.photo_urls.length > 0) return product.photo_urls;
   return product.photo_url ? [product.photo_url] : [];
 }
+
+type AuctionActionState = {
+  run: AuctionRunWithProduct;
+  nextMinimumBid: number;
+  viewerState: "winning" | "outbid" | "none";
+  yourMaxBid: number | null;
+};
 
 export function ProductsGridLive({
   shopId,
@@ -41,7 +40,7 @@ export function ProductsGridLive({
   isAuthed,
   isOwner,
   userId,
-  initialAuction,
+  initialAuctionsByProductId,
   startAt,
   endAt,
   gridColumns = 2,
@@ -52,7 +51,7 @@ export function ProductsGridLive({
   isAuthed: boolean;
   isOwner: boolean;
   userId: string | null;
-  initialAuction: AuctionPanelState;
+  initialAuctionsByProductId: Record<string, AuctionProductState>;
   startAt: string;
   endAt: string;
   gridColumns?: 2 | 3;
@@ -121,14 +120,6 @@ export function ProductsGridLive({
   }
 
   const openProduct = products.find((p) => p.id === openId) ?? null;
-  const auctionForActions = initialAuction
-    ? {
-        run: initialAuction.run,
-        nextMinimumBid: initialAuction.nextMinimumBid,
-        viewerState: initialAuction.viewerState,
-        yourMaxBid: initialAuction.yourMaxBid,
-      }
-    : null;
 
   return (
     <>
@@ -147,7 +138,7 @@ export function ProductsGridLive({
             isAuthed={isAuthed}
             isOwner={isOwner}
             userId={userId}
-            initialAuction={auctionForActions}
+            initialAuction={initialAuctionsByProductId[product.id] ?? null}
             onOpenDetails={() => setOpenId(product.id)}
           />
         ))}
@@ -161,7 +152,7 @@ export function ProductsGridLive({
           isAuthed={isAuthed}
           isOwner={isOwner}
           userId={userId}
-          initialAuction={auctionForActions}
+          initialAuction={initialAuctionsByProductId[openProduct.id] ?? null}
           onClose={() => setOpenId(null)}
         />
       )}
@@ -185,7 +176,7 @@ function ProductCard({
   isAuthed: boolean;
   isOwner: boolean;
   userId: string | null;
-  initialAuction: Omit<NonNullable<AuctionPanelState>, "winnerName"> | null;
+  initialAuction: AuctionActionState | null;
   onOpenDetails: () => void;
 }) {
   const photos = photosOf(product);
@@ -280,7 +271,7 @@ function ProductDetailDialog({
   isAuthed: boolean;
   isOwner: boolean;
   userId: string | null;
-  initialAuction: Omit<NonNullable<AuctionPanelState>, "winnerName"> | null;
+  initialAuction: AuctionActionState | null;
   onClose: () => void;
 }) {
   const photos = photosOf(product);
