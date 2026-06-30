@@ -67,7 +67,7 @@ export async function updateSession(request: NextRequest) {
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!error && profile && !profile.profile_setup_complete) {
+    if (!error && !profile?.profile_setup_complete) {
       const url = request.nextUrl.clone();
       url.pathname = ONBOARDING_PATH;
       url.searchParams.set("redirectTo", pathname);

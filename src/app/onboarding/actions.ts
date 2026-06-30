@@ -1,6 +1,5 @@
 "use server";
 
-import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isUsernameAvailable } from "@/lib/profile";
@@ -19,7 +18,7 @@ async function requireUser() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  if (!user) return null;
   return { supabase, user };
 }
 
@@ -27,7 +26,11 @@ export async function completeProfileSetup(
   _prev: ProfileActionState,
   formData: FormData,
 ): Promise<ProfileActionState> {
-  const { supabase, user } = await requireUser();
+  const auth = await requireUser();
+  if (!auth) {
+    return { error: "Your session expired. Please log in again." };
+  }
+  const { supabase, user } = auth;
 
   const usernameInput = String(formData.get("username") ?? "");
   const usernameResult = validateUsername(usernameInput);

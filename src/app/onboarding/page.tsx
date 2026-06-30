@@ -17,8 +17,7 @@ export default async function OnboardingPage({
   if (!user) redirect("/login");
 
   const profile = await getCurrentProfile();
-  if (!profile) redirect("/login");
-  if (profile.profile_setup_complete) {
+  if (profile?.profile_setup_complete) {
     redirect(redirectTo?.startsWith("/") && !redirectTo.startsWith("//") ? redirectTo : "/dashboard");
   }
 
@@ -36,7 +35,7 @@ export default async function OnboardingPage({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <OnboardingForm redirectTo={redirectTo} initialUsername={profile.username} />
+          <OnboardingForm redirectTo={redirectTo} initialUsername={profile?.username} />
         </CardContent>
       </Card>
     </div>

@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
           .select("profile_setup_complete")
           .eq("id", user.id)
           .maybeSingle();
-        if (profile && !profile.profile_setup_complete) {
+        if (!profile?.profile_setup_complete) {
           const onboarding = new URL("/onboarding", origin);
           onboarding.searchParams.set("redirectTo", safeNext);
           return NextResponse.redirect(onboarding);
