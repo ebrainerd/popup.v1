@@ -5,8 +5,9 @@ seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) an
 `docs/PRODUCT_UX_REVIEW.md` for broader UX context.
 
 **Status:** Phase 0 (metadata + defaults) and Phase 1 (editor archetype picker +
-preview phase toggle) implemented (June 2026). Phases 2–5 (per-layout buyer-page
-parity) not started.  
+preview phase toggle) and Phase 2 (Live Stage / `broadcast` buyer-page parity)
+implemented (June 2026). Phases 3–5 (remaining per-layout buyer-page parity)
+not started.  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
 drop”), not four interchangeable skins of the same page.
 
@@ -394,10 +395,10 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ### Phase 2 — Live Stage (`broadcast`) parity
 
-- [ ] Audit `stream-slot.tsx` `wideHero` paths for broadcast
-- [ ] Implement §5.1 section order in `shop-page-view.tsx` (chat below products on open)
-- [ ] Mobile: verify stream-first fold
-- [ ] Mirror in preview
+- [x] Audit `stream-slot.tsx` `wideHero` paths for broadcast
+- [x] Implement §5.1 section order in `shop-page-view.tsx` (chat below products on open)
+- [x] Mobile: collapsible chat below fold; stream-first section order
+- [x] Mirror in preview
 
 **Test:** Manual on `/shop/[id]` with native live + embed; Playwright smoke optional.
 
