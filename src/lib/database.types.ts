@@ -551,6 +551,7 @@ export interface Database {
         Args: { target_shop: string };
         Returns: number;
       };
+      auto_queue_shop_auctions: { Args: { p_shop_id: string }; Returns: number };
       queue_auction_run: { Args: { p_product_id: string }; Returns: string };
       start_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
       place_auction_bid: {
