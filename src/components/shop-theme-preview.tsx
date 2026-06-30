@@ -19,18 +19,22 @@ type PreviewProduct = {
   photoUrl?: string;
 };
 
+export type ShopPreviewPhase = "scheduled" | "open" | "live";
+
 export function ShopThemePreview({
   theme,
   shopName,
   coverUrl,
   products,
   viewport = "desktop",
+  phase = "open",
 }: {
   theme: ShopTheme;
   shopName: string;
   coverUrl?: string;
   products: PreviewProduct[];
   viewport?: "desktop" | "mobile";
+  phase?: ShopPreviewPhase;
 }) {
   const preset = SHOP_THEME_PRESET_META[theme.preset];
   const layout = SHOP_LAYOUT_MODE_META[theme.layout];
@@ -72,8 +76,13 @@ export function ShopThemePreview({
         <span className="ml-1 truncate font-medium">
           {isMobile ? "popup.app · mobile" : "popup.app/shop/preview"}
         </span>
-        <span className="ml-auto rounded-full px-2 py-0.5 text-[9px]" style={{ background: `${theme.accent}22`, color: theme.accent }}>
-          {preset.label}
+        <span className="ml-auto flex items-center gap-1">
+          <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: `${visual.mutedForeground}22`, color: visual.mutedForeground }}>
+            {phase === "scheduled" ? "Scheduled" : phase === "live" ? "Live" : "Open"}
+          </span>
+          <span className="rounded-full px-2 py-0.5 text-[9px]" style={{ background: `${theme.accent}22`, color: theme.accent }}>
+            {preset.label}
+          </span>
         </span>
       </div>
 
@@ -86,6 +95,7 @@ export function ShopThemePreview({
           products={displayProducts}
           isMobile={isMobile}
           visual={visual}
+          phase={phase}
         />
       </div>
     </div>
@@ -100,6 +110,7 @@ function LayoutPreview({
   products,
   isMobile,
   visual,
+  phase,
 }: {
   theme: ShopTheme;
   layout: ShopTheme["layout"];
@@ -108,13 +119,18 @@ function LayoutPreview({
   products: PreviewProduct[];
   isMobile: boolean;
   visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
+  phase: ShopPreviewPhase;
 }) {
+  const isScheduled = phase === "scheduled";
+  const isLive = phase === "live";
+
   const hero = (
     <HeroBlock
       theme={theme}
       coverUrl={coverUrl}
       visual={visual}
       layout={layout}
+      phase={phase}
       large={layout === "broadcast" || layout === "countdown"}
     />
   );
@@ -139,15 +155,22 @@ function LayoutPreview({
   );
 
   const productGrid = (
-    <ProductGrid products={products} theme={theme} visual={visual} isMobile={isMobile} compact={layout === "broadcast"} />
+    <ProductGrid
+      products={products}
+      theme={theme}
+      visual={visual}
+      isMobile={isMobile}
+      compact={layout === "broadcast"}
+      locked={isScheduled}
+    />
   );
 
-  const chat = theme.showChat && layout !== "countdown" && (
-    <ChatStub visual={visual} isMobile={isMobile} />
-  );
+  // Chat reads as the room when open/live; the Drop Clock keeps it off pre-open.
+  const showChatPanel = theme.showChat && !(layout === "countdown" && isScheduled);
+  const chat = showChatPanel ? <ChatStub visual={visual} isMobile={isMobile} /> : null;
 
   const reminder =
-    theme.showReminderCta && layout === "countdown" ? (
+    isScheduled && theme.showReminderCta ? (
       <button
         type="button"
         className="w-full rounded-lg py-2 text-center text-[10px] font-semibold"
@@ -157,11 +180,28 @@ function LayoutPreview({
       </button>
     ) : null;
 
+  const sneakPeek = isScheduled ? (
+    <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: visual.mutedForeground }}>
+      Sneak peek
+    </p>
+  ) : null;
+
+  const liveStreamBand = (
+    <div
+      className="flex aspect-video items-center justify-center rounded-lg border text-[10px]"
+      style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
+    >
+      <Radio className="mr-1 size-3" /> {isLive ? "Live now" : "Live stream"}
+    </div>
+  );
+
   if (layout === "broadcast") {
     return (
       <div className="space-y-3">
         {hero}
+        {reminder}
         {title}
+        {sneakPeek}
         {productGrid}
         {chat}
       </div>
@@ -174,9 +214,7 @@ function LayoutPreview({
         {hero}
         {reminder}
         {title}
-        <p className="text-[10px] font-medium uppercase tracking-widest" style={{ color: visual.mutedForeground }}>
-          Sneak peek
-        </p>
+        {sneakPeek}
         {productGrid}
         {chat}
       </div>
@@ -187,14 +225,11 @@ function LayoutPreview({
     return (
       <div className="space-y-3">
         {title}
+        {reminder}
+        {sneakPeek}
         {productGrid}
         <div className={cn("grid gap-2", !isMobile && "grid-cols-2")}>
-          <div
-            className="flex aspect-video items-center justify-center rounded-lg border text-[10px]"
-            style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
-          >
-            <Radio className="mr-1 size-3" /> Live stream
-          </div>
+          {liveStreamBand}
           {chat}
         </div>
       </div>
@@ -205,6 +240,7 @@ function LayoutPreview({
   return (
     <div className="space-y-3">
       {hero}
+      {reminder}
       {title}
       <div className={cn("grid gap-3", !isMobile && "grid-cols-[1fr_120px]")}>
         {productGrid}
@@ -219,15 +255,22 @@ function HeroBlock({
   coverUrl,
   visual,
   layout,
+  phase,
   large,
 }: {
   theme: ShopTheme;
   coverUrl?: string;
   visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
   layout: ShopTheme["layout"];
+  phase: ShopPreviewPhase;
   large: boolean;
 }) {
   if (layout === "catalog") return null;
+
+  const isScheduled = phase === "scheduled";
+  const isLive = phase === "live";
+  const showCountdown = isScheduled;
+  const showLive = isLive;
 
   return (
     <div
@@ -257,13 +300,20 @@ function HeroBlock({
             }}
           />
         )}
-        {layout === "countdown" && (
+        {showCountdown && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 text-white">
             <p className="text-[9px] font-medium uppercase tracking-[0.2em] opacity-90">Opens in</p>
-            <p className="mt-1 text-2xl font-extrabold tabular-nums">02:14:08</p>
+            <p
+              className={cn(
+                "mt-1 font-extrabold tabular-nums",
+                layout === "countdown" ? "text-3xl" : "text-2xl",
+              )}
+            >
+              02:14:08
+            </p>
           </div>
         )}
-        {layout === "broadcast" && (
+        {showLive && (
           <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-bold text-white" style={{ background: theme.accent }}>
             <Monitor className="size-3" /> LIVE
           </div>
@@ -279,18 +329,25 @@ function ProductGrid({
   visual,
   isMobile,
   compact,
+  locked,
 }: {
   products: PreviewProduct[];
   theme: ShopTheme;
   visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
   isMobile: boolean;
   compact?: boolean;
+  locked?: boolean;
 }) {
   const cols = isMobile ? 2 : theme.productGridColumns;
 
   return (
     <div
-      className={cn("grid gap-2", cols === 3 ? "grid-cols-3" : "grid-cols-2", compact && "grid-cols-3")}
+      className={cn(
+        "grid gap-2",
+        cols === 3 ? "grid-cols-3" : "grid-cols-2",
+        compact && "grid-cols-3",
+        locked && "opacity-70",
+      )}
     >
       {products.map((product, i) => (
         <div
@@ -320,8 +377,16 @@ function ProductGrid({
           </div>
           <div className="space-y-0.5 p-1.5">
             <p className="truncate text-[9px] font-medium">{product.title}</p>
-            <p className="text-[9px] font-bold" style={{ color: theme.accent }}>
+            <p className="flex items-center gap-1 text-[9px] font-bold" style={{ color: theme.accent }}>
               {formatCurrency(Math.round(parseFloat(product.price || "0") * 100))}
+              {locked && (
+                <span
+                  className="rounded-full px-1 text-[8px] font-semibold uppercase"
+                  style={{ background: `${visual.mutedForeground}22`, color: visual.mutedForeground }}
+                >
+                  soon
+                </span>
+              )}
             </p>
           </div>
         </div>

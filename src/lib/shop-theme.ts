@@ -44,9 +44,14 @@ export type ShopThemePresetMeta = {
 
 export type ShopLayoutModeMeta = {
   id: ShopLayoutMode;
+  /** Archetype-led display name (e.g. "Live Stage"). */
   label: string;
   tagline: string;
   description: string;
+  /** Short "best for…" line shown on the archetype picker card. */
+  bestFor: string;
+  /** Suggested color preset offered (not forced) when this layout is picked. */
+  recommendedPreset: ShopThemePreset;
 };
 
 export type ShopBackgroundMeta = {
@@ -107,36 +112,94 @@ export const SHOP_THEME_PRESET_META: Record<ShopThemePreset, ShopThemePresetMeta
   },
 };
 
+// Archetype-led layout metadata. Keep the enum slugs (classic/broadcast/
+// countdown/catalog) for backward compatibility — only the display copy and
+// recommended pairings are archetype-branded. See
+// docs/SHOP_LAYOUT_ARCHETYPES.md §3.
 export const SHOP_LAYOUT_MODE_META: Record<ShopLayoutMode, ShopLayoutModeMeta> = {
-  classic: {
-    id: "classic",
-    label: "Classic",
-    tagline: "Balanced storefront",
-    description:
-      "Banner at the top, shop details, then products with chat in a side panel. The default PopUp room layout.",
-  },
   broadcast: {
     id: "broadcast",
-    label: "Stream first",
-    tagline: "Live-forward",
+    label: "Live Stage",
+    tagline: "Built for live selling",
     description:
-      "Your live video (or banner) fills the top. Products stack below and chat spans the full width — built for watch-and-buy.",
-  },
-  countdown: {
-    id: "countdown",
-    label: "Waiting room",
-    tagline: "Hype the opener",
-    description:
-      "Oversized countdown on the hero, reminder button up front, and a lighter product preview until doors open.",
+      "Your live video (or cover) fills the top and stays the star. Products sit right below and chat runs full width — watch, bid, and buy in one tap.",
+    bestFor: "Creators whose drop is a live event — streams, flash drops, and auctions.",
+    recommendedPreset: "default",
   },
   catalog: {
     id: "catalog",
-    label: "Catalog",
-    tagline: "Products first",
+    label: "Lookbook",
+    tagline: "Let your work lead",
     description:
-      "Your product grid leads the page. Live stream and chat sit underneath as supporting panels.",
+      "Your product grid leads the page with larger imagery and room to read. Stream and chat tuck in below as supporting panels.",
+    bestFor: "Artists and makers with a few standout pieces that deserve a moment.",
+    recommendedPreset: "gallery",
+  },
+  countdown: {
+    id: "countdown",
+    label: "Drop Clock",
+    tagline: "Hype the opening",
+    description:
+      "An oversized countdown and a prominent reminder button own the pre-open hero, with a teaser of products until doors open.",
+    bestFor: "Limited runs that sell out fast — the clock and reminders do the work.",
+    recommendedPreset: "dark_room",
+  },
+  classic: {
+    id: "classic",
+    label: "The Room",
+    tagline: "Your regulars’ hangout",
+    description:
+      "A balanced room: banner or stream beside a chat sidebar, seller bio up top, and a scannable product grid. Warm and conversational.",
+    bestFor: "Community sellers and repeat drops where chat and trust matter most.",
+    recommendedPreset: "market_stall",
   },
 };
+
+/**
+ * Recommended theme bundle offered (with consent) when a seller picks a layout.
+ * Mirrors the default toggles + preset pairings in docs/SHOP_LAYOUT_ARCHETYPES.md
+ * §3 and §5. Applied via the "Apply recommended settings" prompt in the editor —
+ * never silently, so existing shops keep their settings on layout change.
+ */
+export const SHOP_LAYOUT_DEFAULTS: Record<ShopLayoutMode, Partial<ShopTheme>> = {
+  broadcast: {
+    preset: "default",
+    accent: SHOP_THEME_PRESET_META.default.defaultAccent,
+    showChat: true,
+    showSellerBio: false,
+    showReminderCta: false,
+    productGridColumns: 2,
+  },
+  catalog: {
+    preset: "gallery",
+    accent: SHOP_THEME_PRESET_META.gallery.defaultAccent,
+    showChat: true,
+    showSellerBio: true,
+    showReminderCta: true,
+    productGridColumns: 3,
+  },
+  countdown: {
+    preset: "dark_room",
+    accent: SHOP_THEME_PRESET_META.dark_room.defaultAccent,
+    showChat: false,
+    showSellerBio: false,
+    showReminderCta: true,
+    productGridColumns: 2,
+  },
+  classic: {
+    preset: "market_stall",
+    accent: SHOP_THEME_PRESET_META.market_stall.defaultAccent,
+    showChat: true,
+    showSellerBio: true,
+    showReminderCta: true,
+    productGridColumns: 2,
+  },
+};
+
+/** Recommended theme bundle for a layout, merged onto an existing theme. */
+export function recommendedThemeForLayout(layout: ShopLayoutMode, base: ShopTheme): ShopTheme {
+  return { ...base, ...SHOP_LAYOUT_DEFAULTS[layout], layout };
+}
 
 export const SHOP_BACKGROUND_META: Record<ShopBackgroundStyle, ShopBackgroundMeta> = {
   gradient: {
