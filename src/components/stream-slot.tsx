@@ -5,6 +5,7 @@
  * Live Stage (`broadcast`) wideHero + compact scheduled countdown: see
  * docs/SHOP_LAYOUT_ARCHETYPES.md §5.1 — keep in sync with shop-page-view.tsx.
  * Lookbook (`catalog`) secondary band below products: §5.2 — max ~40vh.
+ * Drop Clock (`countdown`) oversized hero + shrink at open: §5.3.
  */
 import Image from "next/image";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import {
 } from "@/components/native-live-publisher";
 import { NotifyWhenLiveButton } from "@/components/notify-when-live-button";
 import { useShopEvent } from "@/components/shop-room";
+import { useShopPhase } from "@/hooks/use-shop-open";
 import { ROOM_EVENTS, type LiveBroadcast } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 
@@ -83,20 +85,25 @@ export function StreamSlot({
     if (!data.isLive) setPublisherState("idle");
   });
 
+  const isCountdown = layout === "countdown";
+  const phase = useShopPhase(shop.start_at, shop.end_at, { isOpen, isScheduled });
+  const effectiveScheduled = isDraftPreview || phase.isScheduled;
+  const effectiveOpen = !isDraftPreview && phase.isOpen;
+
   const showNative = nativeEnabled && streamProvider === "native";
-  const ownerNativeSlot = isOwner && showNative && isOpen && !isDraftPreview;
+  const ownerNativeSlot = isOwner && showNative && effectiveOpen && !isDraftPreview;
   const showExternalLive = isLive && embed?.embeddable && streamProvider !== "native";
   const showNativeLive = isLive && showNative && !ownerNativeSlot;
   const showCover = !showNativeLive && !showExternalLive && !ownerNativeSlot;
 
-  const countdownFocus = layout === "countdown" && isScheduled;
+  const countdownFocus = isCountdown && effectiveScheduled;
   /** Live Stage uses a compact hero countdown — not the Drop Clock takeover. */
-  const broadcastScheduled = layout === "broadcast" && isScheduled;
+  const broadcastScheduled = layout === "broadcast" && effectiveScheduled;
   /** Lookbook stream/cover sits below the product grid — cap height, slim countdown. */
   const catalogSecondary = layout === "catalog" && streamPlacement === "secondary";
   const wideHero =
     !catalogSecondary &&
-    (layout === "broadcast" || showNative || ownerNativeSlot);
+    (layout === "broadcast" || showNative || ownerNativeSlot || countdownFocus);
 
   const secondaryBandClass = catalogSecondary ? "max-h-[40vh] overflow-hidden rounded-xl" : undefined;
 
@@ -116,8 +123,8 @@ export function StreamSlot({
             <StreamCover
               shop={shop}
               layout={layout}
-              isOpen={isOpen}
-              isScheduled={isScheduled}
+              isOpen={effectiveOpen}
+              isScheduled={effectiveScheduled}
               isOwner={isOwner}
               isLive={isLive}
               showNative={showNative}
@@ -134,7 +141,7 @@ export function StreamSlot({
             shopId={shop.id}
             initialIsLive={initialIsLive}
             needsTosAcceptance={needsTosAcceptance ?? false}
-            canGoLive={isOpen}
+            canGoLive={effectiveOpen}
             isEnded={false}
             slotMode
             onStateChange={setPublisherState}
@@ -168,8 +175,8 @@ export function StreamSlot({
         <StreamCover
           shop={shop}
           layout={layout}
-          isOpen={isOpen}
-          isScheduled={isScheduled}
+          isOpen={effectiveOpen}
+          isScheduled={effectiveScheduled}
           isOwner={isOwner}
           isLive={isLive}
           showNative={showNative}
@@ -180,6 +187,7 @@ export function StreamSlot({
           broadcastScheduled={broadcastScheduled}
           catalogSecondary={catalogSecondary}
           wideHero={wideHero}
+          countdownOpen={isCountdown && effectiveOpen}
         />
       )}
     </div>
@@ -201,6 +209,7 @@ function StreamCover({
   broadcastScheduled = false,
   catalogSecondary = false,
   wideHero = layout === "broadcast" || showNative,
+  countdownOpen = false,
   fillParent = false,
 }: {
   shop: Shop;
@@ -217,6 +226,7 @@ function StreamCover({
   broadcastScheduled?: boolean;
   catalogSecondary?: boolean;
   wideHero?: boolean;
+  countdownOpen?: boolean;
   fillParent?: boolean;
 }) {
   const slimCountdown = broadcastScheduled || catalogSecondary;
@@ -224,15 +234,18 @@ function StreamCover({
   return (
     <div
       className={cn(
-        "relative overflow-hidden bg-muted",
+        "relative overflow-hidden bg-muted transition-[aspect-ratio] duration-700 ease-in-out",
         fillParent ? "absolute inset-0" : "w-full",
         !fillParent &&
-          (wideHero
-            ? "aspect-video rounded-xl"
-            : catalogSecondary
-              ? "aspect-[21/9] rounded-xl"
-              : "aspect-[16/6] rounded-2xl"),
-        !fillParent && countdownFocus && "aspect-[16/9] ring-2 ring-[var(--shop-accent)]/50",
+          (countdownFocus
+            ? "aspect-[16/9] rounded-2xl ring-2 ring-[var(--shop-accent)]/50"
+            : countdownOpen
+              ? "aspect-[16/6] rounded-xl"
+              : wideHero
+                ? "aspect-video rounded-xl"
+                : catalogSecondary
+                  ? "aspect-[21/9] rounded-xl"
+                  : "aspect-[16/6] rounded-2xl"),
         catalogSecondary && !fillParent && "max-h-[40vh]",
       )}
     >
@@ -253,8 +266,8 @@ function StreamCover({
       {isScheduled && (
         <div
           className={cn(
-            "absolute inset-0 flex items-center justify-center bg-black/30",
-            countdownFocus && "bg-black/50",
+            "absolute inset-0 flex items-center justify-center bg-black/30 transition-colors duration-700",
+            countdownFocus && "bg-black/55",
             slimCountdown && "items-end justify-start bg-gradient-to-t from-black/70 to-transparent pb-4 pl-4",
           )}
         >
@@ -264,23 +277,48 @@ function StreamCover({
               slimCountdown ? "text-left" : "text-center",
             )}
           >
+            {countdownFocus && (
+              <p className="mb-2 text-xl font-extrabold tracking-tight sm:text-2xl md:text-3xl">
+                {shop.name}
+              </p>
+            )}
             <p
               className={cn(
                 "font-medium uppercase tracking-widest opacity-90",
-                countdownFocus ? "text-base" : slimCountdown ? "text-xs" : "text-sm",
+                countdownFocus ? "text-sm sm:text-base" : slimCountdown ? "text-xs" : "text-sm",
               )}
             >
               Drop opens in
             </p>
             <div
               className={cn(
-                "mt-1 font-bold",
-                countdownFocus ? "mt-2 text-4xl" : slimCountdown ? "text-xl" : "text-2xl",
+                "mt-1 font-bold tabular-nums",
+                countdownFocus
+                  ? "mt-2 text-4xl sm:text-5xl md:text-6xl lg:text-7xl"
+                  : slimCountdown
+                    ? "text-xl"
+                    : "text-2xl",
               )}
             >
-              <Countdown startAt={shop.start_at} endAt={shop.end_at} />
+              <Countdown
+                startAt={shop.start_at}
+                endAt={shop.end_at}
+                compact
+                className={cn(
+                  countdownFocus && "text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white",
+                  slimCountdown && "text-xl text-white",
+                  !countdownFocus && !slimCountdown && "text-2xl text-white",
+                )}
+              />
             </div>
           </div>
+        </div>
+      )}
+      {countdownOpen && !isLive && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+          <p className="text-xl font-extrabold tracking-tight text-white sm:text-2xl">
+            We&apos;re open
+          </p>
         </div>
       )}
       {isOpen && !isLive && !isOwner && (
