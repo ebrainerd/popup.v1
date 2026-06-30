@@ -482,6 +482,21 @@ function MainContent({
         endAt={shop.end_at}
         gridColumns={theme.productGridColumns}
       />
+      {isOpen && !isOwner && shop.products.length > 0 && (
+        <p className="mt-6 text-pretty text-center text-xs text-muted-foreground">
+          Purchases and winning bids are contracts directly with the seller; PopUp is not the seller
+          of record. By buying or bidding you agree to PopUp&apos;s{" "}
+          <Link
+            href="/legal/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            Terms of Service
+          </Link>
+          .
+        </p>
+      )}
     </section>
   );
 }

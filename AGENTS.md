@@ -95,3 +95,12 @@ afterward. RLS stays enabled, so these grants do not weaken row-level access.
   (`npm run build`) and a one-time `npx playwright install --with-deps chromium`.
 - The gated RLS suite (`test/integration/rls.test.ts`) only runs when
   `TEST_SUPABASE_*` env vars are set, otherwise it auto-skips.
+
+### Testing preference: skip manual GUI testing by default
+
+Do **not** perform manual GUI testing (the `computerUse` subagent, screen
+recordings, etc.) as a matter of course. Rely on `npm run typecheck`,
+`npm run lint`, `npm run test`, and `npm run build` for verification. Only
+spin up the browser / dev server for manual GUI testing when it is genuinely
+necessary to validate a change (e.g. complex interactive UI behavior that
+automated checks cannot cover), and prefer the lightest sufficient check.
