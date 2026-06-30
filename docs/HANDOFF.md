@@ -72,6 +72,13 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - [x] Migrations through `0020` applied on production
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
 
+### Infrastructure (owner — not yet)
+
+- [ ] **Web push (VAPID)** — not configured in production. Email reminders work via
+      Resend; browser push from "Remind me" / "Notify when live" is disabled until
+      `NEXT_PUBLIC_VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, and `VAPID_SUBJECT` are set
+      (`npx web-push generate-vapid-keys`, see `docs/DEPLOYMENT.md`).
+
 ## ⚠️ Before marketing (remaining)
 
 Use **`docs/PRE_MARKETING_TEST.md`** — the full two-person checklist. Short list:
@@ -99,8 +106,8 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
 - **Mark shipped** → buyer email with tracking link
 - **Unshipped > 3 days** → seller reminder (daily `release-funds` cron)
 - **Shipped, unconfirmed ~3 days** → buyer receipt nudge (max 2, ~4 days apart)
-- **Drop reminders** (24h / 1h / opening) → buyer email (+ push if VAPID set); cron every 15 min
-- **Go live** → followers + live-reminder subscribers (instant, no cron)
+- **Drop reminders** (24h / 1h / opening) → buyer email (+ push if VAPID set; **VAPID not configured yet**); cron every 15 min
+- **Go live** → followers + live-reminder subscribers (email; push when VAPID is set)
 
 Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.
 
