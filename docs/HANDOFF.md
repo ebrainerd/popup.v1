@@ -57,46 +57,46 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–2 done (metadata, editor picker, Live Stage / `broadcast` buyer-page parity, merged #92 + #94). **Next: Phase 3 — Lookbook (`catalog`)** — see handoff section below.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–3 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog` buyer-page parity). **Next: Phase 4 — Drop Clock (`countdown`)** — see handoff section below.
 
-## Shop layout archetypes — next agent (Phase 3)
+## Shop layout archetypes — next agent (Phase 4)
 
-**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §5.2 and §7 Phase 3.
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §5.3 and §7 Phase 4.
 
-**Baseline on `main`:** Phase 2 landed in #94. Live Stage (`broadcast`) uses a dedicated
-branch in `shop-page-view.tsx` (`isBroadcast`) — header → stream hero → auction →
-products → full-width chat below (`broadcast-chat-panel.tsx`). Use that pattern for
-Lookbook (`catalog`).
+**Baseline on `main`:** Phase 3 landed Lookbook (`catalog`) — products-first section order in
+`shop-page-view.tsx` (`isCatalog`), secondary stream band capped at ~40vh in `stream-slot.tsx`,
+reminder CTAs below slim countdown when scheduled. Mirror pattern from Phase 2 `isBroadcast`.
 
-### Phase 3 scope — Lookbook (`catalog`)
+### Phase 4 scope — Drop Clock (`countdown`)
 
 | Task | Detail |
 | ---- | ------ |
-| Section order (open) | Header (minimal) → **products grid first** → stream/banner band → chat below |
-| Section order (scheduled) | Header + seller bio/story → product preview grid → slim countdown footer → reminder CTAs |
-| Stream height | Cap embed/cover at ~**40vh** when shown **below** the product grid (`stream-slot.tsx`) |
-| Hero | No oversized stream unless live; omit or shrink cover when products exist |
-| Preview parity | `shop-theme-preview.tsx` catalog branch (~line 224) already stubs products-first — align with prod |
-| 3-column default | **Already shipped** in Phase 1 via `SHOP_LAYOUT_DEFAULTS.catalog` + “Apply recommended settings” consent in `shop-theme-editor.tsx` — verify, don’t reimplement |
+| Hero | **Oversized countdown** + shop name; cover as backdrop |
+| Section order (scheduled) | Header → **hero countdown** → Remind me + follower CTAs → product preview → announcements |
+| Section order (open) | Clear “We’re open” state; shrink hero; products at full fidelity; chat enabled |
+| Dedup | Consolidate `WaitingRoomBanner` vs layout hero (one source of truth) |
+| Transition | Hero shrink at `start_at` via client `useShopOpen` |
+| Preview parity | `shop-theme-preview.tsx` countdown branch |
 
 ### Key files
 
 ```
-src/components/shop-page-view.tsx   # add isCatalog branch (mirror isBroadcast)
-src/components/stream-slot.tsx      # max-h-[40vh] or similar when catalog + secondary
+src/components/shop-page-view.tsx
+src/components/stream-slot.tsx
+src/components/waiting-room-banner.tsx
+src/components/countdown.tsx
 src/components/shop-theme-preview.tsx
-src/lib/shop-theme.ts               # SHOP_LAYOUT_DEFAULTS.catalog (reference only)
 ```
 
-### Acceptance (from spec §5.2)
+### Acceptance (from spec §5.3)
 
-- First paint above fold is product imagery (scheduled + open)
-- Stream embed height capped when below grid
-- Seller bio visible when `showSellerBio` (default on for catalog)
+- Scheduled shop: countdown is the largest element in hero
+- Transition at `start_at`: hero collapses or swaps without full page reload
+- `WaitingRoomBanner` + layout hero don’t duplicate countdown awkwardly
 
-### After Phase 3
+### After Phase 4
 
-Phases 4–5 remain: Drop Clock (`countdown`), The Room (`classic`), then Phase 6 QA/docs.
+Phases 5–6 remain: The Room (`classic`), then Phase 6 QA/docs.
 
 ### Before opening PR
 
@@ -104,8 +104,8 @@ Phases 4–5 remain: Drop Clock (`countdown`), The Room (`classic`), then Phase 
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Branch: `cursor/shop-layout-catalog-phase3-<suffix>`. One PR per phase; keep preview and
-buyer page in sync (comment cross-links like Phase 2).
+Branch: `cursor/shop-layout-countdown-phase4-<suffix>`. One PR per phase; keep preview and
+buyer page in sync (comment cross-links like Phases 2–3).
 
 ### Infrastructure (owner — done)
 

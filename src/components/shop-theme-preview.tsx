@@ -186,15 +186,6 @@ function LayoutPreview({
     </p>
   ) : null;
 
-  const liveStreamBand = (
-    <div
-      className="flex aspect-video items-center justify-center rounded-lg border text-[10px]"
-      style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
-    >
-      <Radio className="mr-1 size-3" /> {isLive ? "Live now" : "Live stream"}
-    </div>
-  );
-
   if (layout === "broadcast") {
     // Keep section order in sync with shop-page-view.tsx Live Stage branch (§5.1).
     return (
@@ -223,16 +214,33 @@ function LayoutPreview({
   }
 
   if (layout === "catalog") {
+    // Keep section order in sync with shop-page-view.tsx Lookbook branch (§5.2).
+    const slimStreamBand = (
+      <div
+        className="flex aspect-[21/9] max-h-[72px] items-center justify-center rounded-lg border text-[10px]"
+        style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
+      >
+        {isScheduled ? (
+          <span className="flex flex-col items-start px-3 py-2 text-left">
+            <span className="text-[8px] font-medium uppercase tracking-widest opacity-90">Opens in</span>
+            <span className="text-sm font-extrabold tabular-nums">02:14:08</span>
+          </span>
+        ) : (
+          <>
+            <Radio className="mr-1 size-3" /> {isLive ? "Live now" : "Live stream"}
+          </>
+        )}
+      </div>
+    );
+
     return (
       <div className="space-y-3">
         {title}
-        {reminder}
         {sneakPeek}
         {productGrid}
-        <div className={cn("grid gap-2", !isMobile && "grid-cols-2")}>
-          {liveStreamBand}
-          {chat}
-        </div>
+        {slimStreamBand}
+        {reminder}
+        {chat}
       </div>
     );
   }
