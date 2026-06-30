@@ -5,9 +5,9 @@ seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) an
 `docs/PRODUCT_UX_REVIEW.md` for broader UX context.
 
 **Status:** Phase 0 (metadata + defaults) and Phase 1 (editor archetype picker +
-preview phase toggle) and Phase 2 (Live Stage / `broadcast` buyer-page parity)
-implemented (June 2026). Phases 3–5 (remaining per-layout buyer-page parity)
-not started.  
+preview phase toggle) and Phase 2 (Live Stage / `broadcast` buyer-page parity) and
+Phase 3 (Lookbook / `catalog` buyer-page parity) implemented (June 2026). Phases 4–5
+(remaining per-layout buyer-page parity) not started.  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
 drop”), not four interchangeable skins of the same page.
 
@@ -389,8 +389,8 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 > swaps the hero treatment (countdown overlay / LIVE badge), shows the reminder
 > CTA when scheduled, and tints products as "soon". Full per-phase **section
 > reordering** per §5 lands in Phases 2–5 alongside `shop-page-view.tsx`.
-> **Phase 2 (broadcast)** is done (#94); **Phase 3 (catalog)** is next — see
-> `docs/HANDOFF.md` “Shop layout archetypes — next agent”.
+> **Phase 2 (broadcast)** is done (#94); **Phase 3 (catalog)** is done;
+> **Phase 4 (countdown)** is next — see `docs/HANDOFF.md`.
 
 ---
 
@@ -407,12 +407,12 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ### Phase 3 — Lookbook (`catalog`) parity
 
-- [ ] Products before stream on buyer page when layout `catalog` (`shop-page-view.tsx` — mirror Phase 2 `isBroadcast` branch)
-- [ ] Cap stream height when below grid (~40vh in `stream-slot.tsx`)
-- [ ] Verify 3-column grid offered via existing “Apply recommended settings” on catalog pick (Phase 1 — no new editor work expected)
-- [ ] Preview mirror (`shop-theme-preview.tsx` catalog branch)
+- [x] Products before stream on buyer page when layout `catalog` (`shop-page-view.tsx` — mirror Phase 2 `isBroadcast` branch)
+- [x] Cap stream height when below grid (~40vh in `stream-slot.tsx`)
+- [x] Verify 3-column grid offered via existing “Apply recommended settings” on catalog pick (Phase 1 — no new editor work expected)
+- [x] Preview mirror (`shop-theme-preview.tsx` catalog branch)
 
-**Pattern:** See `isBroadcast` / `BroadcastChatBelow` in `shop-page-view.tsx` (#94).
+**Pattern:** See `isCatalog` / `BroadcastChatBelow` / `CatalogReminderFooter` in `shop-page-view.tsx`.
 
 ---
 
