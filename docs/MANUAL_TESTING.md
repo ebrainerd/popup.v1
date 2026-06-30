@@ -93,6 +93,61 @@ Record pass/fail and any notes in your PR or handoff comment.
 
 ---
 
+## Shop layout archetypes (theme & customize)
+
+**Requires:** no special env or migrations beyond a working local stack
+(`supabase start` + `npm run dev`). Spec: `docs/SHOP_LAYOUT_ARCHETYPES.md`
+(§5 per-layout behavior, §10 testing matrix). Code: `src/lib/shop-theme.ts`,
+`src/components/shop-theme-editor.tsx`, `src/components/shop-theme-preview.tsx`,
+`src/components/shop-page-view.tsx`, `src/components/stream-slot.tsx`.
+
+The four layout slugs map to archetype labels: `broadcast` → **Live Stage**,
+`catalog` → **Lookbook**, `countdown` → **Drop Clock**, `classic` → **The Room**.
+Each layout reorders the buyer page; the customize **Live preview** must mirror
+that order (preview drift is the most common regression here).
+
+### Editor smoke — four layouts × two presets
+
+Open `/dashboard/shops/[id]/customize` (or the wizard **Layout & theme** step —
+same `ShopThemeEditor`). Above the preview, use the **Scheduled / Open / Live**
+phase toggle and the **Desktop / Mobile** viewport toggle. For each layout, run
+its **recommended** preset and one **off-pairing** preset (the two columns
+below) to confirm theme + layout are independent.
+
+| # | Layout | Presets to try | Expected preview (Desktop) | ✓ |
+| - | ------ | -------------- | -------------------------- | - |
+| L1 | **Live Stage** (`broadcast`) | Neon PopUp (rec.) + Gallery | Title → **wide stream/cover hero** → product grid → chat full-width below. Scheduled overlays a countdown on the hero; Live shows a LIVE badge. | |
+| L2 | **Lookbook** (`catalog`) | Gallery (rec.) + Dark Room | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
+| L3 | **Drop Clock** (`countdown`) | Dark Room (rec.) + Market Stall | Scheduled: **oversized countdown hero** with shop name + "Remind me", then sneak-peek grid + announcements. Open: hero shrinks to "We're open", full products, chat. | |
+| L4 | **The Room** (`classic`) | Market Stall (rec.) + Neon PopUp | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
+
+| # | Step | Expected | ✓ |
+| - | ---- | -------- | - |
+| L5 | Pick a layout that differs from current | "Apply recommended settings for …?" prompt appears (preset, chat, grid summary) | |
+| L6 | Click **Apply** | Preset/accent/toggles/grid switch to that layout's defaults; preview updates | |
+| L7 | Click **Keep my settings** instead | Only `layout` changes; existing preset/toggles preserved | |
+| L8 | Toggle each phase Scheduled / Open / Live | Hero swaps: countdown (Scheduled), open state, LIVE badge (Live); reminder CTA only when Scheduled + reminder toggle on | |
+| L9 | Switch viewport to **Mobile** | Grid drops to readable columns; chat/countdown stay reachable; no overflow | |
+| L10 | Toggle **Chat**, **Seller bio**, **Reminder button** off | Matching blocks disappear from preview | |
+| L11 | Pick an accent that fails contrast on a light preset | Inline contrast warning appears above the theme list | |
+
+### Buyer-page parity (preview ≈ production)
+
+For each layout, set it on a draft/scheduled shop and open the public
+`/shop/[id]` page; the section order must match the editor preview for that
+layout and phase.
+
+| # | Step | Expected | ✓ |
+| - | ---- | -------- | - |
+| B1 | **Live Stage**, shop scheduled then open | Stream/cover hero leads; products reachable in one scroll; chat full width below | |
+| B2 | **Lookbook**, scheduled then open | Product grid is first paint above the fold; stream band capped (~40vh) below grid; seller bio shown | |
+| B3 | **Drop Clock**, scheduled | Countdown is the largest hero element; `WaitingRoomBanner` does **not** duplicate it; reminder CTA prominent | |
+| B4 | **Drop Clock** at `start_at` | Hero shrinks / swaps to open state **without a full page reload** | |
+| B5 | **The Room**, open on desktop | Chat sidebar visible beside the stream without scrolling; seller bio in header | |
+| B6 | Any layout on mobile 375px | Hero/stream visible; products and checkout usable; chat collapses below fold | |
+
+---
+
 Copy this block when adding the next checklist:
 
 ```markdown

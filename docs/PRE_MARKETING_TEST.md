@@ -414,13 +414,25 @@ After shop **Ended**:
 
 ---
 
-## Phase 17 — Theme & customize (10 min)
+## Phase 17 — Theme & customize (15 min)
+
+Layout slugs map to archetype labels: **Live Stage** (`broadcast`), **Lookbook**
+(`catalog`), **Drop Clock** (`countdown`), **The Room** (`classic`). See
+`docs/SHOP_LAYOUT_ARCHETYPES.md` and the four-layout smoke matrix in
+`docs/MANUAL_TESTING.md` for the detailed per-layout/phase checks.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
 | 17.1 | Change theme on open shop via customize | Buyer page updates after refresh/realtime | |
 | 17.2 | Product grid 2 vs 3 columns | Layout correct on mobile + desktop | |
 | 17.3 | Hide chat section | Chat block hidden for buyers | |
+| 17.4 | In customize, switch between all four layouts | Each card shows archetype name + "Best for…"; switching offers "Apply recommended settings" (Apply vs Keep my settings) | |
+| 17.5 | Toggle preview phase Scheduled / Open / Live for each layout | Hero updates: countdown (Scheduled), open state, LIVE badge (Live); reminder CTA only when Scheduled + reminder on | |
+| 17.6 | Set **Live Stage**, view buyer page | Stream/cover hero leads; products below; chat full width under grid | |
+| 17.7 | Set **Lookbook**, view buyer page | Product grid is first above the fold; stream band capped below grid; seller bio shown | |
+| 17.8 | Set **Drop Clock** scheduled, view buyer page | Oversized countdown hero; no duplicate waiting-room countdown; reminder CTA prominent; hero shrinks at open without full reload | |
+| 17.9 | Set **The Room** open on desktop | Chat sidebar visible beside stream without scrolling; seller bio in header | |
+| 17.10 | Confirm customize **Live preview** matches the buyer page for each layout/phase | Preview section order ≈ production | |
 
 ---
 
