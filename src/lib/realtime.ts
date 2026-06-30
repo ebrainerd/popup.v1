@@ -16,6 +16,7 @@ export const ROOM_EVENTS = {
   flashItem: "flash_item",
   live: "live",
   auctionStarted: "auction_started",
+  auctionQueued: "auction_queued",
   auctionBid: "auction_bid",
   auctionExtended: "auction_extended",
   auctionEnded: "auction_ended",
@@ -89,6 +90,16 @@ export type AuctionStartedBroadcast = {
   productTitle: string;
   startingBid: number;
   endsAt: string;
+  suddenDeath: boolean;
+};
+
+export type AuctionQueuedBroadcast = {
+  auctionId: string;
+  productId: string;
+  productTitle: string;
+  startingBid: number;
+  minIncrement: number;
+  allowPrebids: boolean;
   suddenDeath: boolean;
 };
 

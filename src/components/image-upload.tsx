@@ -11,6 +11,7 @@ import {
 } from "@/lib/image-upload-client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { ImageCropDialog } from "@/components/image-crop-dialog";
 
 /**
  * Uploads an image to a public Supabase Storage bucket under the current
@@ -24,6 +25,7 @@ export function ImageUpload({
   aspect = "video",
   label = "Upload image",
   onChange,
+  cropAspect,
 }: {
   name: string;
   bucket: "covers" | "products" | "avatars";
@@ -31,6 +33,8 @@ export function ImageUpload({
   aspect?: "video" | "square";
   label?: string;
   onChange?: (url: string) => void;
+  /** When set, opens a zoom/pan crop dialog before upload (e.g. 16/6 for banners). */
+  cropAspect?: number;
 }) {
   const [url, setUrlState] = useState<string>(defaultValue ?? "");
   const setUrl = (next: string) => {
@@ -40,7 +44,37 @@ export function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  async function uploadPrepared(prepared: File) {
+    if (prepared.size > 5 * 1024 * 1024) {
+      setError("Image must be under 5MB.");
+      return;
+    }
+
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setError("You must be logged in to upload.");
+      return;
+    }
+    const ext = prepared.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from(bucket)
+      .upload(path, prepared, { cacheControl: "3600", upsert: false });
+    if (uploadError) {
+      setError(uploadError.message);
+      return;
+    }
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(bucket).getPublicUrl(path);
+    setUrl(publicUrl);
+  }
 
   async function onFile(file: File) {
     setError(null);
@@ -52,32 +86,23 @@ export function ImageUpload({
     setUploading(true);
     try {
       const prepared = await prepareImageForUpload(file);
-      if (prepared.size > 5 * 1024 * 1024) {
-        setError("Image must be under 5MB.");
+      if (cropAspect) {
+        setCropFile(prepared);
         return;
       }
+      await uploadPrepared(prepared);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setError("You must be logged in to upload.");
-        return;
-      }
-      const ext = prepared.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${user.id}/${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await supabase.storage
-        .from(bucket)
-        .upload(path, prepared, { cacheControl: "3600", upsert: false });
-      if (uploadError) {
-        setError(uploadError.message);
-        return;
-      }
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from(bucket).getPublicUrl(path);
-      setUrl(publicUrl);
+  async function onCropConfirm(blob: Blob) {
+    setCropFile(null);
+    setUploading(true);
+    try {
+      await uploadPrepared(new File([blob], "banner.jpg", { type: "image/jpeg" }));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Upload failed.");
     } finally {
@@ -158,6 +183,19 @@ export function ImageUpload({
         }}
       />
       {error && <p className="text-sm text-live">{error}</p>}
+
+      {cropFile && cropAspect && (
+        <ImageCropDialog
+          file={cropFile}
+          aspect={cropAspect}
+          title="Crop shop banner"
+          onCancel={() => {
+            setCropFile(null);
+            setUploading(false);
+          }}
+          onConfirm={(blob) => void onCropConfirm(blob)}
+        />
+      )}
     </div>
   );
 }

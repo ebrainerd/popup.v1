@@ -160,7 +160,7 @@ export function ShopPageView({
           isDraftPreview={isDraftPreview}
         />
 
-        {isScheduled && seller && layout !== "countdown" && !isDraftPreview && (
+        {isOwner && isScheduled && seller && layout !== "countdown" && !isDraftPreview && (
           <div className="mb-8 grid gap-4 lg:grid-cols-2">
             <ShareDropCard
               shopId={shop.id}
@@ -214,6 +214,8 @@ export function ShopPageView({
           isOpen={isOpen}
           isScheduled={isScheduled}
           profileId={profileId}
+          isOwner={isOwner}
+          auctionPanel={auctionPanel}
         />
       </ShopRoom>
     </div>
@@ -436,12 +438,16 @@ function MainContent({
   isOpen,
   isScheduled,
   profileId,
+  isOwner,
+  auctionPanel,
 }: {
   shop: ShopWithDetails;
   theme: ShopTheme;
   isOpen: boolean;
   isScheduled: boolean;
   profileId?: string;
+  isOwner: boolean;
+  auctionPanel: AuctionPanelState;
 }) {
   return (
     <section>
@@ -454,6 +460,9 @@ function MainContent({
         initialProducts={shop.products}
         isOpen={isOpen}
         isAuthed={Boolean(profileId)}
+        isOwner={isOwner}
+        userId={profileId ?? null}
+        initialAuction={auctionPanel}
         startAt={shop.start_at}
         endAt={shop.end_at}
         gridColumns={theme.productGridColumns}
