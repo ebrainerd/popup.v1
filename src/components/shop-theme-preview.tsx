@@ -270,16 +270,17 @@ function LayoutPreview({
     );
   }
 
-  // classic
+  // classic — The Room §5.4: header → [stream + chat sidebar] → products.
+  // Keep section order in sync with shop-page-view.tsx classic branch.
   return (
     <div className="space-y-3">
-      {hero}
-      {reminder}
       {title}
+      {reminder}
       <div className={cn("grid gap-3", !isMobile && "grid-cols-[1fr_120px]")}>
-        {productGrid}
+        {hero}
         {chat}
       </div>
+      {productGrid}
     </div>
   );
 }
