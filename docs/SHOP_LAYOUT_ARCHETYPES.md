@@ -4,10 +4,11 @@ Living handoff doc for redesigning PopUp’s **page layout** customization aroun
 seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) and
 `docs/PRODUCT_UX_REVIEW.md` for broader UX context.
 
-**Status:** Phase 0 (metadata + defaults) and Phase 1 (editor archetype picker +
-preview phase toggle) and Phase 2 (Live Stage / `broadcast` buyer-page parity) and
-Phase 3 (Lookbook / `catalog` buyer-page parity) implemented (June 2026). Phases 4–5
-(remaining per-layout buyer-page parity) not started.  
+**Status:** Phase 0 (metadata + defaults), Phase 1 (editor archetype picker +
+preview phase toggle), Phase 2 (Live Stage / `broadcast` buyer-page parity),
+Phase 3 (Lookbook / `catalog` buyer-page parity), and Phase 5 (The Room /
+`classic` polish) implemented (June 2026). **Phase 4 (Drop Clock / `countdown`)
+remains** the only per-layout parity phase not started.  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
 drop”), not four interchangeable skins of the same page.
 
@@ -389,8 +390,8 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 > swaps the hero treatment (countdown overlay / LIVE badge), shows the reminder
 > CTA when scheduled, and tints products as "soon". Full per-phase **section
 > reordering** per §5 lands in Phases 2–5 alongside `shop-page-view.tsx`.
-> **Phase 2 (broadcast)** is done (#94); **Phase 3 (catalog)** is done;
-> **Phase 4 (countdown)** is next — see `docs/HANDOFF.md`.
+> **Phase 2 (broadcast)**, **Phase 3 (catalog)**, and **Phase 5 (classic)** are
+> done; **Phase 4 (countdown)** is the remaining parity phase — see `docs/HANDOFF.md`.
 
 ---
 
@@ -427,12 +428,18 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ---
 
-### Phase 5 — The Room (`classic`) polish
+### Phase 5 — The Room (`classic`) polish — DONE
 
-- [ ] Seller bio in header when `showSellerBio`
-- [ ] Confirm auction pre-bid grid works in classic layout (multi-lot)
-- [ ] Desktop chat sidebar min-heights
-- [ ] Preview mirror
+- [x] Seller bio in header when `showSellerBio` — header now leads the `classic`
+      section order (was below the stream), so the bio/title sit at the top per §5.4
+- [x] Confirm auction pre-bid grid works in classic layout (multi-lot) — `classic`
+      renders `AuctionLivePanel` + `ProductsGridLive` (per-lot bid state) unchanged
+- [x] Desktop chat sidebar min-heights — `StreamChatRow` adds `lg:min-h-[20rem]` so
+      the chat column stays usable beside a short banner without scrolling
+- [x] Preview mirror — `shop-theme-preview.tsx` `classic` branch reordered to
+      title → [hero + chat sidebar] → products
+
+**Files:** `shop-page-view.tsx`, `shop-theme-preview.tsx`
 
 ---
 
@@ -521,7 +528,7 @@ Before starting implementation:
 6. Do not change `ShopLayoutMode` union without migration plan
 7. Update `SHOP_LAYOUT_MODE_META` in the same PR as any buyer-facing layout behavior change
 
-**Suggested next PR:** Phase 3 — Lookbook (`catalog`) buyer-page parity (Phase 2 broadcast merged #94).
+**Suggested next PR:** Phase 4 — Drop Clock (`countdown`) buyer-page parity (Phases 2/3/5 merged).
 
 ---
 

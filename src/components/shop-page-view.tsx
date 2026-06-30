@@ -311,9 +311,10 @@ export function ShopPageView({
           </>
         ) : (
           <>
+            {/* The Room §5.4: header (seller bio) → stream + chat sidebar → auction → products */}
+            {shopHeader}
             {streamRow}
             {ownerLiveBar}
-            {shopHeader}
             {shareDropCard}
             {soldOutBanner}
             {externalLiveNotice}
@@ -524,7 +525,9 @@ function StreamChatRow({
     <div
       className={cn(
         "mb-6 grid gap-4",
-        chatPanel && "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch",
+        // The Room §5.4: give the desktop chat sidebar a comfortable floor so it
+        // stays usable beside a short banner/stream without scrolling.
+        chatPanel && "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch lg:min-h-[20rem]",
       )}
     >
       <StreamSlot

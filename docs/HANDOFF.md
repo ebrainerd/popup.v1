@@ -57,7 +57,7 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–3 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog` buyer-page parity). **Next: Phase 4 — Drop Clock (`countdown`)** — see handoff section below.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–3 + Phase 5 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, The Room / `classic` buyer-page parity). **Remaining: Phase 4 — Drop Clock (`countdown`)** — see handoff section below.
 
 ## Shop layout archetypes — next agent (Phase 4)
 
@@ -96,7 +96,8 @@ src/components/shop-theme-preview.tsx
 
 ### After Phase 4
 
-Phases 5–6 remain: The Room (`classic`), then Phase 6 QA/docs.
+Phase 5 (The Room / `classic`) is done. Only Phase 4 (Drop Clock / `countdown`)
+parity and Phase 6 QA/docs remain.
 
 ### Before opening PR
 
