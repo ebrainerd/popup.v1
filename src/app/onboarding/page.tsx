@@ -6,6 +6,7 @@ import { Logo } from "@/components/logo";
 import { getCurrentProfile, getCurrentUser } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Complete your profile" };
+export const dynamic = "force-dynamic";
 
 export default async function OnboardingPage({
   searchParams,
