@@ -25,6 +25,7 @@ import { LiveStreamBadge } from "@/components/live-stream-badge";
 import { BroadcastChatPanel } from "@/components/broadcast-chat-panel";
 import { ShopChat } from "@/components/shop-chat";
 import { ProductsGridLive } from "@/components/products-grid-live";
+import { CountdownLayoutPanel } from "@/components/countdown-layout-panel";
 import { FlashControls } from "@/components/flash-controls";
 import { AuctionControls } from "@/components/auction-controls";
 import { AuctionLivePanel } from "@/components/auction-live-panel";
@@ -106,6 +107,7 @@ export function ShopPageView({
     isOpen && shop.products.length > 0 && shop.products.every((p) => p.quantity === 0);
   const isBroadcast = layout === "broadcast";
   const isCatalog = layout === "catalog";
+  const isCountdown = layout === "countdown";
   const chatBelowProducts = isBroadcast || isCatalog;
 
   const streamRow = (
@@ -254,6 +256,32 @@ export function ShopPageView({
       />
     ) : null;
 
+  const countdownReminderFooter =
+    isCountdown && isScheduled && !isOwner && theme.showReminderCta && seller ? (
+      <CountdownReminderFooter
+        shop={shop}
+        seller={seller}
+        profileId={profileId}
+        isFollowing={isFollowing}
+        hasReminder={hasReminder}
+        reminderCount={reminderCount}
+        reminderDeliveryConfigured={reminderDeliveryConfigured}
+      />
+    ) : null;
+
+  const countdownLayoutPanel = isCountdown ? (
+    <CountdownLayoutPanel
+      shop={shop}
+      isOpen={isOpen}
+      isScheduled={isScheduled}
+      isDraftPreview={isDraftPreview}
+      isOwner={isOwner}
+      showChat={theme.showChat}
+      initialMessages={initialMessages}
+      announcements={announcements}
+    />
+  ) : null;
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6">
       {checkoutCanceled && <ReleaseHoldOnCancel shopId={shop.id} />}
@@ -262,7 +290,7 @@ export function ShopPageView({
         <DraftPreviewBanner shopId={shop.id} scheduleLabel={draftPreviewScheduleLabel} />
       )}
 
-      {isScheduled && !isDraftPreview && (
+      {isScheduled && !isDraftPreview && !isCountdown && (
         <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
       )}
 
@@ -308,6 +336,21 @@ export function ShopPageView({
             {streamRow}
             {catalogReminderFooter}
             {chatBelowProductsSection}
+          </>
+        ) : isCountdown ? (
+          <>
+            {/* Drop Clock §5.3: header → hero countdown → reminders → products → announcements/chat */}
+            {shopHeader}
+            {streamRow}
+            {countdownReminderFooter}
+            {shareDropCard}
+            {soldOutBanner}
+            {externalLiveNotice}
+            {ownerSellingTools}
+            {auctionPanelSection}
+            {mainContent}
+            {ownerLiveBar}
+            {countdownLayoutPanel}
           </>
         ) : (
           <>
@@ -360,7 +403,9 @@ function ShopHeader({
   initialIsLive?: boolean;
 }) {
   const compact = layout === "broadcast" || layout === "countdown" || layout === "catalog";
-  const remindersInHeader = !(layout === "catalog" && isScheduled);
+  const remindersInHeader =
+    !(layout === "catalog" && isScheduled) && !(layout === "countdown" && isScheduled);
+  const titleInHeader = !(layout === "countdown" && isScheduled);
 
   return (
     <div
@@ -370,14 +415,16 @@ function ShopHeader({
       )}
     >
       <div className="space-y-2">
-        <h1
-          className={cn(
-            "font-extrabold tracking-tight text-foreground",
-            layout === "countdown" ? "text-2xl" : "text-3xl",
-          )}
-        >
-          {shop.name}
-        </h1>
+        {titleInHeader && (
+          <h1
+            className={cn(
+              "font-extrabold tracking-tight text-foreground",
+              layout === "countdown" ? "text-2xl" : "text-3xl",
+            )}
+          >
+            {shop.name}
+          </h1>
+        )}
         {theme.showSellerBio && seller && (
           <Link
             href={`/u/${seller.username}`}
@@ -498,7 +545,7 @@ function StreamChatRow({
   streamPlacement?: "primary" | "secondary";
 }) {
   const chatFillClass = "h-full min-h-[16rem] lg:min-h-0";
-  const showSidebarChat = chatPlacement === "sidebar";
+  const showSidebarChat = chatPlacement === "sidebar" && layout !== "countdown";
 
   const chatPanel =
     showSidebarChat &&
@@ -604,6 +651,42 @@ function MainContent({
         </p>
       )}
     </section>
+  );
+}
+
+/** Drop Clock scheduled reminders — below hero countdown. See shop-theme-preview countdown branch. */
+function CountdownReminderFooter({
+  shop,
+  seller,
+  profileId,
+  isFollowing,
+  hasReminder,
+  reminderCount,
+  reminderDeliveryConfigured,
+}: {
+  shop: ShopWithDetails;
+  seller: NonNullable<ShopWithDetails["seller"]>;
+  profileId?: string;
+  isFollowing: boolean;
+  hasReminder: boolean;
+  reminderCount: number;
+  reminderDeliveryConfigured: boolean;
+}) {
+  return (
+    <div className="mb-6 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+      <RemindMeButton
+        shopId={shop.id}
+        initialSubscribed={hasReminder}
+        isAuthed={Boolean(profileId)}
+        reminderCount={reminderCount}
+        deliveryConfigured={reminderDeliveryConfigured}
+      />
+      <FollowButton
+        sellerId={seller.id}
+        initialFollowing={isFollowing}
+        isAuthed={Boolean(profileId)}
+      />
+    </div>
   );
 }
 

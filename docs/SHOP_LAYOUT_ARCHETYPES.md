@@ -419,12 +419,12 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ### Phase 4 — Drop Clock (`countdown`) parity
 
-- [ ] Hero countdown sizing + reminder prominence
-- [ ] Deduplicate `WaitingRoomBanner` vs layout hero (pick one source of truth)
-- [ ] Open-state transition (hero shrink)
-- [ ] Preview mirror
+- [x] Hero countdown sizing + reminder prominence
+- [x] Deduplicate `WaitingRoomBanner` vs layout hero (pick one source of truth)
+- [x] Open-state transition (hero shrink)
+- [x] Preview mirror
 
-**Files:** `stream-slot.tsx`, `waiting-room-banner.tsx`, `countdown.tsx`
+**Files:** `stream-slot.tsx`, `waiting-room-banner.tsx`, `countdown.tsx`, `shop-page-view.tsx`, `countdown-layout-panel.tsx`
 
 ---
 

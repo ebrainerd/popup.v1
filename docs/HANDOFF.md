@@ -57,47 +57,42 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–3 + Phase 5 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, The Room / `classic` buyer-page parity). **Remaining: Phase 4 — Drop Clock (`countdown`)** — see handoff section below.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–5 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, Drop Clock / `countdown`, The Room / `classic` buyer-page parity). **Remaining: Phase 6 — QA & docs** — see handoff section below.
 
-## Shop layout archetypes — next agent (Phase 4)
+## Shop layout archetypes — next agent (Phase 6)
 
-**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §5.3 and §7 Phase 4.
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §7 Phase 6 and §10 testing matrix.
 
-**Baseline on `main`:** Phase 3 landed Lookbook (`catalog`) — products-first section order in
-`shop-page-view.tsx` (`isCatalog`), secondary stream band capped at ~40vh in `stream-slot.tsx`,
-reminder CTAs below slim countdown when scheduled. Mirror pattern from Phase 2 `isBroadcast`.
+**Baseline on `main`:** All four per-layout parity phases have landed.
+Phase 4 added Drop Clock (`countdown`) — oversized hero countdown with shop name,
+reminder CTAs below hero, announcements pre-open / chat when open, hero shrink at
+`start_at` via `useShopPhase`, `WaitingRoomBanner` skipped for countdown layout.
+Phase 5 added The Room (`classic`) — header (with seller bio) leads, then the
+stream + chat sidebar row (with a desktop min-height floor), auction panel, and
+products; the editor preview mirrors that order.
 
-### Phase 4 scope — Drop Clock (`countdown`)
+### Phase 6 scope — QA & docs
 
 | Task | Detail |
 | ---- | ------ |
-| Hero | **Oversized countdown** + shop name; cover as backdrop |
-| Section order (scheduled) | Header → **hero countdown** → Remind me + follower CTAs → product preview → announcements |
-| Section order (open) | Clear “We’re open” state; shrink hero; products at full fidelity; chat enabled |
-| Dedup | Consolidate `WaitingRoomBanner` vs layout hero (one source of truth) |
-| Transition | Hero shrink at `start_at` via client `useShopOpen` |
-| Preview parity | `shop-theme-preview.tsx` countdown branch |
+| Manual matrix | Walk `docs/PRE_MARKETING_TEST.md` Phase 17 (theme & customize) |
+| Smoke matrix | `docs/MANUAL_TESTING.md` — four layouts × two presets |
+| Cross-link | Update `docs/PRODUCT_UX_REVIEW.md` (optional) |
 
 ### Key files
 
 ```
 src/components/shop-page-view.tsx
-src/components/stream-slot.tsx
-src/components/waiting-room-banner.tsx
-src/components/countdown.tsx
 src/components/shop-theme-preview.tsx
+src/components/stream-slot.tsx
 ```
 
-### Acceptance (from spec §5.3)
+### Done (Phases 4–5 acceptance)
 
-- Scheduled shop: countdown is the largest element in hero
-- Transition at `start_at`: hero collapses or swaps without full page reload
-- `WaitingRoomBanner` + layout hero don’t duplicate countdown awkwardly
-
-### After Phase 4
-
-Phase 5 (The Room / `classic`) is done. Only Phase 4 (Drop Clock / `countdown`)
-parity and Phase 6 QA/docs remain.
+- Drop Clock: scheduled countdown is the largest hero element; hero shrinks at
+  `start_at` without a full reload; `WaitingRoomBanner` no longer duplicates it.
+- The Room: desktop chat visible beside the stream without scrolling; seller bio
+  appears in the header when `showSellerBio`; preview ≈ buyer page.
 
 ### Before opening PR
 
@@ -105,8 +100,8 @@ parity and Phase 6 QA/docs remain.
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Branch: `cursor/shop-layout-countdown-phase4-<suffix>`. One PR per phase; keep preview and
-buyer page in sync (comment cross-links like Phases 2–3).
+Branch: `cursor/shop-layout-qa-phase6-<suffix>`. One PR per phase; keep preview and
+buyer page in sync (comment cross-links like Phases 2–5).
 
 ### Infrastructure (owner — done)
 
