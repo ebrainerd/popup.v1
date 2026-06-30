@@ -116,10 +116,13 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
 
   async function finishSignup() {
     if (avatarUrl) {
-      await setProfileAvatar(avatarUrl);
+      const result = await setProfileAvatar(avatarUrl);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
     }
     router.push(redirectTo ?? "/dashboard");
-    router.refresh();
   }
 
   if (showAvatarStep) {
@@ -144,6 +147,9 @@ export function SignupForm({ redirectTo }: { redirectTo?: string }) {
             Continue
           </Button>
         </div>
+        {error && (
+          <p className="rounded-md bg-live/10 px-3 py-2 text-sm text-live">{error}</p>
+        )}
       </div>
     );
   }

@@ -1,15 +1,16 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
-import { completeProfileSetup } from "@/app/onboarding/actions";
+import { completeProfileSetup, type ProfileActionState } from "@/app/onboarding/actions";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { USERNAME_PERMANENCE_NOTICE } from "@/lib/username";
 
-const initialState = { error: null as string | null };
+const initialState: ProfileActionState = { error: null };
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -27,8 +28,15 @@ export function OnboardingForm({
   redirectTo?: string;
   initialUsername?: string;
 }) {
+  const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState("");
   const [state, formAction] = useActionState(completeProfileSetup, initialState);
+
+  useEffect(() => {
+    if (state.success && state.redirectTo) {
+      router.push(state.redirectTo);
+    }
+  }, [state.success, state.redirectTo, router]);
 
   return (
     <form action={formAction} className="space-y-4">

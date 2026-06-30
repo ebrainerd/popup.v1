@@ -1,13 +1,16 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isUsernameAvailable } from "@/lib/profile";
 import { USERNAME_PERMANENCE_NOTICE, validateUsername } from "@/lib/username";
 
-export type ProfileActionState = { error: string | null; success?: boolean };
+export type ProfileActionState = {
+  error: string | null;
+  success?: boolean;
+  redirectTo?: string;
+};
 
 const avatarUrlSchema = z.string().url().optional().or(z.literal(""));
 
@@ -58,10 +61,11 @@ export async function completeProfileSetup(
     return { error: error?.message ?? "Could not save your profile." };
   }
 
-  const redirectTo = safeRedirectPath(formData.get("redirectTo"));
-  revalidatePath("/", "layout");
-  revalidatePath(`/u/${profile.username}`);
-  redirect(redirectTo);
+  return {
+    error: null,
+    success: true,
+    redirectTo: safeRedirectPath(formData.get("redirectTo")),
+  };
 }
 
 function safeRedirectPath(input: FormDataEntryValue | null): string {
