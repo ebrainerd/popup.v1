@@ -12,7 +12,7 @@ import {
 import { startNativeLive, endNativeLive, acceptNativeLiveTos } from "@/app/dashboard/actions";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { broadcastLiveState } from "@/lib/live-broadcast-client";
+import { useBroadcastLiveState } from "@/hooks/use-broadcast-live-state";
 import { AudioLevelMeter } from "@/components/audio-level-meter";
 
 export type PublisherState = "idle" | "preview" | "connecting" | "live" | "error";
@@ -66,6 +66,7 @@ export function NativeLivePublisher({
   onStateChange?: (state: PublisherState) => void;
 }) {
   const router = useRouter();
+  const broadcastLive = useBroadcastLiveState(shopId);
   const roomRef = useRef<Room | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewStreamRef = useRef<MediaStream | null>(null);
@@ -80,6 +81,12 @@ export function NativeLivePublisher({
   const [cameraId, setCameraId] = useState("");
   const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
   const liveStartedRef = useRef<number | null>(null);
+  const endingLiveRef = useRef(false);
+  const stateRef = useRef(state);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   useEffect(() => {
     if (initialIsLive && liveStartedRef.current === null) {
@@ -222,7 +229,16 @@ export function NativeLivePublisher({
       roomRef.current = room;
 
       room.on(RoomEvent.Disconnected, () => {
-        setState((s) => (s === "live" ? "idle" : s));
+        if (endingLiveRef.current) return;
+        void (async () => {
+          if (stateRef.current !== "live") return;
+          await disconnectLive();
+          await endNativeLive(shopId);
+          liveStartedRef.current = null;
+          setState("idle");
+          setLiveSeconds(0);
+          broadcastLive(false, "native");
+        })();
       });
 
       await room.connect(tokenData.livekitUrl, tokenData.token);
@@ -240,7 +256,7 @@ export function NativeLivePublisher({
       liveStartedRef.current = Date.now();
       setLiveSeconds(0);
       setState("live");
-      void broadcastLiveState(shopId, { isLive: true, streamProvider: "native" });
+      void broadcastLive(true, "native");
       router.refresh();
     } catch (err) {
       await disconnectLive();
@@ -273,6 +289,7 @@ export function NativeLivePublisher({
   async function handleEndLive() {
     setPending(true);
     setError(null);
+    endingLiveRef.current = true;
     try {
       await disconnectLive();
       if (videoRef.current) videoRef.current.srcObject = null;
@@ -281,11 +298,12 @@ export function NativeLivePublisher({
       liveStartedRef.current = null;
       setState("idle");
       setLiveSeconds(0);
-      void broadcastLiveState(shopId, { isLive: false, streamProvider: "native" });
+      broadcastLive(false, "native");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to end live.");
     } finally {
+      endingLiveRef.current = false;
       setPending(false);
     }
   }

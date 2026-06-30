@@ -73,6 +73,7 @@ export function OwnerShopLiveBar({
           isOpen={isOpen}
           isEnded={isEnded}
           hasLiveUrl={Boolean(liveUrl || twitchUrl)}
+          streamProvider={provider}
         />
       )}
     </section>

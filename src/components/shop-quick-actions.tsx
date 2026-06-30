@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { StreamProvider } from "@/lib/database.types";
 import { Radio, Check } from "lucide-react";
 import { toggleLive } from "@/app/dashboard/actions";
+import { useBroadcastLiveState } from "@/hooks/use-broadcast-live-state";
 import { Button } from "@/components/ui/button";
 
 /** External-stream go-live controls (native live uses NativeLivePublisher). */
@@ -13,17 +15,26 @@ export function ShopQuickActions({
   isOpen,
   isEnded,
   hasLiveUrl,
+  streamProvider,
 }: {
   shopId: string;
   isLive: boolean;
   isOpen: boolean;
   isEnded: boolean;
   hasLiveUrl: boolean;
+  streamProvider: StreamProvider;
 }) {
   const router = useRouter();
+  const broadcastLive = useBroadcastLiveState(shopId);
   const [pending, startTransition] = useTransition();
   const [live, setLive] = useState(isLive);
+  const [prevIsLive, setPrevIsLive] = useState(isLive);
   const [error, setError] = useState<string | null>(null);
+
+  if (prevIsLive !== isLive) {
+    setPrevIsLive(isLive);
+    setLive(isLive);
+  }
 
   function onToggleLive() {
     setError(null);
@@ -34,7 +45,9 @@ export function ShopQuickActions({
       if (res.error) {
         setLive(!next);
         setError(res.error);
+        return;
       }
+      broadcastLive(next, streamProvider);
       router.refresh();
     });
   }

@@ -33,11 +33,17 @@ export async function toggleDropReminder(shopId: string): Promise<ReminderResult
     return { subscribed: false };
   }
 
+  const { isPushReminderDeliveryConfigured, userHasPushSubscription } = await import(
+    "@/lib/reminder-delivery"
+  );
+  const pushEnabled =
+    isPushReminderDeliveryConfigured() && (await userHasPushSubscription(user.id));
+
   const { error } = await supabase.from("drop_reminders").insert({
     shop_id: shopId,
     user_id: user.id,
     email_enabled: true,
-    push_enabled: false,
+    push_enabled: pushEnabled,
   });
   if (error) {
     if (error.code === "23505") return { subscribed: true };

@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, BellOff, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toggleDropReminder } from "@/app/shop/reminder-actions";
+import { toggleDropReminder, enableReminderPush } from "@/app/shop/reminder-actions";
+import { ensureBrowserPushSubscription } from "@/lib/push-client";
 import { cn } from "@/lib/utils";
 
 export function RemindMeButton({
@@ -40,6 +41,10 @@ export function RemindMeButton({
         setSubscribed(initialSubscribed);
       } else {
         setSubscribed(res.subscribed);
+        if (res.subscribed && process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY) {
+          const pushOk = await ensureBrowserPushSubscription();
+          if (pushOk) await enableReminderPush(shopId);
+        }
       }
     });
   }

@@ -84,9 +84,11 @@ async function emailForUser(userId: string): Promise<string | null> {
 }
 
 async function sendEmailToUsers(userIds: string[], subject: string, html: string) {
+  const { isEmailReminderDeliveryConfigured } = await import("@/lib/reminder-delivery");
+  if (!isEmailReminderDeliveryConfigured() || userIds.length === 0) return;
   const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey || userIds.length === 0) return;
-  const from = process.env.RESEND_FROM || "PopUp <onboarding@resend.dev>";
+  if (!apiKey) return;
+  const from = process.env.RESEND_FROM!;
   const supabase = createServiceRoleClient();
 
   // Resolve emails via the auth admin API (service role).
@@ -132,7 +134,15 @@ export async function notifyFollowersOfLive(shopId: string): Promise<void> {
       .from("shop_follows")
       .select("follower_id")
       .eq("seller_id", shop.seller_id);
-    const followerIds = (followers ?? []).map((f) => f.follower_id);
+    const { data: liveReminderRows } = await supabase
+      .from("live_reminders")
+      .select("user_id")
+      .eq("shop_id", shopId)
+      .is("cancelled_at", null);
+    const liveReminderIds = new Set((liveReminderRows ?? []).map((r) => r.user_id));
+    const followerIds = (followers ?? [])
+      .map((f) => f.follower_id)
+      .filter((id) => !liveReminderIds.has(id));
     if (followerIds.length === 0) return;
 
     const seller = (shop as unknown as {
@@ -660,6 +670,130 @@ export async function sendDropReminders(): Promise<number> {
   } catch (err) {
     console.error("sendDropReminders failed", err);
     Sentry.captureException(err, { tags: { area: "notifications" } });
+    return 0;
+  }
+}
+
+/**
+ * Send opening-window drop reminders for one shop as soon as it opens.
+ * Complements the cron job so subscribers are not waiting up to 15 minutes.
+ */
+export async function sendOpeningRemindersForShop(shopId: string): Promise<number> {
+  try {
+    const { dueReminderWindows } = await import("@/lib/drop-reminders");
+    const {
+      canDeliverReminder,
+      claimReminderDelivery,
+      finalizeReminderDelivery,
+      isEmailReminderDeliveryConfigured,
+      resolveReminderDeliveryOutcome,
+      userHasPushSubscription,
+    } = await import("@/lib/reminder-delivery");
+    const supabase = createServiceRoleClient();
+    const now = new Date();
+
+    const { data: shop } = await supabase
+      .from("shops")
+      .select("id, name, start_at, end_at, status, seller:profiles!shops_seller_id_fkey(username, display_name)")
+      .eq("id", shopId)
+      .maybeSingle();
+    if (!shop || shop.status === "draft") return 0;
+    if (new Date(shop.end_at).getTime() < now.getTime()) return 0;
+    if (now.getTime() < new Date(shop.start_at).getTime()) return 0;
+
+    const { data: rows } = await supabase
+      .from("drop_reminders")
+      .select(
+        `id, user_id, email_enabled, push_enabled,
+         before_24h_sent_at, before_1h_sent_at, opening_sent_at`,
+      )
+      .eq("shop_id", shopId)
+      .is("cancelled_at", null);
+
+    if (!rows?.length) return 0;
+
+    const site = getSiteUrl();
+    let sent = 0;
+    const seller = (shop as unknown as {
+      seller: { username: string; display_name: string | null } | null;
+    }).seller;
+    const sellerName = seller?.username ? `@${seller.username}` : "A creator";
+    const url = `${site}/shop/${shop.id}`;
+    const copy = REMINDER_COPY.opening;
+
+    for (const row of rows) {
+      const r = row as Pick<
+        DropReminderRow,
+        "id" | "user_id" | "email_enabled" | "push_enabled" | "before_24h_sent_at" | "before_1h_sent_at" | "opening_sent_at"
+      >;
+      const windows = dueReminderWindows(shop.start_at, now, r);
+      if (!windows.includes("opening")) continue;
+
+      const claim = await claimReminderDelivery(r.id, "opening");
+      if (claim !== "claimed") continue;
+
+      const deliverable = await canDeliverReminder({
+        userId: r.user_id,
+        emailEnabled: r.email_enabled,
+        pushEnabled: r.push_enabled,
+      });
+      if (!deliverable) {
+        await finalizeReminderDelivery(r.id, "opening", "skipped_no_provider");
+        continue;
+      }
+
+      const emailWanted = r.email_enabled && isEmailReminderDeliveryConfigured();
+      const pushWanted = r.push_enabled && (await userHasPushSubscription(r.user_id));
+
+      let emailSucceeded = false;
+      let pushSucceeded = false;
+      let failureMessage: string | undefined;
+
+      try {
+        if (emailWanted) {
+          const email = await emailForUser(r.user_id);
+          if (email) {
+            emailSucceeded = await sendResendEmail(
+              email,
+              copy.subject(shop.name),
+              copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url),
+            );
+          }
+        }
+        if (pushWanted) {
+          const pushCount = await sendPushToUsers([r.user_id], {
+            title: copy.pushTitle(shop.name),
+            body: copy.pushBody(),
+            url,
+          });
+          pushSucceeded = pushCount > 0;
+        }
+      } catch (err) {
+        failureMessage = err instanceof Error ? err.message : String(err);
+      }
+
+      const outcome = failureMessage
+        ? "failed"
+        : resolveReminderDeliveryOutcome({
+            emailWanted,
+            pushWanted,
+            emailSucceeded,
+            pushSucceeded,
+          });
+
+      if (outcome !== "sent") {
+        await finalizeReminderDelivery(r.id, "opening", outcome, { error: failureMessage });
+        continue;
+      }
+
+      await finalizeReminderDelivery(r.id, "opening", "sent", { markReminderSent: true });
+      sent++;
+    }
+
+    return sent;
+  } catch (err) {
+    console.error("sendOpeningRemindersForShop failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { shopId } });
     return 0;
   }
 }
