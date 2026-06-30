@@ -196,11 +196,12 @@ function LayoutPreview({
   );
 
   if (layout === "broadcast") {
+    // Keep section order in sync with shop-page-view.tsx Live Stage branch (§5.1).
     return (
       <div className="space-y-3">
+        {title}
         {hero}
         {reminder}
-        {title}
         {sneakPeek}
         {productGrid}
         {chat}
@@ -301,12 +302,26 @@ function HeroBlock({
           />
         )}
         {showCountdown && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 text-white">
-            <p className="text-[9px] font-medium uppercase tracking-[0.2em] opacity-90">Opens in</p>
+          <div
+            className={cn(
+              "absolute inset-0 flex flex-col bg-black/55 text-white",
+              layout === "broadcast"
+                ? "items-start justify-end bg-gradient-to-t from-black/75 to-transparent p-3"
+                : "items-center justify-center",
+            )}
+          >
+            <p
+              className={cn(
+                "font-medium uppercase tracking-[0.2em] opacity-90",
+                layout === "countdown" ? "text-[10px]" : layout === "broadcast" ? "text-[8px]" : "text-[9px]",
+              )}
+            >
+              Opens in
+            </p>
             <p
               className={cn(
                 "mt-1 font-extrabold tabular-nums",
-                layout === "countdown" ? "text-3xl" : "text-2xl",
+                layout === "countdown" ? "text-3xl" : layout === "broadcast" ? "text-xl" : "text-2xl",
               )}
             >
               02:14:08

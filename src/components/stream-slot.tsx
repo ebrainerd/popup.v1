@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Stream hero / cover / countdown for buyer shop pages.
+ * Live Stage (`broadcast`) wideHero + compact scheduled countdown: see
+ * docs/SHOP_LAYOUT_ARCHETYPES.md §5.1 — keep in sync with shop-page-view.tsx.
+ */
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -82,8 +87,11 @@ export function StreamSlot({
   const showCover = !showNativeLive && !showExternalLive && !ownerNativeSlot;
 
   const countdownFocus = layout === "countdown" && isScheduled;
+  /** Live Stage uses a compact hero countdown — not the Drop Clock takeover. */
+  const broadcastScheduled = layout === "broadcast" && isScheduled;
   const catalogHero = layout === "catalog" && showCover;
-  const wideHero = layout === "broadcast" || showNative || catalogHero || ownerNativeSlot;
+  const wideHero =
+    layout === "broadcast" || showNative || catalogHero || ownerNativeSlot;
 
   if (ownerNativeSlot) {
     const showCoverBehind = publisherState === "idle" && !isLive;
@@ -109,6 +117,7 @@ export function StreamSlot({
               hasLiveReminder={hasLiveReminder}
               liveReminderCount={liveReminderCount}
               countdownFocus={countdownFocus}
+              broadcastScheduled={broadcastScheduled}
               fillParent
             />
           )}
@@ -151,6 +160,7 @@ export function StreamSlot({
           hasLiveReminder={hasLiveReminder}
           liveReminderCount={liveReminderCount}
           countdownFocus={countdownFocus}
+          broadcastScheduled={broadcastScheduled}
           wideHero={wideHero}
         />
       )}
@@ -170,6 +180,7 @@ function StreamCover({
   hasLiveReminder,
   liveReminderCount,
   countdownFocus,
+  broadcastScheduled = false,
   wideHero = layout === "broadcast" || showNative || layout === "catalog",
   fillParent = false,
 }: {
@@ -184,6 +195,7 @@ function StreamCover({
   hasLiveReminder: boolean;
   liveReminderCount: number;
   countdownFocus: boolean;
+  broadcastScheduled?: boolean;
   wideHero?: boolean;
   fillParent?: boolean;
 }) {
@@ -215,18 +227,29 @@ function StreamCover({
           className={cn(
             "absolute inset-0 flex items-center justify-center bg-black/30",
             countdownFocus && "bg-black/50",
+            broadcastScheduled && "items-end justify-start bg-gradient-to-t from-black/70 to-transparent pb-4 pl-4",
           )}
         >
-          <div className="text-center text-white">
+          <div
+            className={cn(
+              "text-white",
+              broadcastScheduled ? "text-left" : "text-center",
+            )}
+          >
             <p
               className={cn(
                 "font-medium uppercase tracking-widest opacity-90",
-                countdownFocus ? "text-base" : "text-sm",
+                countdownFocus ? "text-base" : broadcastScheduled ? "text-xs" : "text-sm",
               )}
             >
               Drop opens in
             </p>
-            <div className={cn("mt-2 font-bold", countdownFocus ? "text-4xl" : "text-2xl")}>
+            <div
+              className={cn(
+                "mt-1 font-bold",
+                countdownFocus ? "mt-2 text-4xl" : broadcastScheduled ? "text-xl" : "text-2xl",
+              )}
+            >
               <Countdown startAt={shop.start_at} endAt={shop.end_at} />
             </div>
           </div>
