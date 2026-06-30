@@ -4,7 +4,7 @@
 // IMPORTANT: do not cache HTML or /_next/ assets. Caching those after a deploy
 // leaves users on stale JS with invalid Server Action IDs.
 
-const CACHE = "popup-shell-v2";
+const CACHE = "popup-shell-v3";
 const SHELL = ["/manifest.webmanifest", "/icons/icon.svg", "/icons/maskable.svg"];
 
 self.addEventListener("install", (event) => {

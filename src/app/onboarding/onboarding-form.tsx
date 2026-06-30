@@ -1,18 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createClient } from "@/lib/supabase/client";
 import { USERNAME_PERMANENCE_NOTICE, validateUsername } from "@/lib/username";
-
-function safeRedirectPath(path: string | undefined): string {
-  if (path?.startsWith("/") && !path.startsWith("//")) return path;
-  return "/dashboard";
-}
 
 function isValidAvatarUrl(url: string): boolean {
   if (!url) return true;
@@ -31,7 +24,6 @@ export function OnboardingForm({
   redirectTo?: string;
   initialUsername?: string;
 }) {
-  const router = useRouter();
   const [avatarUrl, setAvatarUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -55,48 +47,24 @@ export function OnboardingForm({
 
     setPending(true);
     try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setError("Your session expired. Please log in again.");
-        return;
-      }
-
-      const { data: taken } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("username", usernameResult.username)
-        .neq("id", user.id)
-        .maybeSingle();
-      if (taken) {
-        setError("That username is already taken.");
-        return;
-      }
-
-      const { data: profile, error: updateError } = await supabase
-        .from("profiles")
-        .update({
+      const res = await fetch("/api/profile/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           username: usernameResult.username,
-          avatar_url: avatarUrl || null,
-          profile_setup_complete: true,
-        })
-        .eq("id", user.id)
-        .select("id")
-        .single();
+          avatarUrl: avatarUrl || "",
+          redirectTo,
+        }),
+      });
 
-      if (updateError || !profile) {
-        const message = updateError?.message.toLowerCase() ?? "";
-        if (message.includes("duplicate") || message.includes("username")) {
-          setError("That username is already taken.");
-        } else {
-          setError(updateError?.message ?? "Could not save your profile.");
-        }
+      const payload = (await res.json()) as { error?: string; redirectTo?: string };
+      if (!res.ok) {
+        setError(payload.error ?? "Could not save your profile.");
         return;
       }
 
-      router.push(safeRedirectPath(redirectTo));
+      // Full navigation so middleware sees profile_setup_complete immediately.
+      window.location.assign(payload.redirectTo ?? "/dashboard");
     } catch {
       setError("Something went wrong saving your profile. Please try again.");
     } finally {
