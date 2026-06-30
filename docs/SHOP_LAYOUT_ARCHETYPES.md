@@ -388,8 +388,9 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 > **Note (Phase 1, June 2026):** The preview phase toggle is a *mock* — it
 > swaps the hero treatment (countdown overlay / LIVE badge), shows the reminder
 > CTA when scheduled, and tints products as "soon". Full per-phase **section
-> reordering** per §5 lands in Phases 2–5 alongside `shop-page-view.tsx`; until
-> then the preview keeps each layout's existing section order.
+> reordering** per §5 lands in Phases 2–5 alongside `shop-page-view.tsx`.
+> **Phase 2 (broadcast)** is done (#94); **Phase 3 (catalog)** is next — see
+> `docs/HANDOFF.md` “Shop layout archetypes — next agent”.
 
 ---
 
@@ -406,10 +407,12 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 
 ### Phase 3 — Lookbook (`catalog`) parity
 
-- [ ] Products before stream on buyer page when layout `catalog`
-- [ ] Cap stream height when below grid
-- [ ] Default 3-column grid when switching to catalog (with consent)
-- [ ] Preview mirror
+- [ ] Products before stream on buyer page when layout `catalog` (`shop-page-view.tsx` — mirror Phase 2 `isBroadcast` branch)
+- [ ] Cap stream height when below grid (~40vh in `stream-slot.tsx`)
+- [ ] Verify 3-column grid offered via existing “Apply recommended settings” on catalog pick (Phase 1 — no new editor work expected)
+- [ ] Preview mirror (`shop-theme-preview.tsx` catalog branch)
+
+**Pattern:** See `isBroadcast` / `BroadcastChatBelow` in `shop-page-view.tsx` (#94).
 
 ---
 
@@ -511,13 +514,14 @@ Extend `test/unit/shop-theme.test.ts`:
 Before starting implementation:
 
 1. Read this doc + skim `src/lib/shop-theme.ts` and `shop-page-view.tsx`
-2. Run app locally (`AGENTS.md` — Supabase + `npm run dev`)
-3. Open `/dashboard/shops/[id]/customize` and `/shop/[id]` for a draft shop
-4. Pick **one phase** per PR; keep preview and production in sync
-5. Do not change `ShopLayoutMode` union without migration plan
-6. Update `SHOP_LAYOUT_MODE_META` in the same PR as any buyer-facing layout behavior change
+2. Read **`docs/HANDOFF.md` → “Shop layout archetypes — next agent”** for current phase
+3. Run app locally (`AGENTS.md` — Supabase + `npm run dev`)
+4. Open `/dashboard/shops/[id]/customize` and `/shop/[id]` for a draft shop
+5. Pick **one phase** per PR; keep preview and production in sync
+6. Do not change `ShopLayoutMode` union without migration plan
+7. Update `SHOP_LAYOUT_MODE_META` in the same PR as any buyer-facing layout behavior change
 
-**Suggested first PR:** Phase 0 + Phase 1 (metadata + editor cards + preview phase toggle).
+**Suggested next PR:** Phase 3 — Lookbook (`catalog`) buyer-page parity (Phase 2 broadcast merged #94).
 
 ---
 

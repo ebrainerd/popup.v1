@@ -57,7 +57,55 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phase 0 (archetype labels + `SHOP_LAYOUT_DEFAULTS`) and Phase 1 (editor archetype picker, recommended-theme chips, "Apply recommended settings" prompt, preview phase toggle) done; Phase 2 (Live Stage / `broadcast` buyer-page parity) done; Phases 3–5 (remaining layouts) pending.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–2 done (metadata, editor picker, Live Stage / `broadcast` buyer-page parity, merged #92 + #94). **Next: Phase 3 — Lookbook (`catalog`)** — see handoff section below.
+
+## Shop layout archetypes — next agent (Phase 3)
+
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §5.2 and §7 Phase 3.
+
+**Baseline on `main`:** Phase 2 landed in #94. Live Stage (`broadcast`) uses a dedicated
+branch in `shop-page-view.tsx` (`isBroadcast`) — header → stream hero → auction →
+products → full-width chat below (`broadcast-chat-panel.tsx`). Use that pattern for
+Lookbook (`catalog`).
+
+### Phase 3 scope — Lookbook (`catalog`)
+
+| Task | Detail |
+| ---- | ------ |
+| Section order (open) | Header (minimal) → **products grid first** → stream/banner band → chat below |
+| Section order (scheduled) | Header + seller bio/story → product preview grid → slim countdown footer → reminder CTAs |
+| Stream height | Cap embed/cover at ~**40vh** when shown **below** the product grid (`stream-slot.tsx`) |
+| Hero | No oversized stream unless live; omit or shrink cover when products exist |
+| Preview parity | `shop-theme-preview.tsx` catalog branch (~line 224) already stubs products-first — align with prod |
+| 3-column default | **Already shipped** in Phase 1 via `SHOP_LAYOUT_DEFAULTS.catalog` + “Apply recommended settings” consent in `shop-theme-editor.tsx` — verify, don’t reimplement |
+
+### Key files
+
+```
+src/components/shop-page-view.tsx   # add isCatalog branch (mirror isBroadcast)
+src/components/stream-slot.tsx      # max-h-[40vh] or similar when catalog + secondary
+src/components/shop-theme-preview.tsx
+src/lib/shop-theme.ts               # SHOP_LAYOUT_DEFAULTS.catalog (reference only)
+```
+
+### Acceptance (from spec §5.2)
+
+- First paint above fold is product imagery (scheduled + open)
+- Stream embed height capped when below grid
+- Seller bio visible when `showSellerBio` (default on for catalog)
+
+### After Phase 3
+
+Phases 4–5 remain: Drop Clock (`countdown`), The Room (`classic`), then Phase 6 QA/docs.
+
+### Before opening PR
+
+```bash
+npm run typecheck && npm run lint && npm run test && npm run build
+```
+
+Branch: `cursor/shop-layout-catalog-phase3-<suffix>`. One PR per phase; keep preview and
+buyer page in sync (comment cross-links like Phase 2).
 
 ### Infrastructure (owner — done)
 
