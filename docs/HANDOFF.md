@@ -57,46 +57,33 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–3 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog` buyer-page parity). **Next: Phase 4 — Drop Clock (`countdown`)** — see handoff section below.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. Phases 0–4 done (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, Drop Clock / `countdown` buyer-page parity). **Next: Phase 5 — The Room (`classic`)** — see handoff section below.
 
-## Shop layout archetypes — next agent (Phase 4)
+## Shop layout archetypes — next agent (Phase 5)
 
-**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §5.3 and §7 Phase 4.
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md` §5.4 and §7 Phase 5.
 
-**Baseline on `main`:** Phase 3 landed Lookbook (`catalog`) — products-first section order in
-`shop-page-view.tsx` (`isCatalog`), secondary stream band capped at ~40vh in `stream-slot.tsx`,
-reminder CTAs below slim countdown when scheduled. Mirror pattern from Phase 2 `isBroadcast`.
+**Baseline on `main`:** Phase 4 landed Drop Clock (`countdown`) — oversized hero countdown with shop name, reminder CTAs below hero, announcements pre-open / chat when open, hero shrink at `start_at` via `useShopPhase`, `WaitingRoomBanner` skipped for countdown layout.
 
-### Phase 4 scope — Drop Clock (`countdown`)
+### Phase 5 scope — The Room (`classic`)
 
 | Task | Detail |
 | ---- | ------ |
-| Hero | **Oversized countdown** + shop name; cover as backdrop |
-| Section order (scheduled) | Header → **hero countdown** → Remind me + follower CTAs → product preview → announcements |
-| Section order (open) | Clear “We’re open” state; shrink hero; products at full fidelity; chat enabled |
-| Dedup | Consolidate `WaitingRoomBanner` vs layout hero (one source of truth) |
-| Transition | Hero shrink at `start_at` via client `useShopOpen` |
-| Preview parity | `shop-theme-preview.tsx` countdown branch |
+| Header | Seller bio snippet when `showSellerBio` |
+| Layout | Confirm auction pre-bid grid in classic two-column layout |
+| Desktop | Chat sidebar min-heights |
+| Preview | Mirror in `shop-theme-preview.tsx` |
 
 ### Key files
 
 ```
 src/components/shop-page-view.tsx
-src/components/stream-slot.tsx
-src/components/waiting-room-banner.tsx
-src/components/countdown.tsx
 src/components/shop-theme-preview.tsx
 ```
 
-### Acceptance (from spec §5.3)
+### After Phase 5
 
-- Scheduled shop: countdown is the largest element in hero
-- Transition at `start_at`: hero collapses or swaps without full page reload
-- `WaitingRoomBanner` + layout hero don’t duplicate countdown awkwardly
-
-### After Phase 4
-
-Phases 5–6 remain: The Room (`classic`), then Phase 6 QA/docs.
+Phase 6 QA/docs remains.
 
 ### Before opening PR
 
@@ -104,8 +91,8 @@ Phases 5–6 remain: The Room (`classic`), then Phase 6 QA/docs.
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Branch: `cursor/shop-layout-countdown-phase4-<suffix>`. One PR per phase; keep preview and
-buyer page in sync (comment cross-links like Phases 2–3).
+Branch: `cursor/shop-layout-classic-phase5-<suffix>`. One PR per phase; keep preview and
+buyer page in sync (comment cross-links like Phases 2–4).
 
 ### Infrastructure (owner — done)
 

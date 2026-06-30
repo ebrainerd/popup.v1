@@ -131,7 +131,8 @@ function LayoutPreview({
       visual={visual}
       layout={layout}
       phase={phase}
-      large={layout === "broadcast" || layout === "countdown"}
+      large={layout === "broadcast" || (layout === "countdown" && isScheduled)}
+      shopName={shopName}
     />
   );
 
@@ -201,14 +202,38 @@ function LayoutPreview({
   }
 
   if (layout === "countdown") {
+    // Keep section order in sync with shop-page-view.tsx Drop Clock branch (§5.3).
+    const announcementsStub = isScheduled ? (
+      <div
+        className="flex min-h-[60px] flex-col rounded-lg border p-2"
+        style={{ borderColor: visual.border, background: visual.cardBackground, borderRadius: visual.radius }}
+      >
+        <p className="mb-1 text-[9px] font-medium" style={{ color: visual.mutedForeground }}>
+          Announcements
+        </p>
+        <div className="space-y-1">
+          <div className="h-1.5 w-3/4 rounded-full" style={{ background: `${visual.mutedForeground}33` }} />
+          <div className="h-1.5 w-1/2 rounded-full" style={{ background: `${visual.mutedForeground}22` }} />
+        </div>
+      </div>
+    ) : null;
+
     return (
       <div className="space-y-3">
-        {hero}
+        {!isScheduled && title}
+        <HeroBlock
+          theme={theme}
+          coverUrl={coverUrl}
+          visual={visual}
+          layout={layout}
+          phase={phase}
+          large={isScheduled}
+          shopName={shopName}
+        />
         {reminder}
-        {title}
-        {sneakPeek}
+        {isScheduled && sneakPeek}
         {productGrid}
-        {chat}
+        {isScheduled ? announcementsStub : chat}
       </div>
     );
   }
@@ -266,6 +291,7 @@ function HeroBlock({
   layout,
   phase,
   large,
+  shopName,
 }: {
   theme: ShopTheme;
   coverUrl?: string;
@@ -273,19 +299,21 @@ function HeroBlock({
   layout: ShopTheme["layout"];
   phase: ShopPreviewPhase;
   large: boolean;
+  shopName?: string;
 }) {
   if (layout === "catalog") return null;
 
   const isScheduled = phase === "scheduled";
   const isLive = phase === "live";
+  const isCountdownOpen = layout === "countdown" && phase === "open";
   const showCountdown = isScheduled;
   const showLive = isLive;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden",
-        large ? "aspect-video rounded-xl" : "aspect-[2/1] rounded-lg",
+        "relative overflow-hidden transition-[aspect-ratio] duration-700",
+        large ? "aspect-video rounded-xl" : isCountdownOpen ? "aspect-[2/1] rounded-lg" : "aspect-[2/1] rounded-lg",
         visual.heroTreatment === "frame" && "border-2 p-0.5",
       )}
       style={{
@@ -312,28 +340,39 @@ function HeroBlock({
         {showCountdown && (
           <div
             className={cn(
-              "absolute inset-0 flex flex-col bg-black/55 text-white",
+              "absolute inset-0 flex flex-col bg-black/55 text-white transition-colors duration-700",
               layout === "broadcast"
                 ? "items-start justify-end bg-gradient-to-t from-black/75 to-transparent p-3"
                 : "items-center justify-center",
+              layout === "countdown" && "bg-black/55",
             )}
           >
+            {layout === "countdown" && shopName && (
+              <p className="mb-1 text-sm font-extrabold tracking-tight sm:text-base md:text-lg">
+                {shopName.trim() || "Your shop name"}
+              </p>
+            )}
             <p
               className={cn(
                 "font-medium uppercase tracking-[0.2em] opacity-90",
                 layout === "countdown" ? "text-[10px]" : layout === "broadcast" ? "text-[8px]" : "text-[9px]",
               )}
             >
-              Opens in
+              {layout === "countdown" ? "Drop opens in" : "Opens in"}
             </p>
             <p
               className={cn(
                 "mt-1 font-extrabold tabular-nums",
-                layout === "countdown" ? "text-3xl" : layout === "broadcast" ? "text-xl" : "text-2xl",
+                layout === "countdown" ? "text-3xl sm:text-4xl" : layout === "broadcast" ? "text-xl" : "text-2xl",
               )}
             >
               02:14:08
             </p>
+          </div>
+        )}
+        {isCountdownOpen && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/25">
+            <p className="text-sm font-extrabold tracking-tight text-white sm:text-base">We&apos;re open</p>
           </div>
         )}
         {showLive && (
