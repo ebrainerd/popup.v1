@@ -572,9 +572,9 @@ function StreamChatRow({
     <div
       className={cn(
         "mb-6 grid gap-4",
-        // The Room §5.4: give the desktop chat sidebar a comfortable floor so it
-        // stays usable beside a short banner/stream without scrolling.
-        chatPanel && "lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch lg:min-h-[20rem]",
+        // The Room §5.4: on desktop the stream window and the chat sidebar share
+        // one constant row height, so they always end at exactly the same line.
+        chatPanel && "lg:h-[28rem] lg:grid-cols-[minmax(0,1fr)_340px] lg:items-stretch",
       )}
     >
       <StreamSlot
@@ -593,6 +593,7 @@ function StreamChatRow({
         hasLiveReminder={hasLiveReminder}
         liveReminderCount={liveReminderCount}
         streamPlacement={streamPlacement}
+        fillHeight={Boolean(chatPanel)}
         className="h-full"
       />
       {chatPanel && <aside className="flex min-h-0 flex-col">{chatPanel}</aside>}

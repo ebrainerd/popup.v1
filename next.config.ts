@@ -60,7 +60,7 @@ const nextConfig: NextConfig = {
       ...(supabaseHost
         ? [
             {
-              protocol: "https" as const,
+              protocol: (supabaseUrl?.startsWith("http://") ? "http" : "https") as const,
               hostname: supabaseHost,
               pathname: "/storage/v1/object/public/**",
             },

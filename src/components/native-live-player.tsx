@@ -6,13 +6,17 @@ import { Radio } from "lucide-react";
 import { useShopEvent } from "@/components/shop-room";
 import { ROOM_EVENTS, type LiveBroadcast } from "@/lib/realtime";
 import { getPublicLiveKitUrl } from "@/lib/live-stream";
+import { cn } from "@/lib/utils";
 
 export function NativeLivePlayer({
   shopId,
   initialIsLive,
+  fillHeight = false,
 }: {
   shopId: string;
   initialIsLive: boolean;
+  /** Fill the parent's height on desktop (chat-sidebar rows) instead of 16:9. */
+  fillHeight?: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const roomRef = useRef<Room | null>(null);
@@ -104,7 +108,12 @@ export function NativeLivePlayer({
   if (!isLive) return null;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-primary/60 bg-black glow-primary">
+    <div
+      className={cn(
+        "overflow-hidden rounded-xl border border-primary/60 bg-black glow-primary",
+        fillHeight && "lg:flex lg:h-full lg:flex-col",
+      )}
+    >
       <div className="flex items-center justify-between gap-2 px-4 py-2">
         <div className="flex items-center gap-2">
           <Radio className="size-4 text-live animate-live-pulse" />
@@ -118,7 +127,12 @@ export function NativeLivePlayer({
           {muted ? "Tap to unmute" : "Muted off"}
         </button>
       </div>
-      <div className="relative aspect-video w-full bg-black">
+      <div
+        className={cn(
+          "relative aspect-video w-full bg-black",
+          fillHeight && "lg:aspect-auto lg:min-h-0 lg:flex-1",
+        )}
+      >
         <div ref={containerRef} className="absolute inset-0" />
         {connecting && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-sm text-white">
