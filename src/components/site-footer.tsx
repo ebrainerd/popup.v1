@@ -22,6 +22,9 @@ export function SiteFooter() {
           <Link href={inviteOnly ? "/sell" : "/dashboard"} className="hover:text-foreground">
             {inviteOnly ? "Create shop" : "Sell"}
           </Link>
+          <Link href="/support" className="hover:text-foreground">
+            Support
+          </Link>
           <Link href="/legal/terms" className="hover:text-foreground">
             Terms
           </Link>

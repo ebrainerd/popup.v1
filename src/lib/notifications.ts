@@ -60,7 +60,12 @@ async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise
 }
 
 /** Send one email via Resend. Returns false when skipped; throws on API failure. */
-async function sendResendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendResendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  options?: { replyTo?: string },
+): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || !to) return false;
   const from = process.env.RESEND_FROM?.trim();
@@ -78,7 +83,13 @@ async function sendResendEmail(to: string, subject: string, html: string): Promi
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to, subject, html }),
+    body: JSON.stringify({
+      from,
+      to,
+      subject,
+      html,
+      ...(options?.replyTo ? { reply_to: options.replyTo } : {}),
+    }),
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -260,6 +271,35 @@ function formatShippingAddress(raw: unknown): string | null {
  * Email both buyer and seller when an order is placed. Fire-and-forget:
  * never throws; no-ops if email isn't configured.
  */
+const SUPPORT_INBOX = "support@popupdrop.co";
+
+/** Email the owner about a new support ticket (best-effort). */
+export async function notifySupportTicket(ticket: {
+  id: string;
+  email: string;
+  topic: string;
+  message: string;
+  username?: string | null;
+}): Promise<void> {
+  try {
+    await sendResendEmail(
+      SUPPORT_INBOX,
+      `Support ticket (${ticket.topic}) — #${ticket.id.slice(0, 8)}`,
+      `<h2>New support ticket</h2>
+       <p><strong>From:</strong> ${escapeHtml(ticket.email)}${
+         ticket.username ? ` (@${escapeHtml(ticket.username)})` : ""
+       }</p>
+       <p><strong>Topic:</strong> ${escapeHtml(ticket.topic)}</p>
+       <p style="white-space:pre-wrap">${escapeHtml(ticket.message)}</p>
+       <p>Reply to this email to answer them directly.</p>`,
+      { replyTo: ticket.email },
+    );
+  } catch (err) {
+    console.error("notifySupportTicket failed", err);
+    Sentry.captureException(err, { tags: { area: "support_ticket_email" } });
+  }
+}
+
 export async function notifyOrderPlaced(orderId: string): Promise<void> {
   try {
     if (!process.env.RESEND_API_KEY) return;

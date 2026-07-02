@@ -29,3 +29,4 @@ grant update (status, tracking_number, carrier, shipped_at, received_at, deliver
   on table public.orders to authenticated;
 revoke all on function public.decrement_stock(uuid, integer) from public, anon, authenticated;
 grant execute on function public.decrement_stock(uuid, integer) to service_role;
+revoke all on table public.support_tickets from anon, authenticated;
