@@ -63,7 +63,18 @@ async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise
 async function sendResendEmail(to: string, subject: string, html: string): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || !to) return false;
-  const from = process.env.RESEND_FROM || "PopUp <onboarding@resend.dev>";
+  const from = process.env.RESEND_FROM?.trim();
+  if (!from) {
+    // Without a verified-domain sender, Resend's sandbox address can only
+    // email the account owner (403 for everyone else) — skip and alert
+    // instead of half-working.
+    console.error("RESEND_FROM is not set; skipping email", { subject });
+    Sentry.captureMessage("RESEND_FROM missing — transactional emails are being skipped", {
+      level: "warning",
+      tags: { area: "notifications" },
+    });
+    return false;
+  }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },

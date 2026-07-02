@@ -1,9 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CircleStop } from "lucide-react";
+import { CircleStop, TriangleAlert } from "lucide-react";
 import { endShop } from "@/app/dashboard/actions";
+import {
+  getPendingAuctionSummary,
+  type PendingAuctionSummary,
+} from "@/app/shop/auction-actions";
 import { useNow } from "@/components/countdown";
 import { Button } from "@/components/ui/button";
 import { deriveShopStatus, formatDurationMs } from "@/lib/utils";
@@ -32,6 +36,22 @@ export function CloseShopDialog({
   const now = useNow();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [auctionSummary, setAuctionSummary] = useState<PendingAuctionSummary | null>(null);
+
+  // Check for unfinished auction lots each time the dialog opens, so the
+  // seller is warned before cutting off a winner's checkout window.
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    getPendingAuctionSummary(shopId)
+      .then((summary) => {
+        if (!cancelled) setAuctionSummary(summary);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [open, shopId]);
 
   if (!open) return null;
 
@@ -103,6 +123,8 @@ export function CloseShopDialog({
           </div>
         )}
 
+        <PendingAuctionWarning summary={auctionSummary} />
+
         {error && <p className="mt-3 text-sm text-live">{error}</p>}
 
         <div className="mt-6 flex justify-end gap-2">
@@ -110,10 +132,64 @@ export function CloseShopDialog({
             Cancel
           </Button>
           <Button variant="destructive" onClick={confirm} disabled={pending}>
-            {pending ? "Closing…" : "Close shop"}
+            {pending
+              ? "Closing…"
+              : hasPendingAuctions(auctionSummary)
+                ? "Close anyway"
+                : "Close shop"}
           </Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function hasPendingAuctions(summary: PendingAuctionSummary | null): boolean {
+  if (!summary) return false;
+  return summary.live > 0 || summary.awaitingPayment > 0 || summary.queuedWithBids > 0;
+}
+
+function PendingAuctionWarning({ summary }: { summary: PendingAuctionSummary | null }) {
+  if (!hasPendingAuctions(summary) || !summary) return null;
+
+  const risks: string[] = [];
+  if (summary.awaitingPayment > 0) {
+    risks.push(
+      summary.awaitingPayment === 1
+        ? "An auction winner hasn't paid yet. Winners can't check out after the shop closes, so you'd lose that sale."
+        : `${summary.awaitingPayment} auction winners haven't paid yet. Winners can't check out after the shop closes, so you'd lose those sales.`,
+    );
+  }
+  if (summary.live > 0) {
+    risks.push(
+      summary.live === 1
+        ? "An auction is live right now. Its winner won't be able to pay once the shop is closed."
+        : `${summary.live} auctions are live right now. Their winners won't be able to pay once the shop is closed.`,
+    );
+  }
+  if (summary.queuedWithBids > 0) {
+    risks.push(
+      summary.queuedWithBids === 1
+        ? "A queued lot already has pre-bids that will never run."
+        : `${summary.queuedWithBids} queued lots already have pre-bids that will never run.`,
+    );
+  }
+
+  return (
+    <div className="mt-3 space-y-2 rounded-lg border border-highlight/40 bg-highlight/10 p-3 text-sm">
+      <p className="flex items-center gap-1.5 font-semibold text-foreground">
+        <TriangleAlert className="size-4 text-highlight" />
+        Auctions still pending
+      </p>
+      {risks.map((risk) => (
+        <p key={risk} className="text-muted-foreground">
+          {risk}
+        </p>
+      ))}
+      <p className="text-muted-foreground">
+        Safest move: wait until pending winners finish checkout (each has a 30-minute window)
+        before closing.
+      </p>
     </div>
   );
 }

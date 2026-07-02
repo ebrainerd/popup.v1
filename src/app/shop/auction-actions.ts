@@ -111,6 +111,34 @@ export async function expireAuctionPayment(
   return { ok: true, expired: Boolean(data) };
 }
 
+export type PendingAuctionSummary = {
+  live: number;
+  awaitingPayment: number;
+  queuedWithBids: number;
+  queued: number;
+};
+
+/** Unfinished auction lots for a shop, used to warn before closing early. */
+export async function getPendingAuctionSummary(
+  shopId: string,
+): Promise<PendingAuctionSummary> {
+  const { supabase } = await requireUser();
+  const { data } = await supabase
+    .from("auction_runs")
+    .select("status, bid_count")
+    .eq("shop_id", shopId)
+    .in("status", ["queued", "live", "awaiting_payment"]);
+
+  const summary: PendingAuctionSummary = { live: 0, awaitingPayment: 0, queuedWithBids: 0, queued: 0 };
+  for (const run of data ?? []) {
+    if (run.status === "live") summary.live += 1;
+    else if (run.status === "awaiting_payment") summary.awaitingPayment += 1;
+    else if (run.bid_count > 0) summary.queuedWithBids += 1;
+    else summary.queued += 1;
+  }
+  return summary;
+}
+
 export type AuctionBidState = {
   run: AuctionRun;
   nextMinimumBid: number;
