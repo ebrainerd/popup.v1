@@ -44,6 +44,7 @@ export function StreamSlot({
   hasLiveReminder,
   liveReminderCount,
   streamPlacement = "primary",
+  fillHeight = false,
   className,
 }: {
   shop: Shop;
@@ -61,6 +62,12 @@ export function StreamSlot({
   hasLiveReminder: boolean;
   liveReminderCount: number;
   streamPlacement?: "primary" | "secondary";
+  /**
+   * Fill the parent's fixed height on desktop instead of using an aspect
+   * ratio, so the stream window always matches the chat sidebar exactly
+   * (The Room layout). Mobile keeps the aspect-ratio sizing.
+   */
+  fillHeight?: boolean;
   className?: string;
 }) {
   const [isLive, setIsLive] = useState(initialIsLive);
@@ -117,6 +124,7 @@ export function StreamSlot({
             "relative w-full overflow-hidden bg-muted",
             wideHero ? "aspect-video rounded-xl" : "aspect-[16/6] rounded-2xl",
             catalogSecondary && "aspect-[21/9]",
+            fillHeight && "lg:aspect-auto lg:h-full",
           )}
         >
           {showCoverBehind && (
@@ -160,14 +168,24 @@ export function StreamSlot({
   return (
     <div className={cn("min-w-0", className, secondaryBandClass)}>
       {showNativeLive && (
-        <div className={cn(catalogSecondary && "max-h-[40vh] overflow-hidden rounded-xl")}>
-          <NativeLivePlayer shopId={shop.id} initialIsLive={isLive} />
+        <div
+          className={cn(
+            catalogSecondary && "max-h-[40vh] overflow-hidden rounded-xl",
+            fillHeight && "lg:h-full",
+          )}
+        >
+          <NativeLivePlayer shopId={shop.id} initialIsLive={isLive} fillHeight={fillHeight} />
         </div>
       )}
 
       {showExternalLive && embed && (
-        <div className={cn(catalogSecondary && "max-h-[40vh] overflow-hidden rounded-xl")}>
-          <LiveEmbedPlayer embed={embed} />
+        <div
+          className={cn(
+            catalogSecondary && "max-h-[40vh] overflow-hidden rounded-xl",
+            fillHeight && "lg:h-full",
+          )}
+        >
+          <LiveEmbedPlayer embed={embed} fillHeight={fillHeight} />
         </div>
       )}
 
@@ -188,6 +206,7 @@ export function StreamSlot({
           catalogSecondary={catalogSecondary}
           wideHero={wideHero}
           countdownOpen={isCountdown && effectiveOpen}
+          fillHeight={fillHeight}
         />
       )}
     </div>
@@ -211,6 +230,7 @@ function StreamCover({
   wideHero = layout === "broadcast" || showNative,
   countdownOpen = false,
   fillParent = false,
+  fillHeight = false,
 }: {
   shop: Shop;
   layout: ShopTheme["layout"];
@@ -228,6 +248,7 @@ function StreamCover({
   wideHero?: boolean;
   countdownOpen?: boolean;
   fillParent?: boolean;
+  fillHeight?: boolean;
 }) {
   const slimCountdown = broadcastScheduled || catalogSecondary;
 
@@ -247,6 +268,7 @@ function StreamCover({
                   ? "aspect-[21/9] rounded-xl"
                   : "aspect-[16/6] rounded-2xl"),
         catalogSecondary && !fillParent && "max-h-[40vh]",
+        fillHeight && !fillParent && "lg:aspect-auto lg:h-full",
       )}
     >
       {shop.cover_url ? (
