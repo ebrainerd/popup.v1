@@ -91,6 +91,11 @@ export type AuctionStartedBroadcast = {
   startingBid: number;
   endsAt: string;
   suddenDeath: boolean;
+  /** Carry-over from pre-bids so clients don't reset live bid state to zero. */
+  currentBid: number;
+  bidCount: number;
+  nextMinimumBid: number;
+  currentWinnerId: string | null;
 };
 
 export type AuctionQueuedBroadcast = {
