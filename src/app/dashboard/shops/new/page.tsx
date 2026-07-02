@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { FreshShopWizard } from "@/components/fresh-shop-wizard";
-import { ShopSetupWizard } from "@/components/shop-setup-wizard";
+import { ShopStudio } from "@/components/studio/shop-studio";
 
 export const metadata: Metadata = { title: "Create shop" };
 
@@ -8,7 +8,7 @@ export default async function NewShopPage() {
   return (
     <>
       <FreshShopWizard />
-      <ShopSetupWizard />
+      <ShopStudio />
     </>
   );
 }
