@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Store, Star, DollarSign, CalendarDays, PackageOpen, ShoppingBag } from "lucide-react";
+import {
+  Plus,
+  Store,
+  Star,
+  DollarSign,
+  CalendarDays,
+  ExternalLink,
+  PackageOpen,
+  ShoppingBag,
+} from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
 import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
@@ -54,6 +63,14 @@ export default async function DashboardPage() {
           <p className="text-muted-foreground">Manage your drops and orders.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {payoutsConnected && (
+            <Button asChild variant="outline" className="rounded-full">
+              {/* Opens the Stripe Express dashboard (balance, payouts, bank). */}
+              <a href="/api/stripe/express-login" target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-4" /> Stripe payouts
+              </a>
+            </Button>
+          )}
           <Button asChild variant="outline" className="rounded-full">
             <Link href="/dashboard/sales">
               <ShoppingBag className="size-4" /> Sales
