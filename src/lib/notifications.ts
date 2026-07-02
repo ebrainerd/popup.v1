@@ -371,6 +371,98 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
 }
 
 /** Email the buyer that their order shipped, with tracking. Best-effort. */
+/** Tell the seller the buyer confirmed delivery (best-effort). */
+export async function notifyReceiptConfirmed(orderId: string): Promise<void> {
+  try {
+    const supabase = createServiceRoleClient();
+    const { data: order } = await supabase
+      .from("orders")
+      .select(
+        `id, released_at,
+         product:products!orders_product_id_fkey(title),
+         shop:shops!orders_shop_id_fkey(name, seller_id)`,
+      )
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+
+    const o = order as unknown as {
+      id: string;
+      released_at: string | null;
+      product: { title: string } | null;
+      shop: { name: string; seller_id: string } | null;
+    };
+    if (!o.shop) return;
+
+    const sellerEmail = await emailForUser(o.shop.seller_id);
+    if (!sellerEmail) return;
+
+    const itemTitle = escapeHtml(o.product?.title ?? "your item");
+    const site = getSiteUrl();
+    await sendResendEmail(
+      sellerEmail,
+      `Delivery confirmed — ${itemTitle}`,
+      `<h2>Your buyer got their order 🎉</h2>
+       <p>The buyer confirmed delivery of <strong>${itemTitle}</strong>
+       (order <strong>#${o.id.slice(0, 8)}</strong>) from <strong>${escapeHtml(o.shop.name)}</strong>.</p>
+       ${
+         o.released_at
+           ? "<p>Your funds for this order have been released to your Stripe account.</p>"
+           : "<p>Your funds release automatically after the payout hold.</p>"
+       }
+       <p>Track it in your <a href="${site}/dashboard/sales">Sales</a>.</p>`,
+    );
+  } catch (err) {
+    console.error("notifyReceiptConfirmed failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
+  }
+}
+
+/** Tell the seller their funds were transferred to Stripe (best-effort). */
+export async function notifyFundsReleased(orderId: string, amountCents: number): Promise<void> {
+  try {
+    const supabase = createServiceRoleClient();
+    const { data: order } = await supabase
+      .from("orders")
+      .select(
+        `id,
+         product:products!orders_product_id_fkey(title),
+         shop:shops!orders_shop_id_fkey(name, seller_id)`,
+      )
+      .eq("id", orderId)
+      .maybeSingle();
+    if (!order) return;
+
+    const o = order as unknown as {
+      id: string;
+      product: { title: string } | null;
+      shop: { name: string; seller_id: string } | null;
+    };
+    if (!o.shop) return;
+
+    const sellerEmail = await emailForUser(o.shop.seller_id);
+    if (!sellerEmail) return;
+
+    const itemTitle = escapeHtml(o.product?.title ?? "your item");
+    const amount = (amountCents / 100).toLocaleString("en-US", {
+      style: "currency",
+      currency: "USD",
+    });
+    await sendResendEmail(
+      sellerEmail,
+      `You got paid — ${amount} for ${itemTitle}`,
+      `<h2>Cha-ching! 💸</h2>
+       <p><strong>${amount}</strong> for <strong>${itemTitle}</strong>
+       (order <strong>#${o.id.slice(0, 8)}</strong>) was just released to your Stripe account.</p>
+       <p>Stripe deposits it to your bank on your payout schedule — see the timing in your
+       <a href="${getSiteUrl()}/api/stripe/express-login">Stripe dashboard</a>.</p>`,
+    );
+  } catch (err) {
+    console.error("notifyFundsReleased failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
+  }
+}
+
 export async function notifyOrderShipped(orderId: string): Promise<void> {
   try {
     if (!process.env.RESEND_API_KEY) return;

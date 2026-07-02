@@ -76,6 +76,11 @@ export async function releaseOrderFunds(
       .from("orders")
       .update({ transfer_id: transfer.id, released_at: new Date().toISOString() })
       .eq("id", order.id);
+
+    // Tell the seller their money moved (best-effort, never blocks release).
+    const { notifyFundsReleased } = await import("@/lib/notifications");
+    await notifyFundsReleased(order.id, amount);
+
     return { released: true };
   } catch (err) {
     console.error("releaseOrderFunds failed", err);

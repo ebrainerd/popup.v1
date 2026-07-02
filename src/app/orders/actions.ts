@@ -84,6 +84,10 @@ export async function confirmReceipt(orderId: string): Promise<OrderActionState>
 
   await releaseOrderFunds(orderId);
 
+  // Let the seller know their buyer confirmed delivery (best-effort).
+  const { notifyReceiptConfirmed } = await import("@/lib/notifications");
+  await notifyReceiptConfirmed(orderId);
+
   revalidatePath("/orders");
   return { ok: true };
 }

@@ -31,6 +31,13 @@ export const metadata: Metadata = {
     description:
       "Everything you need to run a timed pop-up shop, in one link.",
     type: "website",
+    images: [{ url: "/og.jpg", width: 1200, height: 630, alt: "PopUp — your shop, one link." }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PopUp: Pop up. Sell out.",
+    description: "Everything you need to run a timed pop-up shop, in one link.",
+    images: ["/og.jpg"],
   },
 };
 
