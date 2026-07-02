@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   description:
     "Everything you need to run a timed pop-up shop, in one link.",
   applicationName: "PopUp",
+  icons: {
+    icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
+  },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
