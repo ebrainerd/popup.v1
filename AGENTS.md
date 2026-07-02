@@ -31,8 +31,8 @@ Startup (these are service-start steps, intentionally NOT in the update script):
    - `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = the `ANON_KEY` from `supabase status`
    - `SUPABASE_SERVICE_ROLE_KEY` = the `SERVICE_ROLE_KEY` from `supabase status`
-   The default local keys are deterministic across runs, so a committed-style
-   `.env.local` keeps working after restarts.
+     The default local keys are deterministic across runs, so a committed-style
+     `.env.local` keeps working after restarts.
 4. `npm run dev` (Next.js dev server on http://localhost:3000).
 
 ### Non-obvious gotcha: injected Cloud secrets override `.env.local`
@@ -104,3 +104,7 @@ recordings, etc.) as a matter of course. Rely on `npm run typecheck`,
 spin up the browser / dev server for manual GUI testing when it is genuinely
 necessary to validate a change (e.g. complex interactive UI behavior that
 automated checks cannot cover), and prefer the lightest sufficient check.
+
+Use Fable for planning and coordination. For anything you can scope into a clean subtask, start a Composer 2.5 subagent.
+Give each subagent a clear goal, the relevant context, and what to bring back. Don't have them invent the plan. Run independent pieces in parallel.
+When they return, review the results before you merge anything. If something's off, rewrite the brief and spin another, don't silently patch over it yourself unless it's trivial.
