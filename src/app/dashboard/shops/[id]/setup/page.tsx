@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { ShopSetupWizard } from "@/components/shop-setup-wizard";
+import { ShopStudio } from "@/components/studio/shop-studio";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
 import { shopToWizardDraft } from "@/lib/shop-wizard";
@@ -18,5 +18,5 @@ export default async function ShopSetupPage({ params }: { params: Promise<{ id: 
     redirect(`/dashboard/shops/${id}`);
   }
 
-  return <ShopSetupWizard shopId={id} initialDraft={shopToWizardDraft(shop, shop.products)} />;
+  return <ShopStudio shopId={id} initialDraft={shopToWizardDraft(shop, shop.products)} />;
 }
