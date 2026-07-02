@@ -2,8 +2,13 @@ import type { NextConfig } from "next";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 let supabaseHost: string | undefined;
+let supabaseProtocol: "http" | "https" = "https";
 try {
-  supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : undefined;
+  const parsed = supabaseUrl ? new URL(supabaseUrl) : undefined;
+  supabaseHost = parsed?.hostname;
+  // A local Supabase stack (http://127.0.0.1:54321) serves storage over http;
+  // hosted projects are always https.
+  supabaseProtocol = parsed?.protocol === "http:" ? "http" : "https";
 } catch {
   supabaseHost = undefined;
 }
@@ -53,6 +58,10 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers }];
   },
   images: {
+    // The local Supabase stack serves storage from 127.0.0.1, which Next's
+    // image optimizer blocks by default (SSRF guard). Only relax this when
+    // the configured Supabase URL is a local http stack, never in production.
+    ...(supabaseProtocol === "http" ? { dangerouslyAllowLocalIP: true } : {}),
     remotePatterns: [
       // Supabase Storage public objects — match the configured project host and,
       // as a robust fallback (e.g. if the build-time env is absent), any
@@ -60,8 +69,9 @@ const nextConfig: NextConfig = {
       ...(supabaseHost
         ? [
             {
-              protocol: (supabaseUrl?.startsWith("http://") ? "http" : "https") as const,
+              protocol: supabaseProtocol,
               hostname: supabaseHost,
+              port: supabaseHost === "127.0.0.1" || supabaseHost === "localhost" ? "54321" : "",
               pathname: "/storage/v1/object/public/**",
             },
           ]
