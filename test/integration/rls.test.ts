@@ -202,7 +202,9 @@ describe.skipIf(!enabled)("Row Level Security", () => {
       .update({ status: "scheduled" })
       .eq("id", shop!.id);
 
-    await sellerClient.from("drop_reminders").insert({
+    // Reminders are self-managed ("Users manage own drop reminders"), so the
+    // buyer creates their own row.
+    await buyerClient.from("drop_reminders").insert({
       shop_id: shop!.id,
       user_id: buyerId,
       email_enabled: true,
@@ -298,7 +300,22 @@ describe.skipIf(!enabled)("Row Level Security", () => {
 
     await sellerClient.from("shops").update({ status: "open" }).eq("id", shop!.id);
 
-    const { data: order } = await buyerClient
+    // Buyers can no longer insert orders directly (webhook/service_role only,
+    // 0025_security_hardening.sql).
+    const buyerInsert = await buyerClient
+      .from("orders")
+      .insert({
+        buyer_id: buyerId,
+        shop_id: shop!.id,
+        product_id: product!.id,
+        amount_paid: 500,
+        status: "paid",
+      })
+      .select("id")
+      .single();
+    expect(buyerInsert.error).not.toBeNull();
+
+    const { data: order } = await admin
       .from("orders")
       .insert({
         buyer_id: buyerId,
@@ -317,5 +334,56 @@ describe.skipIf(!enabled)("Row Level Security", () => {
       stars: 5,
     });
     expect(error).not.toBeNull();
+  });
+
+  it("blocks buyers from tampering with order amounts", async () => {
+    const { data: shop } = await sellerClient
+      .from("shops")
+      .insert({
+        seller_id: sellerId,
+        name: "Tamper shop",
+        start_at: pastIso(1),
+        end_at: futureIso(2),
+        visibility: "public",
+        status: "draft",
+      })
+      .select("id")
+      .single();
+    const { data: product } = await sellerClient
+      .from("products")
+      .insert({ shop_id: shop!.id, title: "Widget", price: 500 })
+      .select("id")
+      .single();
+    await sellerClient.from("shops").update({ status: "open" }).eq("id", shop!.id);
+    const { data: order } = await admin
+      .from("orders")
+      .insert({
+        buyer_id: buyerId,
+        shop_id: shop!.id,
+        product_id: product!.id,
+        amount_paid: 500,
+        status: "paid",
+      })
+      .select("id")
+      .single();
+
+    // Money columns are not updatable by authenticated clients (column grant).
+    const tamper = await buyerClient
+      .from("orders")
+      .update({ amount_paid: 1 })
+      .eq("id", order!.id);
+    expect(tamper.error).not.toBeNull();
+
+    // Buyers may still confirm receipt of their own order.
+    const confirm = await buyerClient
+      .from("orders")
+      .update({
+        status: "received",
+        received_at: new Date().toISOString(),
+        delivered_at: new Date().toISOString(),
+      })
+      .eq("id", order!.id)
+      .eq("buyer_id", buyerId);
+    expect(confirm.error).toBeNull();
   });
 });
