@@ -120,7 +120,7 @@ Goal: let proof recruit the next cohort.
 | `marketing/assets/ig_launch_post.webp` | Square claymation launch/announcement post |
 | `marketing/assets/story_founding_seller.webp` | 1080x1920 claymation story for founding-seller recruitment |
 | `marketing/assets/og_banner.webp` | Wide claymation banner (X header, YouTube, deck cover) |
-| `public/og.jpg` | Automatic link-preview card on every shared URL |
+| `public/og.jpg` | Automatic link-preview card on every shared URL (uses the app-experience shot; bump the `?v=` in `layout.tsx` when replacing) |
 
 The product shots were made by staging a real shop locally (seeded products,
 sold-out items, live chat, streaming cover), screenshotting the actual UI, and
