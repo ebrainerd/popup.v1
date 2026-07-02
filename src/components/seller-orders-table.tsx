@@ -59,6 +59,7 @@ function OrderRow({ order }: { order: SellerOrder }) {
         <span>{formatCurrency(order.amount_paid)}</span>
       </div>
       <p className="text-xs text-muted-foreground">
+        {order.shop?.name ? `${order.shop.name} · ` : ""}
         {buyerName}
         {address?.address?.city ? ` · ${address.address.city}, ${address.address.state ?? ""}` : ""}
       </p>

@@ -482,6 +482,28 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["live_reminders"]["Insert"]>;
         Relationships: [];
       };
+      support_tickets: {
+        Row: {
+          id: string;
+          user_id: string | null;
+          email: string;
+          topic: "order" | "payment" | "shop" | "bug" | "other";
+          message: string;
+          status: "open" | "resolved";
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id?: string | null;
+          email: string;
+          topic: "order" | "payment" | "shop" | "bug" | "other";
+          message: string;
+          status?: "open" | "resolved";
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["support_tickets"]["Insert"]>;
+        Relationships: [];
+      };
       shop_announcements: {
         Row: {
           id: string;
