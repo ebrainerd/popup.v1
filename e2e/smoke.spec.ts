@@ -42,7 +42,8 @@ test("unknown shop returns the 404 page", async ({ page }) => {
 test("header has no marketing nav links on mobile", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: /open menu/i })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "How it works" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "About" })).toHaveCount(0);
+  const header = page.locator("header");
+  await expect(header.getByRole("button", { name: /open menu/i })).toHaveCount(0);
+  await expect(header.getByRole("link", { name: "How it works" })).toHaveCount(0);
+  await expect(header.getByRole("link", { name: "About" })).toHaveCount(0);
 });
