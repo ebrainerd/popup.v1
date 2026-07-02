@@ -1,39 +1,26 @@
 "use client";
 
-import { useState } from "react";
 import { Check, RotateCcw } from "lucide-react";
 import {
   SHOP_BACKGROUND_META,
   SHOP_BACKGROUND_STYLES,
-  SHOP_LAYOUT_DEFAULTS,
-  SHOP_LAYOUT_MODE_META,
-  SHOP_LAYOUT_MODES,
   SHOP_THEME_PRESET_META,
   SHOP_THEME_PRESETS,
   presetAccent,
-  recommendedThemeForLayout,
   validateShopThemeContrast,
-  type ShopLayoutMode,
   type ShopTheme,
   type ShopThemePreset,
 } from "@/lib/shop-theme";
-import { Button } from "@/components/ui/button";
 import { PanelSection, PanelToggleRow, Segmented } from "@/components/studio/panel-ui";
 import { cn } from "@/lib/utils";
 
 /** Quick accent swatches: brand colors plus each preset's signature accent. */
 const ACCENT_SWATCHES = ["#ff3b8b", "#00e6c8", "#ffd60a", "#2d4ff2", "#e4572e", "#16a34a"];
 
-function recommendedSummary(layout: ShopLayoutMode): string {
-  const defaults = SHOP_LAYOUT_DEFAULTS[layout];
-  const parts: string[] = [];
-  if (defaults.preset) parts.push(`${SHOP_THEME_PRESET_META[defaults.preset].label} theme`);
-  if (typeof defaults.showChat === "boolean") parts.push(defaults.showChat ? "chat on" : "chat off");
-  if (defaults.productGridColumns) parts.push(`${defaults.productGridColumns}-column grid`);
-  return parts.join(", ");
-}
-
-/** Theme/layout controls for the studio side panel (no preview: the canvas has it). */
+/**
+ * Theme controls for the studio side panel (no preview: the canvas has it).
+ * Every shop uses The Room layout, so there is no layout picker.
+ */
 export function StudioStylePanel({
   theme,
   onChange,
@@ -41,7 +28,6 @@ export function StudioStylePanel({
   theme: ShopTheme;
   onChange: (theme: ShopTheme) => void;
 }) {
-  const [pendingRecommend, setPendingRecommend] = useState<ShopLayoutMode | null>(null);
   const contrastWarnings = validateShopThemeContrast(theme);
 
   function patch(partial: Partial<ShopTheme>) {
@@ -50,12 +36,6 @@ export function StudioStylePanel({
 
   function selectPreset(preset: ShopThemePreset) {
     onChange({ ...theme, preset, accent: presetAccent(preset) });
-  }
-
-  function selectLayout(layout: ShopLayoutMode) {
-    if (layout === theme.layout) return;
-    patch({ layout });
-    setPendingRecommend(layout);
   }
 
   return (
@@ -104,73 +84,6 @@ export function StudioStylePanel({
             ))}
           </div>
         )}
-      </PanelSection>
-
-      <PanelSection
-        title="Layout"
-        description="How your shop page is arranged. Pick the one that matches how you sell."
-      >
-        <div className="space-y-2">
-          {SHOP_LAYOUT_MODES.map((id) => {
-            const layout = SHOP_LAYOUT_MODE_META[id];
-            const active = theme.layout === id;
-            return (
-              <div
-                key={id}
-                className={cn(
-                  "rounded-xl border transition-all",
-                  active
-                    ? "border-primary bg-primary/5 ring-2 ring-primary/40"
-                    : "border-border hover:border-primary/40",
-                )}
-              >
-                <button
-                  type="button"
-                  onClick={() => selectLayout(id)}
-                  aria-pressed={active}
-                  className="w-full px-3 py-2.5 text-left"
-                >
-                  <span className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold">{layout.label}</span>
-                    <span className="text-[11px] font-medium text-primary">{layout.tagline}</span>
-                  </span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
-                    {layout.bestFor}
-                  </span>
-                </button>
-                {pendingRecommend === id && active && (
-                  <div className="border-t border-primary/20 px-3 py-2.5 text-xs">
-                    <p>
-                      Use the recommended settings for {layout.label}? ({recommendedSummary(id)})
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        className="h-7 rounded-full px-3 text-xs"
-                        onClick={() => {
-                          onChange(recommendedThemeForLayout(id, theme));
-                          setPendingRecommend(null);
-                        }}
-                      >
-                        Apply
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 rounded-full px-3 text-xs"
-                        onClick={() => setPendingRecommend(null)}
-                      >
-                        Keep my settings
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
       </PanelSection>
 
       <PanelSection

@@ -24,7 +24,11 @@ export function ShopCustomizeStudio({
   products: Product[];
 }) {
   const router = useRouter();
-  const initialTheme = useMemo(() => parseShopTheme(shop.shop_theme), [shop.shop_theme]);
+  // Every shop uses The Room layout; older themes are coerced on load.
+  const initialTheme = useMemo<ShopTheme>(
+    () => ({ ...parseShopTheme(shop.shop_theme), layout: "classic" }),
+    [shop.shop_theme],
+  );
   const [theme, setTheme] = useState<ShopTheme>(initialTheme);
   const [savedTheme, setSavedTheme] = useState<ShopTheme>(initialTheme);
   const [phase, setPhase] = useState<ShopPreviewPhase>("open");

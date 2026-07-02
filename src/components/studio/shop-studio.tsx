@@ -81,7 +81,12 @@ export function ShopStudio({
 
   useEffect(() => {
     queueMicrotask(() => {
-      const base = initialDraft ?? defaultWizardDraft();
+      const loaded = initialDraft ?? defaultWizardDraft();
+      // Every shop uses The Room layout; older drafts are coerced on load.
+      const base: ShopWizardDraft = {
+        ...loaded,
+        theme: { ...loaded.theme, layout: "classic" },
+      };
       setDraft(base);
       setLastSaved(JSON.stringify(wizardDraftToSavePayload(base)));
       setHydrated(true);
