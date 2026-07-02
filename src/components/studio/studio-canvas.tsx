@@ -34,6 +34,7 @@ export function StudioCanvas({
   viewport,
   onViewportChange,
   className,
+  "data-tour": dataTour,
 }: {
   theme: ShopTheme;
   shopName: string;
@@ -44,9 +45,10 @@ export function StudioCanvas({
   viewport: StudioViewport;
   onViewportChange: (viewport: StudioViewport) => void;
   className?: string;
+  "data-tour"?: string;
 }) {
   return (
-    <div className={cn("relative flex min-h-0 flex-1 flex-col", className)}>
+    <div className={cn("relative flex min-h-0 flex-1 flex-col", className)} data-tour={dataTour}>
       {/* Dotted work surface */}
       <div
         aria-hidden

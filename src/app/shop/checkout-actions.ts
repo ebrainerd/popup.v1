@@ -227,6 +227,10 @@ export async function createAuctionCheckoutSession(auctionId: string): Promise<C
   if (run.current_winner_id !== user.id) {
     return { ok: false, error: "Only the winning bidder can checkout." };
   }
+  if (run.checkout_expires_at && new Date(run.checkout_expires_at).getTime() <= Date.now()) {
+    await supabase.rpc("expire_due_auction_payment", { p_auction_id: auctionId });
+    return { ok: false, error: "The 30-minute checkout window has passed." };
+  }
 
   const { data: product } = await supabase
     .from("products")

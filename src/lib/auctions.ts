@@ -30,7 +30,7 @@ function pickPrimaryAuctionRun(
   })[0];
 }
 
-/** Queue all pre-bid-eligible auction lots when the shop is open (idempotent). */
+/** Queue all pre-bid-eligible auction lots for a published shop (idempotent). */
 export async function autoQueueShopAuctions(shopId: string): Promise<number> {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("auto_queue_shop_auctions", {
@@ -41,6 +41,30 @@ export async function autoQueueShopAuctions(shopId: string): Promise<number> {
     return 0;
   }
   return Number(data ?? 0);
+}
+
+/**
+ * Opportunistically expire unpaid auction wins whose 30-minute checkout
+ * window has lapsed (webhooks only cover winners who opened Stripe checkout).
+ * Runs on shop page load; the RPC is deadline-guarded so this is safe for
+ * any viewer session.
+ */
+export async function expireDueAuctionPayments(shopId: string): Promise<void> {
+  const supabase = await createClient();
+  const { data: dueRuns } = await supabase
+    .from("auction_runs")
+    .select("id")
+    .eq("shop_id", shopId)
+    .eq("status", "awaiting_payment")
+    .lte("checkout_expires_at", new Date().toISOString());
+  if (!dueRuns?.length) return;
+
+  for (const run of dueRuns) {
+    const { error } = await supabase.rpc("expire_due_auction_payment", {
+      p_auction_id: run.id,
+    });
+    if (error) console.error("expireDueAuctionPayments error", error.message);
+  }
 }
 
 export async function getShopAuctionRuns(shopId: string): Promise<AuctionRunWithProduct[]> {

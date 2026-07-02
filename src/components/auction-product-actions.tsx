@@ -110,6 +110,8 @@ export function AuctionProductActions({
     setEnded(null);
     setState((prev) => {
       if (!prev || prev.run.product_id !== product.id) return prev;
+      // Pre-bids carry over into the live round: keep bid state and the
+      // viewer's own max bid instead of resetting to zero.
       return {
         ...prev,
         run: {
@@ -117,13 +119,11 @@ export function AuctionProductActions({
           id: p.auctionId,
           status: "live",
           ends_at: p.endsAt,
-          current_bid: p.startingBid,
-          bid_count: 0,
-          current_winner_id: null,
+          current_bid: p.currentBid ?? prev.run.current_bid,
+          bid_count: p.bidCount ?? prev.run.bid_count,
+          current_winner_id: p.currentWinnerId ?? prev.run.current_winner_id,
         },
-        nextMinimumBid: p.startingBid,
-        viewerState: "none",
-        yourMaxBid: null,
+        nextMinimumBid: p.nextMinimumBid ?? prev.nextMinimumBid,
       };
     });
   });
@@ -228,9 +228,15 @@ export function AuctionProductActions({
   const isQueued = run?.status === "queued";
   const isAwaiting =
     run?.status === "awaiting_payment" || ended?.status === "awaiting_payment";
-  const viewerWon = isAwaiting && userId === (ended?.winnerId ?? run?.current_winner_id);
-  const allowBids =
-    Boolean(run) && (isLive || (isQueued && product.auction_allow_prebids)) && shopOpen;
+  const isEndedState =
+    Boolean(run && !isLive && !isQueued) ||
+    Boolean(ended && ["awaiting_payment", "paid", "unsold", "payment_expired"].includes(ended.status));
+  const viewerWon =
+    isAwaiting &&
+    run?.status === "awaiting_payment" &&
+    userId === (ended?.winnerId ?? run?.current_winner_id);
+  // Pre-bids are open the moment a lot is queued, even before the shop opens.
+  const allowBids = Boolean(run) && (isLive || (isQueued && product.auction_allow_prebids));
 
   if (viewerWon && run) {
     return (
@@ -238,6 +244,9 @@ export function AuctionProductActions({
         <Button size="sm" onClick={checkout} disabled={pending}>
           {pending ? "Starting…" : "Checkout now"}
         </Button>
+        <span className="text-right text-[11px] text-muted-foreground">
+          You have 30 minutes to check out before the lot is released.
+        </span>
         {error && <span className="text-right text-[11px] text-live">{error}</span>}
       </div>
     );
@@ -279,6 +288,14 @@ export function AuctionProductActions({
             </Button>
           </div>
         </div>
+        {isQueued && !shopOpen && (
+          <span className="text-[11px] font-medium text-accent">
+            Pre-bidding is open before the drop starts.
+          </span>
+        )}
+        <span className="text-right text-[11px] text-muted-foreground">
+          Bids are binding — win it, pay it (plus shipping).
+        </span>
         {state.viewerState === "winning" && isLive && (
           <span className="text-xs font-medium text-primary">You&apos;re winning</span>
         )}
@@ -290,11 +307,27 @@ export function AuctionProductActions({
     );
   }
 
-  if (!shopOpen) {
+  // The auction has finished (sold, unsold, or checkout window passed):
+  // give buyers a clear ending instead of stale pre-bid copy.
+  if (isEndedState && run) {
+    const soldAmount = ended?.winningBid ?? run.current_bid;
+    const status = ended?.status ?? run.status;
     return (
-      <Button size="sm" variant="outline" disabled>
-        Auction opens with shop
-      </Button>
+      <div className="flex flex-col items-end gap-1 text-right">
+        <Button size="sm" variant="outline" disabled>
+          <Gavel className="size-4" />
+          Auction ended
+        </Button>
+        <span className="text-[11px] text-muted-foreground">
+          {status === "unsold"
+            ? "No winner this run — the seller can run it again."
+            : status === "payment_expired"
+              ? "Checkout window passed — this lot may run again."
+              : state?.yourMaxBid
+                ? `Sold for ${formatCurrency(soldAmount)}. You didn't win this one.`
+                : `Sold for ${formatCurrency(soldAmount)}.`}
+        </span>
+      </div>
     );
   }
 
@@ -316,17 +349,11 @@ export function AuctionProductActions({
     <div className="flex flex-col items-end gap-1 text-right">
       <Button size="sm" variant="outline" disabled>
         <Gavel className="size-4" />
-        {product.auction_allow_prebids
-          ? shopOpen
-            ? "Pre-bids loading"
-            : "Pre-bids soon"
-          : "Bidding opens live"}
+        {product.auction_allow_prebids ? "Pre-bids soon" : "Bidding opens live"}
       </Button>
       <span className="text-[11px] text-muted-foreground">
         {product.auction_allow_prebids
-          ? shopOpen
-            ? "Pre-bids open while the shop is live."
-            : "Place a pre-bid before the seller starts this lot."
+          ? "Pre-bids open as soon as this lot is listed."
           : "Place bids when the seller starts this auction."}
       </span>
     </div>

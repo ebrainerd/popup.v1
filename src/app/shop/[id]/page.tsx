@@ -16,7 +16,13 @@ import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream"
 import { derivePublishedShopWindow } from "@/lib/utils";
 import { ShopThemeShell } from "@/components/shop-theme-shell";
 import { ShopPageView } from "@/components/shop-page-view";
-import { getShopAuctionRuns, getLiveAuctionPanelState, autoQueueShopAuctions, getAuctionProductStates } from "@/lib/auctions";
+import {
+  getShopAuctionRuns,
+  getLiveAuctionPanelState,
+  autoQueueShopAuctions,
+  expireDueAuctionPayments,
+  getAuctionProductStates,
+} from "@/lib/auctions";
 import type { ChatSender } from "@/lib/realtime";
 
 export const dynamic = "force-dynamic";
@@ -121,9 +127,12 @@ export default async function ShopPage({
           ? parseLiveEmbed(shop.live_url)
           : null
       : null;
-  if (isOpen) {
+  // Queue pre-bid lots for published shops (pre-open included) and expire
+  // any unpaid auction wins whose checkout window lapsed.
+  if (isOpen || isScheduled) {
     await autoQueueShopAuctions(shop.id);
   }
+  await expireDueAuctionPayments(shop.id);
 
   const [initialMessages, announcements, reminderCount, liveReminderCount, auctionRuns, auctionPanel, auctionProductStates] =
     await Promise.all([

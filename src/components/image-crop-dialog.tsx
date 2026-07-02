@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Move, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,6 @@ export function ImageCropDialog({
   onCancel: () => void;
   onConfirm: (cropped: Blob) => void;
 }) {
-  const previewUrl = useMemo(() => URL.createObjectURL(file), [file]);
   const [transform, setTransform] = useState<CropTransform>({
     offsetX: 0,
     offsetY: 0,
@@ -31,11 +30,24 @@ export function ImageCropDialog({
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
+  const [image, setImage] = useState<HTMLImageElement | null>(null);
+
+  // Load the image once per file. Kept separate from the paint effect so
+  // transform changes never revoke the blob URL mid-session (that bug froze
+  // the preview on the first drag/zoom).
+  useEffect(() => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => setImage(img);
+    img.src = url;
+    return () => {
+      URL.revokeObjectURL(url);
+      setImage(null);
+    };
+  }, [file]);
 
   const paintPreview = useCallback(() => {
     const canvas = canvasRef.current;
-    const image = imageRef.current;
     if (!canvas || !image) return;
     const rect = canvas.getBoundingClientRect();
     const width = Math.round(rect.width);
@@ -46,23 +58,17 @@ export function ImageCropDialog({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     drawCroppedImage(ctx, image, width, height, transform);
-  }, [transform]);
+  }, [image, transform]);
 
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      imageRef.current = img;
-      paintPreview();
-    };
-    img.src = previewUrl;
-    return () => {
-      imageRef.current = null;
-      URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl, paintPreview]);
-
+  // Repaint whenever the image loads or the pan/zoom transform changes.
   useEffect(() => {
     paintPreview();
+  }, [paintPreview]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.addEventListener("resize", paintPreview);
+    return () => window.removeEventListener("resize", paintPreview);
   }, [paintPreview]);
 
   useEffect(() => {

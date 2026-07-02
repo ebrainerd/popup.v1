@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
 import * as Sentry from "@sentry/nextjs";
-import { getStripe } from "@/lib/stripe";
+import { getStripe, platformFee } from "@/lib/stripe";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -94,12 +94,25 @@ async function handleCheckoutCompleted(
   if (existing) return;
 
   const amountPaid = session.amount_total ?? 0;
-  const platformFee = Number(meta.platform_fee ?? 0);
   const shippingAmount = Number(meta.shipping_amount ?? 0);
+  // Never trust fee metadata: recompute from the captured amount so a stale
+  // or tampered session value can't shortchange the platform cut.
+  const fee = platformFee(amountPaid);
   const paymentIntent =
     typeof session.payment_intent === "string"
       ? session.payment_intent
       : (session.payment_intent?.id ?? null);
+
+  // Defense-in-depth: sanity-check the captured amount against the DB.
+  // Sessions are created server-side from DB prices, so a mismatch means a
+  // bug or dashboard tampering. Money is already captured at this point, so
+  // record the order either way but alert loudly for investigation.
+  await validateCapturedAmount(supabase, session, {
+    productId,
+    auctionId,
+    amountPaid,
+    shippingAmount,
+  });
 
   const shippingAddress =
     session.collected_information?.shipping_details ??
@@ -113,7 +126,7 @@ async function handleCheckoutCompleted(
       shop_id: shopId,
       product_id: productId,
       amount_paid: amountPaid,
-      platform_fee: platformFee,
+      platform_fee: fee,
       shipping_amount: shippingAmount,
       shipping_address: shippingAddress as Record<string, unknown> | null,
       status: "paid",
@@ -125,11 +138,34 @@ async function handleCheckoutCompleted(
     .select("id")
     .single();
   if (error || !inserted) {
-    console.error("Failed to insert order", error?.message);
-    return;
+    // Throw so the route returns 500 and Stripe retries; the insert is
+    // idempotent on stripe_session_id, so retries are safe. Swallowing this
+    // would leave a captured payment with no order record.
+    throw new Error(`Failed to insert order for session ${session.id}: ${error?.message}`);
   }
 
-  // Reduce available stock and mark the hold as completed.
+  // Reduce available stock and mark the hold as completed. If the buyer's
+  // hold lapsed and stock ran out in the meantime, flag the potential
+  // oversell for manual follow-up (payment is already captured).
+  const { data: reservation } = await supabase
+    .from("product_reservations")
+    .select("id, status, expires_at")
+    .eq("session_id", session.id)
+    .maybeSingle();
+  if (!reservation || reservation.status === "released") {
+    const { data: product } = await supabase
+      .from("products")
+      .select("quantity")
+      .eq("id", productId)
+      .maybeSingle();
+    if ((product?.quantity ?? 0) <= 0) {
+      Sentry.captureMessage("Paid checkout without stock or active hold (possible oversell)", {
+        level: "error",
+        tags: { area: "stripe_webhook" },
+        extra: { sessionId: session.id, productId },
+      });
+    }
+  }
   await supabase.rpc("decrement_stock", { p_product: productId, p_qty: 1 });
   await supabase
     .from("product_reservations")
@@ -147,4 +183,58 @@ async function handleCheckoutCompleted(
   // Email buyer + seller (best-effort, no-op without Resend configured).
   const { notifyOrderPlaced } = await import("@/lib/notifications");
   await notifyOrderPlaced(inserted.id);
+}
+
+/**
+ * Compare the captured amount against what the database says the buyer
+ * should have paid. Auction wins are exact (the winning bid is frozen once
+ * the run awaits payment); buy-now uses the current price/discount, which can
+ * legitimately drift if a flash deal changed mid-checkout, so both paths only
+ * alert (never block the order for money already captured).
+ */
+async function validateCapturedAmount(
+  supabase: ServiceClient,
+  session: Stripe.Checkout.Session,
+  input: { productId: string; auctionId: string | null; amountPaid: number; shippingAmount: number },
+) {
+  try {
+    let expectedUnit: number | null = null;
+    if (input.auctionId) {
+      const { data: run } = await supabase
+        .from("auction_runs")
+        .select("current_bid")
+        .eq("id", input.auctionId)
+        .maybeSingle();
+      expectedUnit = run?.current_bid ?? null;
+    } else {
+      const { data: product } = await supabase
+        .from("products")
+        .select("price, discount_price")
+        .eq("id", input.productId)
+        .maybeSingle();
+      expectedUnit = product ? (product.discount_price ?? product.price) : null;
+    }
+    if (expectedUnit == null) return;
+
+    // Checkout sessions are always for a single unit.
+    const expectedTotal = expectedUnit + input.shippingAmount;
+    if (expectedTotal !== input.amountPaid) {
+      Sentry.captureMessage("Stripe session amount does not match database price", {
+        level: input.auctionId ? "error" : "warning",
+        tags: { area: "stripe_webhook" },
+        extra: {
+          sessionId: session.id,
+          productId: input.productId,
+          auctionId: input.auctionId,
+          amountPaid: input.amountPaid,
+          expectedTotal,
+          expectedUnit,
+          shippingAmount: input.shippingAmount,
+        },
+      });
+    }
+  } catch (err) {
+    // Validation must never take down order recording.
+    console.error("validateCapturedAmount failed", err);
+  }
 }

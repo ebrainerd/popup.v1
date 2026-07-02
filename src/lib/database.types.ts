@@ -565,6 +565,7 @@ export interface Database {
         Returns: Record<string, unknown>;
       };
       cancel_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
+      expire_due_auction_payment: { Args: { p_auction_id: string }; Returns: boolean };
       compute_auction_visible_bid: {
         Args: {
           p_starting_bid: number;

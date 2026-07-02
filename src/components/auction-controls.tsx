@@ -8,7 +8,16 @@ import {
   startAuction,
   cancelAuction,
 } from "@/app/shop/auction-actions";
-import { ROOM_EVENTS, type AuctionStartedBroadcast, type AuctionQueuedBroadcast, type FlashItemBroadcast, type FlashPriceBroadcast, type FlashClearBroadcast } from "@/lib/realtime";
+import {
+  ROOM_EVENTS,
+  type AuctionStartedBroadcast,
+  type AuctionQueuedBroadcast,
+  type AuctionBidBroadcast,
+  type AuctionEndedBroadcast,
+  type FlashItemBroadcast,
+  type FlashPriceBroadcast,
+  type FlashClearBroadcast,
+} from "@/lib/realtime";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Product } from "@/lib/database.types";
@@ -96,13 +105,36 @@ export function AuctionControls({
     [productList],
   );
 
-  const activeRun = runs.find((r) =>
-    ["queued", "live", "awaiting_payment"].includes(r.status),
-  );
+  // Highlight the run that needs the seller's attention: a live lot first,
+  // then an unpaid win, then whatever is queued (matches pickPrimaryAuctionRun).
+  const ACTIVE_PRIORITY: Record<string, number> = { live: 0, awaiting_payment: 1, queued: 2 };
+  const activeRun = [...runs]
+    .filter((r) => r.status in ACTIVE_PRIORITY)
+    .sort((a, b) => (ACTIVE_PRIORITY[a.status] ?? 3) - (ACTIVE_PRIORITY[b.status] ?? 3))[0];
 
   function refreshRun(id: string, patch: Partial<AuctionRunWithProduct>) {
     setRuns((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
+
+  // Keep the seller's queue in sync with room activity (bids, endings,
+  // payment expiry) without a manual refresh.
+  useShopEvent(ROOM_EVENTS.auctionBid, (payload) => {
+    const p = payload as AuctionBidBroadcast;
+    refreshRun(p.auctionId, {
+      current_bid: p.currentBid,
+      bid_count: p.bidCount,
+      current_winner_id: p.currentWinnerId,
+      ends_at: p.endsAt,
+    });
+  });
+
+  useShopEvent(ROOM_EVENTS.auctionEnded, (payload) => {
+    const p = payload as AuctionEndedBroadcast;
+    refreshRun(p.auctionId, {
+      status: p.status,
+      ...(p.checkoutExpiresAt ? { checkout_expires_at: p.checkoutExpiresAt } : {}),
+    });
+  });
 
   function queue(productId: string) {
     setError(null);
@@ -167,6 +199,12 @@ export function AuctionControls({
         startingBid: run.starting_bid,
         endsAt,
         suddenDeath: run.sudden_death,
+        // Pre-bids carry into the live round; keep every client's state intact.
+        currentBid: run.current_bid,
+        bidCount: run.bid_count,
+        nextMinimumBid:
+          run.bid_count === 0 ? run.starting_bid : run.current_bid + run.min_increment,
+        currentWinnerId: run.current_winner_id,
       };
       emit(ROOM_EVENTS.auctionStarted, payload);
     });
