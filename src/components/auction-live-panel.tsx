@@ -7,6 +7,7 @@ import { useShopRoom, useShopEvent } from "@/components/shop-room";
 import {
   placeAuctionBid,
   finalizeAuction,
+  expireAuctionPayment,
 } from "@/app/shop/auction-actions";
 import { createAuctionCheckoutSession } from "@/app/shop/checkout-actions";
 import {
@@ -53,11 +54,17 @@ export function AuctionLivePanel({
   const [ended, setEnded] = useState<AuctionEndedBroadcast | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
 
+  // Tick while a lot is live (auction countdown) or awaiting payment
+  // (winner checkout countdown).
+  const runStatus = state?.run.status;
   useEffect(() => {
-    if (state?.run.status !== "live" || !state.run.ends_at) return;
+    const ticking =
+      (runStatus === "live" && state?.run.ends_at) ||
+      (runStatus === "awaiting_payment" && state?.run.checkout_expires_at);
+    if (!ticking) return;
     const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [state?.run.status, state?.run.ends_at]);
+  }, [runStatus, state?.run.ends_at, state?.run.checkout_expires_at]);
 
   const applyBid = useCallback((payload: AuctionBidBroadcast) => {
     setState((prev) => {
@@ -125,6 +132,8 @@ export function AuctionLivePanel({
     setEnded(null);
     setState((prev) => {
       if (!prev || prev.run.product_id !== p.productId) return prev;
+      // Pre-bids carry over into the live round: keep bid state and the
+      // viewer's own max bid instead of resetting to zero.
       return {
         ...prev,
         run: {
@@ -132,14 +141,11 @@ export function AuctionLivePanel({
           id: p.auctionId,
           status: "live",
           ends_at: p.endsAt,
-          current_bid: p.startingBid,
-          bid_count: 0,
-          current_winner_id: null,
+          current_bid: p.currentBid ?? prev.run.current_bid,
+          bid_count: p.bidCount ?? prev.run.bid_count,
+          current_winner_id: p.currentWinnerId ?? prev.run.current_winner_id,
         },
-        nextMinimumBid: p.startingBid,
-        viewerState: "none",
-        yourMaxBid: null,
-        winnerName: null,
+        nextMinimumBid: p.nextMinimumBid ?? prev.nextMinimumBid,
       };
     });
   });
@@ -169,7 +175,11 @@ export function AuctionLivePanel({
       if (!prev || prev.run.id !== p.auctionId) return prev;
       return {
         ...prev,
-        run: { ...prev.run, status: p.status as typeof prev.run.status },
+        run: {
+          ...prev.run,
+          status: p.status as typeof prev.run.status,
+          ...(p.checkoutExpiresAt ? { checkout_expires_at: p.checkoutExpiresAt } : {}),
+        },
       };
     });
   });
@@ -212,13 +222,48 @@ export function AuctionLivePanel({
     }
   }, [state?.run?.id, state?.run?.status, state?.run?.ends_at, shopId, emit]);
 
+  // Any viewer flips an unpaid win to expired once the checkout deadline
+  // passes (the webhook only covers winners who opened Stripe checkout).
+  const checkoutExpiresAt = state?.run.checkout_expires_at ?? ended?.checkoutExpiresAt ?? null;
+  const awaitingPayment = state?.run.status === "awaiting_payment";
+  useEffect(() => {
+    if (!awaitingPayment || !checkoutExpiresAt || !state) return;
+    const run = state.run;
+    const delay = new Date(checkoutExpiresAt).getTime() - Date.now();
+    const timer = setTimeout(() => {
+      void (async () => {
+        const res = await expireAuctionPayment(run.id, shopId);
+        if (!res.ok || !res.expired) return;
+        const payload: AuctionEndedBroadcast = {
+          auctionId: run.id,
+          productId: run.product_id,
+          status: "payment_expired",
+        };
+        setEnded(payload);
+        setState((prev) =>
+          prev && prev.run.id === run.id
+            ? { ...prev, run: { ...prev.run, status: "payment_expired" } }
+            : prev,
+        );
+        emit(ROOM_EVENTS.auctionEnded, payload);
+      })();
+    }, Math.max(0, delay) + 500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awaitingPayment, checkoutExpiresAt, state?.run.id, shopId, emit]);
+
   if (!state) return null;
 
   const { run } = state;
   const isLive = run.status === "live";
   const isQueued = run.status === "queued";
   const isAwaiting = run.status === "awaiting_payment" || ended?.status === "awaiting_payment";
-  const viewerWon = isAwaiting && userId === (ended?.winnerId ?? run.current_winner_id);
+  const isUnsold = run.status === "unsold" || ended?.status === "unsold";
+  const isExpired = run.status === "payment_expired" || ended?.status === "payment_expired";
+  const isPaid = run.status === "paid" || ended?.status === "paid";
+  const viewerWon =
+    isAwaiting && run.status === "awaiting_payment" && userId === (ended?.winnerId ?? run.current_winner_id);
+  const viewerHadBid = Boolean(state.yourMaxBid);
   const allowBids = (isLive || (isQueued && run.product.auction_allow_prebids)) && !isOwner;
 
   function placeBid(amountCents: number) {
@@ -316,11 +361,15 @@ export function AuctionLivePanel({
                   : "Bidding opens live"
                 : isLive
                   ? "Live auction"
-                  : isAwaiting
-                    ? "Auction ended"
-                    : ended?.status === "unsold"
-                      ? "Unsold"
-                      : "Auction"}
+                  : isPaid
+                    ? "Sold"
+                    : isExpired
+                      ? "Checkout window passed"
+                      : isAwaiting
+                        ? "Auction ended"
+                        : isUnsold
+                          ? "Unsold"
+                          : "Auction"}
             </p>
           </div>
         </div>
@@ -364,39 +413,76 @@ export function AuctionLivePanel({
         <div className="mt-4 rounded-lg border border-primary bg-primary/10 p-4">
           <p className="font-semibold">You won — checkout now</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Pay {formatCurrency(ended?.winningBid ?? run.current_bid)} plus shipping. If you win,
-            you agree to pay this price plus shipping.
+            Pay {formatCurrency(ended?.winningBid ?? run.current_bid)} plus shipping to claim it.
           </p>
+          {checkoutExpiresAt && (
+            <p className="mt-1 text-sm font-medium text-highlight">
+              <CheckoutCountdown expiresAt={checkoutExpiresAt} nowMs={nowMs} /> left to check out
+              before this lot is released.
+            </p>
+          )}
           <Button className="mt-3" onClick={checkout} disabled={pending}>
             {pending ? "Starting…" : "Checkout now"}
           </Button>
         </div>
       )}
 
+      {/* Closing states for everyone who didn't win */}
+      {!viewerWon && !isOwner && (isAwaiting || isPaid) && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Sold for {formatCurrency(ended?.winningBid ?? run.current_bid)}
+          {ended?.winnerName ? ` to ${ended.winnerName}` : ""}.
+          {viewerHadBid && (
+            <span className="text-foreground"> You didn&apos;t win this one — thanks for bidding!</span>
+          )}
+        </p>
+      )}
+      {!isOwner && isUnsold && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          This lot ended with no winner. Keep an eye out — the seller can run it again.
+        </p>
+      )}
+      {!isOwner && isExpired && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          The winner&apos;s checkout window passed, so this lot may come back for another run.
+        </p>
+      )}
+      {isOwner && isExpired && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          The winner didn&apos;t pay in time. Re-run this lot from your auction queue.
+        </p>
+      )}
+
       {allowBids && (isLive || isQueued) && (
-        <div className="mt-4 flex flex-wrap items-end gap-2">
-          <Button onClick={quickBid} disabled={pending}>
-            Bid {formatCurrency(state.nextMinimumBid)}
-          </Button>
-          <div className="flex min-w-48 flex-1 items-end gap-2">
-            <div className="flex-1 space-y-1">
-              <label className="text-xs text-muted-foreground" htmlFor="max-bid">
-                Set max bid (USD)
-              </label>
-              <Input
-                id="max-bid"
-                type="number"
-                min={state.nextMinimumBid / 100}
-                step="0.01"
-                placeholder={(state.nextMinimumBid / 100).toFixed(2)}
-                value={maxBid}
-                onChange={(e) => setMaxBid(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" onClick={setMaxBidSubmit} disabled={pending}>
-              Max bid
+        <div className="mt-4">
+          <div className="flex flex-wrap items-end gap-2">
+            <Button onClick={quickBid} disabled={pending}>
+              Bid {formatCurrency(state.nextMinimumBid)}
             </Button>
+            <div className="flex min-w-48 flex-1 items-end gap-2">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs text-muted-foreground" htmlFor="max-bid">
+                  Set max bid (USD)
+                </label>
+                <Input
+                  id="max-bid"
+                  type="number"
+                  min={state.nextMinimumBid / 100}
+                  step="0.01"
+                  placeholder={(state.nextMinimumBid / 100).toFixed(2)}
+                  value={maxBid}
+                  onChange={(e) => setMaxBid(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" onClick={setMaxBidSubmit} disabled={pending}>
+                Max bid
+              </Button>
+            </div>
           </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Bids are binding: if you win, you pay your winning bid plus shipping. Your max bid
+            stays private — we only bid the minimum needed to keep you in front.
+          </p>
         </div>
       )}
 
@@ -408,6 +494,18 @@ export function AuctionLivePanel({
 
       {error && <p className="mt-2 text-sm text-live">{error}</p>}
     </div>
+  );
+}
+
+function CheckoutCountdown({ expiresAt, nowMs }: { expiresAt: string; nowMs: number }) {
+  const remaining = Math.max(0, new Date(expiresAt).getTime() - nowMs);
+  const totalSeconds = Math.floor(remaining / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return (
+    <span className="tabular-nums">
+      {minutes}:{String(seconds).padStart(2, "0")}
+    </span>
   );
 }
 

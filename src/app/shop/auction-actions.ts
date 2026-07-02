@@ -88,6 +88,29 @@ export async function finalizeAuction(
   return { ok: true, data: data as Record<string, unknown> };
 }
 
+/**
+ * Flip an unpaid auction win to payment_expired once its checkout deadline
+ * passes. Deadline enforcement lives in the RPC, so any viewer can trigger it
+ * (mirrors finalizeAuction).
+ */
+export async function expireAuctionPayment(
+  auctionId: string,
+  shopId: string,
+): Promise<AuctionActionResult & { expired?: boolean }> {
+  const { supabase } = await requireUser();
+
+  const { data, error } = await supabase.rpc("expire_due_auction_payment", {
+    p_auction_id: auctionId,
+  });
+  if (error) return { ok: false, error: error.message };
+
+  if (data) {
+    revalidatePath(`/shop/${shopId}`);
+    revalidatePath(`/dashboard/shops/${shopId}`);
+  }
+  return { ok: true, expired: Boolean(data) };
+}
+
 export type AuctionBidState = {
   run: AuctionRun;
   nextMinimumBid: number;
