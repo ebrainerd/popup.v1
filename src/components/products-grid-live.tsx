@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Package, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { useShopEvent } from "@/components/shop-room";
 import { AuctionProductActions } from "@/components/auction-product-actions";
 import { BuyButton } from "@/components/buy-button";
@@ -59,6 +60,28 @@ export function ProductsGridLive({
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [openId, setOpenId] = useState<string | null>(null);
   const shopOpen = useShopOpen(startAt, endAt, isOpen);
+
+  // Live product sync: when a purchase (or any product edit) lands in the
+  // database, update every viewer's grid immediately so items flip to
+  // "Sold out" without a refresh. RLS scopes events to readable shops.
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`products:${shopId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "products", filter: `shop_id=eq.${shopId}` },
+        (payload) => {
+          const next = payload.new as Product;
+          if (!next?.id) return;
+          setProducts((prev) => prev.map((p) => (p.id === next.id ? { ...p, ...next } : p)));
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [shopId]);
 
   useShopEvent(ROOM_EVENTS.flashPrice, (payload) => {
     const { productId, discountPrice, auctionStartingBid } = payload as FlashPriceBroadcast;

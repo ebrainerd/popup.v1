@@ -27,6 +27,7 @@ import { derivePublishedShopWindow } from "@/lib/utils";
 import { isShopScheduleSet } from "@/lib/shop-schedule";
 import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
 import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
+import { platformFeeBps, releaseDelayHours } from "@/lib/stripe";
 import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
 
 export const metadata: Metadata = { title: "Manage shop" };
@@ -249,8 +250,25 @@ export default async function ManageShopPage({
         }
         defaultOpen={false}
       >
+        <PayoutHoldNotice />
         <SellerOrdersTable orders={orders} />
       </CollapsibleSection>
     </div>
+  );
+}
+
+/** Explains why sale proceeds don't appear in the seller's account right away. */
+function PayoutHoldNotice() {
+  const hours = releaseDelayHours();
+  if (hours <= 0) return null;
+  const label = hours % 24 === 0 ? `${hours / 24} day${hours === 24 ? "" : "s"}` : `${hours} hours`;
+  return (
+    <p className="mb-4 rounded-lg border border-border bg-muted/30 px-3 py-2.5 text-sm text-muted-foreground">
+      <span className="font-medium text-foreground">When do I get paid?</span> Your earnings
+      (minus the {(platformFeeBps() / 100).toFixed(0)}% platform fee) transfer to your Stripe
+      account about {label} after you mark an order shipped — a buyer-protection hold, so
+      don&apos;t worry when funds aren&apos;t instant. Stripe then deposits to your bank on its
+      usual payout schedule.
+    </p>
   );
 }
