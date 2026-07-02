@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, CheckCircle2, CreditCard } from "lucide-react";
+import { ArrowLeft, CheckCircle2, CreditCard, ExternalLink } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
 import { SetupPaymentsButton } from "@/components/setup-payments-button";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
@@ -55,9 +56,21 @@ export default async function PayoutsPage({
               enable checkout and payouts.
             </p>
           ) : onboarded ? (
-            <div className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-sm text-success">
-              <CheckCircle2 className="size-4" />
-              Your payout account is connected and ready.
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 rounded-md bg-success/10 px-3 py-2 text-sm text-success">
+                <CheckCircle2 className="size-4" />
+                Your payout account is connected and ready.
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm text-muted-foreground">
+                  See your balance, upcoming bank payouts, and payment history in Stripe.
+                </p>
+                <Button asChild size="sm" variant="outline" className="rounded-full">
+                  <a href="/api/stripe/express-login" target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="size-4" /> Open Stripe dashboard
+                  </a>
+                </Button>
+              </div>
             </div>
           ) : (
             <>
