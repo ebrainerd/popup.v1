@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Plus, Store, Star, DollarSign, CalendarDays } from "lucide-react";
+import { Plus, Store, Star, DollarSign, CalendarDays, PackageOpen, ShoppingBag } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
 import { syncStripeStatus } from "@/app/dashboard/payouts/actions";
@@ -28,10 +28,11 @@ export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: orders } = await supabase
     .from("orders")
-    .select("amount_paid, platform_fee")
+    .select("amount_paid, platform_fee, status")
     .in("shop_id", shops.length ? shops.map((s) => s.id) : ["00000000-0000-0000-0000-000000000000"]);
 
   const grossSales = (orders ?? []).reduce((sum, o) => sum + (o.amount_paid ?? 0), 0);
+  const needsShippingCount = (orders ?? []).filter((o) => o.status === "paid").length;
   const published = shops.filter((s) => s.status !== "draft");
   const drafts = shops.filter((s) => s.status === "draft");
 
@@ -52,12 +53,45 @@ export default async function DashboardPage() {
           </h1>
           <p className="text-muted-foreground">Manage your drops and orders.</p>
         </div>
-        <Button asChild className="rounded-full">
-          <Link href="/dashboard/shops/new">
-            <Plus className="size-4" /> Create shop
-          </Link>
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild variant="outline" className="rounded-full">
+            <Link href="/dashboard/sales">
+              <ShoppingBag className="size-4" /> Sales
+              {needsShippingCount > 0 && (
+                <span className="rounded-full bg-primary px-1.5 py-0.5 text-xs font-bold leading-none text-primary-foreground">
+                  {needsShippingCount}
+                </span>
+              )}
+            </Link>
+          </Button>
+          <Button asChild className="rounded-full">
+            <Link href="/dashboard/shops/new">
+              <Plus className="size-4" /> Create shop
+            </Link>
+          </Button>
+        </div>
       </div>
+
+      {needsShippingCount > 0 && (
+        <Card className="border-primary/40 bg-primary/5">
+          <CardContent className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-3">
+              <PackageOpen className="size-5 shrink-0 text-primary" />
+              <div>
+                <p className="font-medium">
+                  {needsShippingCount} sale{needsShippingCount === 1 ? "" : "s"} waiting to ship
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Add tracking and mark them shipped — funds release after shipping.
+                </p>
+              </div>
+            </div>
+            <Button asChild size="sm" className="rounded-full">
+              <Link href="/dashboard/sales">Manage sales</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       {paymentsRequired && !payoutsConnected && shops.length > 0 && (
         <Card className="border-primary/40 bg-primary/5">
@@ -76,7 +110,9 @@ export default async function DashboardPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard tone="success" icon={<DollarSign />} label="Gross sales" value={formatCurrency(grossSales)} />
+        <Link href="/dashboard/sales" className="contents">
+          <StatCard tone="success" icon={<DollarSign />} label="Gross sales" value={formatCurrency(grossSales)} />
+        </Link>
         <StatCard tone="accent" icon={<Store />} label="Active shops" value={String(activeCount)} />
         <StatCard tone="highlight" icon={<CalendarDays />} label="Total shops" value={String(shops.length)} />
         <StatCard
