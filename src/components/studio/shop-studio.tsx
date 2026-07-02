@@ -32,6 +32,7 @@ import { StudioCanvas, type StudioViewport } from "@/components/studio/studio-ca
 import { StudioDetailsPanel } from "@/components/studio/details-panel";
 import { StudioStreamPanel } from "@/components/studio/stream-panel";
 import { StudioStylePanel } from "@/components/studio/style-panel";
+import { StudioTour, hasSeenStudioTour } from "@/components/studio/studio-tour";
 import { PanelSection } from "@/components/studio/panel-ui";
 import { cn } from "@/lib/utils";
 
@@ -58,9 +59,12 @@ const AUTOSAVE_DELAY_MS = 2000;
 export function ShopStudio({
   initialDraft,
   shopId,
+  firstShop = false,
 }: {
   initialDraft?: ShopWizardDraft;
   shopId?: string;
+  /** When true (seller has no shops yet), a one-time guided tour runs. */
+  firstShop?: boolean;
 }) {
   const router = useRouter();
   const inviteOnly = isInviteOnlyMode();
@@ -77,7 +81,15 @@ export function ShopStudio({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exitOpen, setExitOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
   const [finishing, startFinishing] = useTransition();
+
+  useEffect(() => {
+    if (!hydrated || !firstShop) return;
+    queueMicrotask(() => {
+      if (!hasSeenStudioTour()) setTourOpen(true);
+    });
+  }, [hydrated, firstShop]);
 
   useEffect(() => {
     queueMicrotask(() => {
@@ -211,7 +223,9 @@ export function ShopStudio({
           </div>
 
           <div className="flex items-center gap-3">
-            <SaveStatus saving={saving} dirty={dirty} hasError={Boolean(error)} canSave={canSaveDraft} />
+            <span data-tour="save">
+              <SaveStatus saving={saving} dirty={dirty} hasError={Boolean(error)} canSave={canSaveDraft} />
+            </span>
             {shopId && (
               <DeleteDraftButton shopId={shopId} shopName={draft.name.trim() || undefined} />
             )}
@@ -221,6 +235,7 @@ export function ShopStudio({
               className="rounded-full px-4"
               onClick={handleFinish}
               disabled={finishing}
+              data-tour="finish"
             >
               {finishing ? "Finishing…" : "Finish setup"}
             </Button>
@@ -243,11 +258,12 @@ export function ShopStudio({
             viewport={viewport}
             onViewportChange={setViewport}
             className="h-[46vh] border-b border-border/60 lg:h-auto lg:border-b-0"
+            data-tour="canvas"
           />
 
           <aside className="flex min-h-0 flex-col border-border/60 bg-card/30 lg:w-[400px] lg:shrink-0 lg:border-l">
             {/* Panel tabs */}
-            <div className="grid shrink-0 grid-cols-4 gap-1 border-b border-border/60 p-2">
+            <div className="grid shrink-0 grid-cols-4 gap-1 border-b border-border/60 p-2" data-tour="tabs">
               {TABS.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -297,6 +313,8 @@ export function ShopStudio({
           </aside>
         </div>
       </div>
+
+      {tourOpen && <StudioTour onDone={() => setTourOpen(false)} />}
 
       <WizardExitDialog
         open={exitOpen}
