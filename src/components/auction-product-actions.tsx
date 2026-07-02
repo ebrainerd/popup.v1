@@ -255,6 +255,16 @@ export function AuctionProductActions({
   if (allowBids && state) {
     return (
       <div className="flex w-full max-w-xs flex-col items-end gap-2">
+        {isLive ? (
+          <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-live">
+            <span aria-hidden className="size-2 animate-live-pulse rounded-full bg-live" />
+            Auction is live
+          </span>
+        ) : (
+          <span className="text-xs font-medium text-muted-foreground">
+            Auction hasn&apos;t started yet
+          </span>
+        )}
         <div className="flex flex-wrap items-end justify-end gap-2">
           <Button size="sm" onClick={() => placeBid(state.nextMinimumBid)} disabled={pending}>
             <Gavel className="size-4" />
@@ -288,9 +298,11 @@ export function AuctionProductActions({
             </Button>
           </div>
         </div>
-        {isQueued && !shopOpen && (
-          <span className="text-[11px] font-medium text-accent">
-            Pre-bidding is open before the drop starts.
+        {isQueued && (
+          <span className="text-right text-[11px] font-medium text-accent">
+            {shopOpen
+              ? "Pre-bids count the moment the seller starts the live round."
+              : "Pre-bidding is open before the drop starts."}
           </span>
         )}
         <span className="text-right text-[11px] text-muted-foreground">

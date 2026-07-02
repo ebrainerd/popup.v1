@@ -357,8 +357,8 @@ export function AuctionLivePanel({
             <p className="text-sm text-muted-foreground">
               {isQueued
                 ? run.product.auction_allow_prebids
-                  ? "Pre-bidding open"
-                  : "Bidding opens live"
+                  ? "Not started yet — pre-bidding open"
+                  : "Not started yet — bidding opens live"
                 : isLive
                   ? "Live auction"
                   : isPaid

@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import { updateProfileBio, type ProfileActionState } from "@/app/u/actions";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,15 @@ function SaveButton() {
 }
 
 export function ProfileBioForm({ bio }: { bio: string | null }) {
+  const router = useRouter();
   const [state, formAction] = useActionState(updateProfileBio, initialState);
   const [value, setValue] = useState(bio ?? "");
   const remaining = 280 - value.length;
+
+  // Pull the saved bio back into the page so the profile display updates.
+  useEffect(() => {
+    if (state.success) router.refresh();
+  }, [state.success, router]);
 
   return (
     <form action={formAction} className="mt-4 max-w-xl space-y-2">

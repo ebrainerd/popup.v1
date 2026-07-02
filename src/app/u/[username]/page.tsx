@@ -8,8 +8,7 @@ import { isInviteOnlyMode } from "@/lib/discovery";
 import { ShopCard } from "@/components/shop-card";
 import { FollowButton } from "@/components/follow-button";
 import { NotifyButton } from "@/components/notify-button";
-import { ProfileBioForm } from "@/components/profile-bio-form";
-import { ProfileAvatarForm } from "@/components/profile-avatar-form";
+import { ProfileEditPanel } from "@/components/profile-edit";
 import { deriveShopStatus } from "@/lib/utils";
 import type { ShopWithSeller } from "@/lib/shops";
 
@@ -111,14 +110,13 @@ export default async function ProfilePage({
           )}
         </div>
 
-        {!isOwner && profile.bio && (
+        {profile.bio && (
           <p className="mt-4 max-w-xl text-pretty text-foreground/90">{profile.bio}</p>
         )}
 
         {isOwner && (
-          <div className="mt-4 max-w-xl space-y-6">
-            <ProfileAvatarForm avatarUrl={profile.avatar_url} />
-            <ProfileBioForm key={profile.bio ?? ""} bio={profile.bio} />
+          <div className="mt-4 max-w-xl">
+            <ProfileEditPanel avatarUrl={profile.avatar_url} bio={profile.bio} />
           </div>
         )}
       </div>

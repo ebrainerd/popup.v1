@@ -82,14 +82,20 @@ export function StudioTour({ onDone }: { onDone: () => void }) {
   }, [step.target]);
 
   useEffect(() => {
-    // Measure after layout settles; resize keeps the spotlight anchored.
+    // Bring the target on screen, then measure after layout settles. Re-measure
+    // on resize AND any scroll (capture catches nested scroll containers), so
+    // the fixed-position spotlight never drifts off its target.
+    const el = document.querySelector<HTMLElement>(`[data-tour="${step.target}"]`);
+    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
     const raf = requestAnimationFrame(measure);
     window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
     return () => {
       cancelAnimationFrame(raf);
       window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
     };
-  }, [measure]);
+  }, [measure, step.target]);
 
   function finish() {
     markStudioTourSeen();
