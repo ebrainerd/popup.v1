@@ -1,3 +1,4 @@
 # crawl runtime state (regenerated on every run)
 state.json
 crawl.log
+__pycache__/
