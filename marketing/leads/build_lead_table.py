@@ -26,13 +26,18 @@ COLUMNS = [
 
 def load_rows():
     rows, seen = [], set()
-    with open(os.path.join(BASE, "profiles.jsonl")) as f:
-        for line in f:
-            r = json.loads(line)
-            if r["username"] in seen:
-                continue
-            seen.add(r["username"])
-            rows.append(r)
+    # apify_profiles.jsonl first: its rows carry authoritative country data
+    for name in ("apify_profiles.jsonl", "profiles.jsonl"):
+        path = os.path.join(BASE, name)
+        if not os.path.exists(path):
+            continue
+        with open(path) as f:
+            for line in f:
+                r = json.loads(line)
+                if r["username"] in seen:
+                    continue
+                seen.add(r["username"])
+                rows.append(r)
     return rows
 
 
