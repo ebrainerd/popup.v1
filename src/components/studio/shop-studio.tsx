@@ -9,6 +9,7 @@ import {
   Package,
   Palette,
   Radio,
+  Rocket,
   Store,
 } from "lucide-react";
 import { finishShopSetup, saveShopDraft } from "@/app/dashboard/actions";
@@ -32,21 +33,29 @@ import { StudioCanvas, type StudioViewport } from "@/components/studio/studio-ca
 import { StudioDetailsPanel } from "@/components/studio/details-panel";
 import { StudioStreamPanel } from "@/components/studio/stream-panel";
 import { StudioStylePanel } from "@/components/studio/style-panel";
+import { StudioLaunchPanel } from "@/components/studio/launch-panel";
 import { StudioTour, hasSeenStudioTour } from "@/components/studio/studio-tour";
 import { PanelSection } from "@/components/studio/panel-ui";
 import { cn } from "@/lib/utils";
 
-type StudioTab = "shop" | "products" | "stream" | "style";
+type StudioTab = "shop" | "products" | "stream" | "style" | "launch";
 
 const TABS: { id: StudioTab; label: string; icon: typeof Store }[] = [
   { id: "shop", label: "Shop", icon: Store },
   { id: "products", label: "Products", icon: Package },
   { id: "stream", label: "Stream", icon: Radio },
-  { id: "style", label: "Style", icon: Palette },
+  { id: "style", label: "Design", icon: Palette },
+  { id: "launch", label: "Launch", icon: Rocket },
 ];
 
 /** Which panel tab surfaces validation errors for each wizard step. */
-const STEP_TO_TAB = { details: "shop", products: "products", live: "stream", layout: "style" } as const;
+const STEP_TO_TAB = {
+  details: "shop",
+  products: "products",
+  live: "stream",
+  layout: "style",
+  schedule: "launch",
+} as const;
 
 const AUTOSAVE_DELAY_MS = 2000;
 
@@ -93,12 +102,7 @@ export function ShopStudio({
 
   useEffect(() => {
     queueMicrotask(() => {
-      const loaded = initialDraft ?? defaultWizardDraft();
-      // Every shop uses The Room layout; older drafts are coerced on load.
-      const base: ShopWizardDraft = {
-        ...loaded,
-        theme: { ...loaded.theme, layout: "classic" },
-      };
+      const base = initialDraft ?? defaultWizardDraft();
       setDraft(base);
       setLastSaved(JSON.stringify(wizardDraftToSavePayload(base)));
       setHydrated(true);
@@ -159,7 +163,7 @@ export function ShopStudio({
   }
 
   function handleFinish() {
-    for (const stepId of ["details", "products", "live"] as const) {
+    for (const stepId of ["details", "products", "live", "schedule"] as const) {
       const result = getStepValidation(stepId, draft);
       if (!result.valid) {
         setTab(STEP_TO_TAB[stepId]);
@@ -263,7 +267,7 @@ export function ShopStudio({
 
           <aside className="flex min-h-0 flex-col border-border/60 bg-card/30 lg:w-[400px] lg:shrink-0 lg:border-l">
             {/* Panel tabs */}
-            <div className="grid shrink-0 grid-cols-4 gap-1 border-b border-border/60 p-2" data-tour="tabs">
+            <div className="grid shrink-0 grid-cols-5 gap-1 border-b border-border/60 p-2" data-tour="tabs">
               {TABS.map(({ id, label, icon: Icon }) => (
                 <button
                   key={id}
@@ -309,6 +313,7 @@ export function ShopStudio({
               {tab === "style" && (
                 <StudioStylePanel theme={draft.theme} onChange={(theme) => patch({ theme })} />
               )}
+              {tab === "launch" && <StudioLaunchPanel draft={draft} onPatch={patch} />}
             </div>
           </aside>
         </div>

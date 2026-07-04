@@ -11,12 +11,13 @@ import {
 } from "@/lib/shop-wizard";
 
 describe("shop wizard", () => {
-  it("orders banner and live stream before layout selection", () => {
+  it("orders banner and live stream before layout, then schedule last", () => {
     expect(WIZARD_STEPS.map((s) => s.id)).toEqual([
       "details",
       "products",
       "live",
       "layout",
+      "schedule",
     ]);
   });
 
@@ -66,6 +67,35 @@ describe("shop wizard", () => {
       ],
     });
     expect(completed).toEqual(["details", "products"]);
+  });
+
+  it("validates the schedule step only when a valid window is set", () => {
+    const base = { ...defaultWizardDraft(), name: "Summer drop" };
+    expect(getStepValidation("schedule", base).valid).toBe(false);
+
+    const withSchedule = {
+      ...base,
+      scheduleSet: true,
+      startLocal: "2099-06-01T18:00",
+      endLocal: "2099-06-01T20:00",
+    };
+    expect(getStepValidation("schedule", withSchedule).valid).toBe(true);
+
+    const backwards = { ...withSchedule, endLocal: "2099-06-01T17:00" };
+    expect(getStepValidation("schedule", backwards).valid).toBe(false);
+  });
+
+  it("carries schedule into the finish payload when set", () => {
+    const payload = wizardDraftToSavePayload({
+      ...defaultWizardDraft(),
+      name: "Summer drop",
+      scheduleSet: true,
+      startLocal: "2099-06-01T18:00",
+      endLocal: "2099-06-01T20:00",
+    });
+    expect(payload.scheduleSet).toBe(true);
+    expect(payload.startAt).not.toBe("");
+    expect(payload.endAt).not.toBe("");
   });
 
   it("filters untitled products from save payloads", () => {

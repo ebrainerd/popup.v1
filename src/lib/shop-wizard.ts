@@ -1,7 +1,7 @@
 import type { Product, Shop } from "@/lib/database.types";
 import type { AuctionFieldState } from "@/components/auction-product-fields";
 import { defaultAuctionFields } from "@/components/auction-product-fields";
-import { isoToLocalInput } from "@/lib/datetime";
+import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { defaultShopTheme, parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
 import {
@@ -15,6 +15,7 @@ export const WIZARD_STEPS = [
   { id: "products", label: "Products", shortLabel: "Products" },
   { id: "live", label: "Banner & live stream", shortLabel: "Banner" },
   { id: "layout", label: "Layout & theme", shortLabel: "Layout" },
+  { id: "schedule", label: "Schedule & launch", shortLabel: "Launch" },
 ] as const;
 
 export type WizardStepId = (typeof WIZARD_STEPS)[number]["id"];
@@ -42,6 +43,8 @@ export type ShopWizardDraft = {
   twitchUrl: string;
   startLocal: string;
   endLocal: string;
+  /** Whether the seller has committed a real open/close window (vs the default). */
+  scheduleSet: boolean;
   products: WizardProductDraft[];
   completedSteps: WizardStepId[];
   theme: ShopTheme;
@@ -66,6 +69,7 @@ export function defaultWizardDraft(): ShopWizardDraft {
     twitchUrl: "",
     startLocal: plusHoursLocal(1),
     endLocal: plusHoursLocal(3),
+    scheduleSet: false,
     products: [],
     completedSteps: [],
     theme: defaultShopTheme(),
@@ -133,6 +137,9 @@ export function productToWizardDraft(product: Product): WizardProductDraft {
 export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDraft {
   const streams = splitStreamUrls(shop.live_url, shop.twitch_url ?? null);
   const provider = effectiveStreamProvider(shop);
+  // Drafts created before the seller picked real times carry a far-future
+  // placeholder — show a friendly default window instead of the year 2099.
+  const scheduleSet = shop.schedule_set === true;
   const base: ShopWizardDraft = {
     shopId: shop.id,
     name: shop.name,
@@ -145,8 +152,9 @@ export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDr
     ),
     youtubeUrl: streams.youtubeUrl,
     twitchUrl: streams.twitchUrl,
-    startLocal: isoToLocalInput(shop.start_at),
-    endLocal: isoToLocalInput(shop.end_at),
+    startLocal: scheduleSet ? isoToLocalInput(shop.start_at) : plusHoursLocal(1),
+    endLocal: scheduleSet ? isoToLocalInput(shop.end_at) : plusHoursLocal(3),
+    scheduleSet,
     products: products.map(productToWizardDraft),
     completedSteps: [],
     theme: parseShopTheme(shop.shop_theme),
@@ -203,6 +211,18 @@ export function getStepValidation(
       return { valid: true };
     case "layout":
       return { valid: true };
+    case "schedule": {
+      if (!draft.scheduleSet) {
+        return { valid: false, message: "Pick when your drop opens and closes." };
+      }
+      if (!draft.startLocal || !draft.endLocal) {
+        return { valid: false, message: "Pick when your drop opens and closes." };
+      }
+      if (new Date(draft.endLocal) <= new Date(draft.startLocal)) {
+        return { valid: false, message: "Closing time must be after the opening time." };
+      }
+      return { valid: true };
+    }
     case "live":
       if (draft.streamSource === "external") {
         if (!isValidOptionalUrl(draft.youtubeUrl)) {
@@ -271,6 +291,11 @@ function buildWizardPersistPayload(
   draft: ShopWizardDraft,
   options?: { draftMode?: boolean },
 ) {
+  const scheduleValid =
+    draft.scheduleSet &&
+    Boolean(draft.startLocal && draft.endLocal) &&
+    new Date(draft.endLocal) > new Date(draft.startLocal);
+
   return {
     shopId: draft.shopId,
     name: draft.name.trim(),
@@ -280,18 +305,18 @@ function buildWizardPersistPayload(
     streamSource: draft.streamSource,
     youtubeUrl: draft.streamSource === "external" ? draft.youtubeUrl.trim() : "",
     twitchUrl: draft.streamSource === "external" ? draft.twitchUrl.trim() : "",
+    scheduleSet: scheduleValid,
+    startAt: scheduleValid ? localInputToIso(draft.startLocal) : "",
+    endAt: scheduleValid ? localInputToIso(draft.endLocal) : "",
     products: mapWizardProducts(draft, Boolean(options?.draftMode)),
     completedSteps: draft.completedSteps,
     theme: draft.theme,
   };
 }
 
-function mapWizardProducts(draft: ShopWizardDraft, draftMode: boolean) {
-  const items = draftMode
-    ? draft.products.filter((p) => p.title.trim())
-    : draft.products;
-
-  return items.map((p) => ({
+/** Map one wizard product draft to the server persist payload shape. */
+export function wizardProductToPayload(p: WizardProductDraft, draftMode = false) {
+  return {
     id: p.dbId,
     title: p.title.trim(),
     description: p.description.trim(),
@@ -307,7 +332,14 @@ function mapWizardProducts(draft: ShopWizardDraft, draftMode: boolean) {
     auction_duration_seconds: p.auctionFields.durationSeconds || 60,
     auction_allow_prebids: p.auctionFields.allowPrebids,
     auction_sudden_death: p.auctionFields.suddenDeath,
-  }));
+  };
+}
+
+function mapWizardProducts(draft: ShopWizardDraft, draftMode: boolean) {
+  const items = draftMode
+    ? draft.products.filter((p) => p.title.trim())
+    : draft.products;
+  return items.map((p) => wizardProductToPayload(p, draftMode));
 }
 
 export function wizardHasDraftContent(draft: ShopWizardDraft): boolean {

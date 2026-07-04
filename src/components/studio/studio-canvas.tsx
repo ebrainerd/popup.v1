@@ -34,6 +34,7 @@ export function StudioCanvas({
   viewport,
   onViewportChange,
   className,
+  showActivity = true,
   "data-tour": dataTour,
 }: {
   theme: ShopTheme;
@@ -45,6 +46,7 @@ export function StudioCanvas({
   viewport: StudioViewport;
   onViewportChange: (viewport: StudioViewport) => void;
   className?: string;
+  showActivity?: boolean;
   "data-tour"?: string;
 }) {
   return (
@@ -102,6 +104,7 @@ export function StudioCanvas({
             products={products}
             viewport={viewport}
             phase={phase}
+            showActivity={showActivity}
           />
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Live preview: this is what buyers see. It updates as you edit.

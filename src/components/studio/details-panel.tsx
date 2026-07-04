@@ -70,9 +70,10 @@ export function StudioDetailsPanel({
       )}
 
       <div className="space-y-1 rounded-xl border border-border bg-muted/20 px-3 py-2.5">
-        <p className="text-xs font-medium">Drop schedule comes later</p>
+        <p className="text-xs font-medium">Set your open &amp; close times in Launch</p>
         <p className="text-xs leading-relaxed text-muted-foreground">
-          Set your open and close times from the manage page when you&apos;re ready to publish.
+          Head to the <span className="font-medium text-foreground">Launch</span> tab when
+          you&apos;re ready to pick your drop schedule and publish.
         </p>
       </div>
     </div>
