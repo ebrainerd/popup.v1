@@ -32,6 +32,7 @@ import { AuctionLivePanel } from "@/components/auction-live-panel";
 import { DraftPreviewBanner } from "@/components/draft-preview-banner";
 import { OwnerShopLiveBar } from "@/components/owner-shop-live-bar";
 import { OwnerSellingTools } from "@/components/owner-selling-tools";
+import { SellerLiveFeed } from "@/components/seller-live-feed";
 import { effectiveStreamProvider } from "@/lib/live-stream";
 import { cn } from "@/lib/utils";
 
@@ -209,6 +210,19 @@ export function ShopPageView({
       </OwnerSellingTools>
     ) : null;
 
+  const sellerLiveFeed =
+    isOwner && isOpen && !isDraftPreview ? (
+      <SellerLiveFeed
+        shopId={shop.id}
+        startAt={shop.start_at}
+        products={shop.products.map((p) => ({
+          id: p.id,
+          title: p.title,
+          quantity: p.quantity,
+        }))}
+      />
+    ) : null;
+
   const auctionPanelSection = (
     <AuctionLivePanel
       shopId={shop.id}
@@ -317,6 +331,7 @@ export function ShopPageView({
             {shareDropCard}
             {soldOutBanner}
             {externalLiveNotice}
+            {sellerLiveFeed}
             {ownerSellingTools}
             {auctionPanelSection}
             {mainContent}
@@ -329,6 +344,7 @@ export function ShopPageView({
             {shareDropCard}
             {soldOutBanner}
             {externalLiveNotice}
+            {sellerLiveFeed}
             {ownerSellingTools}
             {auctionPanelSection}
             {mainContent}
@@ -346,6 +362,7 @@ export function ShopPageView({
             {shareDropCard}
             {soldOutBanner}
             {externalLiveNotice}
+            {sellerLiveFeed}
             {ownerSellingTools}
             {auctionPanelSection}
             {mainContent}
@@ -361,6 +378,7 @@ export function ShopPageView({
             {shareDropCard}
             {soldOutBanner}
             {externalLiveNotice}
+            {sellerLiveFeed}
             {ownerSellingTools}
             {auctionPanelSection}
             {mainContent}

@@ -756,9 +756,39 @@ const finishShopSetupSchema = z
     streamSource: z.enum(["native", "external"]).default("native"),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
+    scheduleSet: z.boolean().default(false),
+    startAt: z.string().optional().or(z.literal("")),
+    endAt: z.string().optional().or(z.literal("")),
     products: z.array(finishProductSchema).min(1, "Add at least one product."),
     theme: shopThemeSchema,
-  });
+  })
+  .refine(
+    (d) => {
+      if (!d.scheduleSet || !d.startAt || !d.endAt) return true;
+      return new Date(d.endAt) > new Date(d.startAt);
+    },
+    { message: "Closing time must be after the opening time.", path: ["endAt"] },
+  );
+
+/**
+ * Resolve the schedule columns for a wizard save. When the seller has set a
+ * real window we persist it and flip schedule_set; otherwise we keep the
+ * far-future placeholder so the shop stays a draft that never auto-opens.
+ */
+function wizardScheduleFields(input: {
+  scheduleSet?: boolean;
+  startAt?: string;
+  endAt?: string;
+}): { start_at: string; end_at: string; schedule_set: boolean } {
+  if (input.scheduleSet && input.startAt && input.endAt) {
+    const start = new Date(input.startAt);
+    const end = new Date(input.endAt);
+    if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end > start) {
+      return { start_at: start.toISOString(), end_at: end.toISOString(), schedule_set: true };
+    }
+  }
+  return { ...PLACEHOLDER_SCHEDULE, schedule_set: false };
+}
 
 function finishProductInsert(
   shopId: string,
@@ -818,29 +848,28 @@ export async function finishShopSetup(
   };
 
   let shopId = d.shopId;
+  const schedule = wizardScheduleFields(d);
 
   if (shopId) {
     const { data: current } = await supabase
       .from("shops")
-      .select("status, schedule_set")
+      .select("status, schedule_set, start_at, end_at")
       .eq("id", shopId)
       .eq("seller_id", user.id)
       .maybeSingle();
     if (!current) return { error: "Shop not found." };
     if (current.status !== "draft") return { error: "Only draft shops can be edited in setup." };
 
-    const updatePayload = current.schedule_set
-      ? { ...shopPayload, status: "draft" as const }
-      : {
-          ...shopPayload,
-          ...PLACEHOLDER_SCHEDULE,
-          schedule_set: false,
-          status: "draft" as const,
-        };
+    // Prefer the wizard's schedule; otherwise keep any window already saved.
+    const scheduleUpdate = schedule.schedule_set
+      ? schedule
+      : current.schedule_set
+        ? { start_at: current.start_at, end_at: current.end_at, schedule_set: true }
+        : { ...PLACEHOLDER_SCHEDULE, schedule_set: false };
 
     const { error } = await supabase
       .from("shops")
-      .update(updatePayload)
+      .update({ ...shopPayload, ...scheduleUpdate, status: "draft" as const })
       .eq("id", shopId)
       .eq("seller_id", user.id);
     if (error) return { error: error.message };
@@ -850,8 +879,7 @@ export async function finishShopSetup(
       .insert({
         seller_id: user.id,
         ...shopPayload,
-        ...PLACEHOLDER_SCHEDULE,
-        schedule_set: false,
+        ...schedule,
         status: "draft",
       })
       .select("id")
@@ -927,6 +955,9 @@ const saveShopDraftSchema = z.object({
     streamSource: z.enum(["native", "external"]).default("native"),
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
+    scheduleSet: z.boolean().default(false),
+    startAt: z.string().optional().or(z.literal("")),
+    endAt: z.string().optional().or(z.literal("")),
     products: z.array(saveDraftProductSchema).default([]),
     completedSteps: z
       .array(z.enum(["details", "products", "layout", "live", "schedule"]))
@@ -1035,30 +1066,28 @@ export async function saveShopDraft(
   };
 
   let shopId = d.shopId;
+  const schedule = wizardScheduleFields(d);
 
   try {
     if (shopId) {
       const { data: current } = await supabase
         .from("shops")
-        .select("status, schedule_set")
+        .select("status, schedule_set, start_at, end_at")
         .eq("id", shopId)
         .eq("seller_id", user.id)
         .maybeSingle();
       if (!current) return { error: "Shop not found." };
       if (current.status !== "draft") return { error: "Only draft shops can be saved here." };
 
-      const updatePayload = current.schedule_set
-        ? { ...shopPayload, status: "draft" as const }
-        : {
-            ...shopPayload,
-            ...PLACEHOLDER_SCHEDULE,
-            schedule_set: false,
-            status: "draft" as const,
-          };
+      const scheduleUpdate = schedule.schedule_set
+        ? schedule
+        : current.schedule_set
+          ? { start_at: current.start_at, end_at: current.end_at, schedule_set: true }
+          : { ...PLACEHOLDER_SCHEDULE, schedule_set: false };
 
       const { error } = await supabase
         .from("shops")
-        .update(updatePayload)
+        .update({ ...shopPayload, ...scheduleUpdate, status: "draft" as const })
         .eq("id", shopId)
         .eq("seller_id", user.id);
       if (error) return { error: error.message };
@@ -1068,8 +1097,7 @@ export async function saveShopDraft(
         .insert({
           seller_id: user.id,
           ...shopPayload,
-          ...PLACEHOLDER_SCHEDULE,
-          schedule_set: false,
+          ...schedule,
           status: "draft",
         })
         .select("id")
@@ -1090,6 +1118,100 @@ export async function saveShopDraft(
   revalidatePath(`/dashboard/shops/${shopId}/setup`);
   revalidatePath(`/shop/${shopId}`);
   return { error: null, shopId };
+}
+
+/**
+ * Save the full product list for a shop from the manage page, using the same
+ * editor as the setup Studio. Products with a live / awaiting-payment / paid
+ * auction run are protected: they are never deleted, and edits to them are
+ * skipped (reported back) so an in-flight auction can't be changed underfoot.
+ */
+export async function saveShopProducts(
+  shopId: string,
+  products: z.infer<typeof saveDraftProductSchema>[],
+): Promise<ActionState & { products?: unknown[] }> {
+  const { supabase, user } = await requireUser();
+
+  const parsed = z.array(saveDraftProductSchema).safeParse(products);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid product." };
+  }
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("id")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+
+  const items = parsed.data;
+
+  // Which existing products are locked by an active auction run?
+  const { data: existingProducts } = await supabase
+    .from("products")
+    .select("id")
+    .eq("shop_id", shopId);
+  const existingIds = new Set((existingProducts ?? []).map((p) => p.id));
+
+  const { data: lockedRuns } = await supabase
+    .from("auction_runs")
+    .select("product_id")
+    .eq("shop_id", shopId)
+    .in("status", ["live", "awaiting_payment", "paid"]);
+  const lockedProductIds = new Set((lockedRuns ?? []).map((r) => r.product_id));
+
+  const incomingIds = new Set(items.map((p) => p.id).filter(Boolean) as string[]);
+  let skipped = 0;
+
+  try {
+    // Delete removed products (never delete a locked one).
+    for (const id of existingIds) {
+      if (incomingIds.has(id)) continue;
+      if (lockedProductIds.has(id)) {
+        skipped++;
+        continue;
+      }
+      await supabase.from("products").delete().eq("id", id).eq("shop_id", shopId);
+    }
+
+    for (const product of items) {
+      if (product.id && lockedProductIds.has(product.id)) {
+        skipped++;
+        continue;
+      }
+      const row = saveDraftProductRow(shopId, product);
+      if (product.id) {
+        const { error } = await supabase
+          .from("products")
+          .update(row)
+          .eq("id", product.id)
+          .eq("shop_id", shopId);
+        if (error) return { error: error.message };
+      } else {
+        const { error } = await supabase.from("products").insert(row);
+        if (error) return { error: error.message };
+      }
+    }
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Could not save products." };
+  }
+
+  revalidatePath(`/dashboard/shops/${shopId}`);
+  revalidatePath(`/shop/${shopId}`);
+
+  const { data: saved } = await supabase
+    .from("products")
+    .select("*")
+    .eq("shop_id", shopId)
+    .order("created_at", { ascending: true });
+
+  return {
+    error: skipped
+      ? "Saved. Items with a live or completed auction were left unchanged."
+      : null,
+    products: saved ?? [],
+  };
 }
 
 /** Update shop appearance (theme/layout) from the manage page. */

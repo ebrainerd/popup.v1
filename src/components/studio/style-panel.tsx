@@ -1,13 +1,17 @@
 "use client";
 
-import { Check, RotateCcw } from "lucide-react";
+import { Check, RotateCcw, Sparkles } from "lucide-react";
 import {
   SHOP_BACKGROUND_META,
   SHOP_BACKGROUND_STYLES,
+  SHOP_LAYOUT_MODES,
+  SHOP_LAYOUT_MODE_META,
   SHOP_THEME_PRESET_META,
   SHOP_THEME_PRESETS,
   presetAccent,
+  recommendedThemeForLayout,
   validateShopThemeContrast,
+  type ShopLayoutMode,
   type ShopTheme,
   type ShopThemePreset,
 } from "@/lib/shop-theme";
@@ -17,9 +21,22 @@ import { cn } from "@/lib/utils";
 /** Quick accent swatches: brand colors plus each preset's signature accent. */
 const ACCENT_SWATCHES = ["#ff3b8b", "#00e6c8", "#ffd60a", "#2d4ff2", "#e4572e", "#16a34a"];
 
+/** Whether the layout's recommended look differs from the current theme. */
+function layoutLookDiffers(theme: ShopTheme, layout: ShopLayoutMode): boolean {
+  const recommended = recommendedThemeForLayout(layout, theme);
+  return (
+    recommended.preset !== theme.preset ||
+    recommended.accent.toLowerCase() !== theme.accent.toLowerCase() ||
+    recommended.productGridColumns !== theme.productGridColumns ||
+    recommended.showChat !== theme.showChat ||
+    recommended.showSellerBio !== theme.showSellerBio ||
+    recommended.showReminderCta !== theme.showReminderCta
+  );
+}
+
 /**
  * Theme controls for the studio side panel (no preview: the canvas has it).
- * Every shop uses The Room layout, so there is no layout picker.
+ * Layout picks the page archetype; the preview on the canvas updates live.
  */
 export function StudioStylePanel({
   theme,
@@ -29,6 +46,8 @@ export function StudioStylePanel({
   onChange: (theme: ShopTheme) => void;
 }) {
   const contrastWarnings = validateShopThemeContrast(theme);
+  const activeLayout = SHOP_LAYOUT_MODE_META[theme.layout];
+  const canApplyRecommended = layoutLookDiffers(theme, theme.layout);
 
   function patch(partial: Partial<ShopTheme>) {
     onChange({ ...theme, ...partial });
@@ -40,6 +59,53 @@ export function StudioStylePanel({
 
   return (
     <div className="space-y-7">
+      <PanelSection
+        title="Layout"
+        description="How your shop page is arranged. Pick the one that fits how you sell — the preview updates as you choose."
+      >
+        <div className="grid gap-2">
+          {SHOP_LAYOUT_MODES.map((id) => {
+            const meta = SHOP_LAYOUT_MODE_META[id];
+            const active = theme.layout === id;
+            return (
+              <button
+                key={id}
+                type="button"
+                onClick={() => patch({ layout: id })}
+                aria-pressed={active}
+                className={cn(
+                  "group relative rounded-xl border px-3 py-2.5 text-left transition-all",
+                  active
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/40"
+                    : "border-border hover:border-primary/40",
+                )}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold leading-tight">{meta.label}</p>
+                  {active && (
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                      <Check className="size-3" />
+                    </span>
+                  )}
+                </div>
+                <p className="mt-0.5 text-[11px] font-medium text-primary/80">{meta.tagline}</p>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{meta.bestFor}</p>
+              </button>
+            );
+          })}
+        </div>
+        {canApplyRecommended && (
+          <button
+            type="button"
+            onClick={() => onChange(recommendedThemeForLayout(theme.layout, theme))}
+            className="flex w-full items-center justify-center gap-1.5 rounded-xl border border-primary/40 bg-primary/5 px-3 py-2 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+          >
+            <Sparkles className="size-3.5" />
+            Use {activeLayout.label}&apos;s recommended colors &amp; sections
+          </button>
+        )}
+      </PanelSection>
+
       <PanelSection
         title="Theme"
         description="Sets your page background, cards, and type. Your accent color applies on top."

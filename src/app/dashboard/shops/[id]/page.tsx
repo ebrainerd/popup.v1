@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Countdown } from "@/components/countdown";
 import { ShopForm } from "@/components/shop-form";
-import { ProductManager } from "@/components/product-manager";
+import { ManageProductManager } from "@/components/manage-product-manager";
 import { LiveControlsCard } from "@/components/live-controls-card";
 import { PublishControls } from "@/components/publish-controls";
 import { LaunchChecklist } from "@/components/launch-checklist";
@@ -196,7 +196,7 @@ export default async function ManageShopPage({
           defaultOpen={!productsDone}
           complete={productsDone}
         >
-          <ProductManager shopId={shop.id} products={shop.products} />
+          <ManageProductManager shopId={shop.id} products={shop.products} />
         </CollapsibleSection>
 
         <CollapsibleSection

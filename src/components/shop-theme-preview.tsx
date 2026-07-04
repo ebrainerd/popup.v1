@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import { MessageCircle, Monitor, Package, Radio, User } from "lucide-react";
+import { MessageCircle, Monitor, Package, Radio, ShoppingBag, User } from "lucide-react";
 import {
   SHOP_LAYOUT_MODE_META,
   SHOP_THEME_PRESET_META,
@@ -28,6 +29,7 @@ export function ShopThemePreview({
   products,
   viewport = "desktop",
   phase = "open",
+  showActivity = false,
 }: {
   theme: ShopTheme;
   shopName: string;
@@ -35,6 +37,8 @@ export function ShopThemePreview({
   products: PreviewProduct[];
   viewport?: "desktop" | "mobile";
   phase?: ShopPreviewPhase;
+  /** Show a looping "just sold" ticker so an open/live shop feels alive. */
+  showActivity?: boolean;
 }) {
   const preset = SHOP_THEME_PRESET_META[theme.preset];
   const layout = SHOP_LAYOUT_MODE_META[theme.layout];
@@ -86,7 +90,10 @@ export function ShopThemePreview({
         </span>
       </div>
 
-      <div className="flex-1 space-y-3 p-3 sm:p-4" style={{ background: previewPageBackground(theme) }}>
+      <div className="relative flex-1 space-y-3 p-3 sm:p-4" style={{ background: previewPageBackground(theme) }}>
+        {showActivity && phase !== "scheduled" && (
+          <MockSaleTicker products={displayProducts} accent={theme.accent} />
+        )}
         <LayoutPreview
           theme={theme}
           layout={layout.id}
@@ -98,6 +105,58 @@ export function ShopThemePreview({
           phase={phase}
         />
       </div>
+    </div>
+  );
+}
+
+const MOCK_BUYERS = ["ava", "noah", "mia", "liam", "zoe", "kai", "ivy", "leo"];
+
+/**
+ * A looping "someone just bought X" pill for the studio preview. Purely
+ * cosmetic — it gives sellers a feel for the live buying energy while they
+ * build, so an open shop never looks static.
+ */
+function MockSaleTicker({
+  products,
+  accent,
+}: {
+  products: PreviewProduct[];
+  accent: string;
+}) {
+  const [i, setI] = useState(0);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    let idx = 0;
+    let showTimer: ReturnType<typeof setTimeout>;
+    const cycle = () => {
+      setI(idx);
+      setVisible(true);
+      showTimer = setTimeout(() => setVisible(false), 2600);
+      idx += 1;
+    };
+    const first = setTimeout(cycle, 900);
+    const interval = setInterval(cycle, 3800);
+    return () => {
+      clearTimeout(first);
+      clearTimeout(showTimer);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const product = products[i % products.length];
+  const buyer = MOCK_BUYERS[i % MOCK_BUYERS.length];
+
+  return (
+    <div
+      className={cn(
+        "pointer-events-none absolute right-3 top-3 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold text-white shadow-lg transition-all duration-500",
+        visible ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0",
+      )}
+      style={{ background: accent }}
+    >
+      <ShoppingBag className="size-3" />
+      @{buyer} just grabbed {product?.title || "an item"}
     </div>
   );
 }
