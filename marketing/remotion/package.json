@@ -1,0 +1,21 @@
+{
+  "name": "popup-marketing-video",
+  "private": true,
+  "description": "Remotion project that renders the PopUp product demo video (marketing/video/popup-product-demo.mp4)",
+  "scripts": {
+    "sync-assets": "node scripts/sync-assets.mjs && node scripts/generate-sfx.mjs",
+    "studio": "npm run sync-assets && remotion studio",
+    "render": "npm run sync-assets && remotion render PopUpDemo ../video/popup-product-demo.mp4 --codec h264 --crf 16"
+  },
+  "dependencies": {
+    "@remotion/transitions": "4.0.484",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "remotion": "4.0.484"
+  },
+  "devDependencies": {
+    "@remotion/cli": "4.0.484",
+    "@types/react": "19.2.9",
+    "typescript": "5.9.3"
+  }
+}
