@@ -34,8 +34,10 @@ import { StudioDetailsPanel } from "@/components/studio/details-panel";
 import { StudioStreamPanel } from "@/components/studio/stream-panel";
 import { StudioStylePanel } from "@/components/studio/style-panel";
 import { StudioLaunchPanel } from "@/components/studio/launch-panel";
+import { StudioBottomSheet } from "@/components/studio/studio-bottom-sheet";
 import { StudioTour, hasSeenStudioTour } from "@/components/studio/studio-tour";
 import { PanelSection } from "@/components/studio/panel-ui";
+import { useIsDesktop } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 type StudioTab = "shop" | "products" | "stream" | "style" | "launch";
@@ -78,6 +80,7 @@ export function ShopStudio({
   const router = useRouter();
   const inviteOnly = isInviteOnlyMode();
   const nativeLiveEnabled = Boolean(getPublicLiveKitUrl());
+  const isDesktop = useIsDesktop();
 
   const [hydrated, setHydrated] = useState(false);
   const [draft, setDraft] = useState<ShopWizardDraft>(initialDraft ?? defaultWizardDraft());
@@ -204,6 +207,54 @@ export function ShopStudio({
     return <p className="text-sm text-muted-foreground">Loading your studio…</p>;
   }
 
+  const tabBar = (
+    <div className="grid shrink-0 grid-cols-5 gap-1 border-b border-border/60 p-2" data-tour="tabs">
+      {TABS.map(({ id, label, icon: Icon }) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => setTab(id)}
+          aria-pressed={tab === id}
+          className={cn(
+            "flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition-colors",
+            tab === id
+              ? "bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          )}
+        >
+          <Icon className="size-4" />
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const panelBody = (
+    <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-10">
+      {tab === "shop" && (
+        <StudioDetailsPanel draft={draft} onPatch={patch} inviteOnly={inviteOnly} />
+      )}
+      {tab === "products" && (
+        <PanelSection
+          title="Products"
+          description="Add at least one product. Each can be Buy Now or a live auction."
+        >
+          <WizardProductManager
+            products={draft.products}
+            onProductsChange={(products) => patch({ products })}
+          />
+        </PanelSection>
+      )}
+      {tab === "stream" && (
+        <StudioStreamPanel draft={draft} onPatch={patch} nativeLiveEnabled={nativeLiveEnabled} />
+      )}
+      {tab === "style" && (
+        <StudioStylePanel theme={draft.theme} onChange={(theme) => patch({ theme })} />
+      )}
+      {tab === "launch" && <StudioLaunchPanel draft={draft} onPatch={patch} />}
+    </div>
+  );
+
   return (
     <div className="relative left-1/2 -my-8 w-screen -translate-x-1/2">
       <div className="flex flex-col lg:h-[calc(100dvh-4rem)]">
@@ -261,61 +312,20 @@ export function ShopStudio({
             onPhaseChange={setPhase}
             viewport={viewport}
             onViewportChange={setViewport}
-            className="h-[46vh] border-b border-border/60 lg:h-auto lg:border-b-0"
+            className="min-h-0 flex-1 lg:h-auto"
             data-tour="canvas"
           />
 
-          <aside className="flex min-h-0 flex-col border-border/60 bg-card/30 lg:w-[400px] lg:shrink-0 lg:border-l">
-            {/* Panel tabs */}
-            <div className="grid shrink-0 grid-cols-5 gap-1 border-b border-border/60 p-2" data-tour="tabs">
-              {TABS.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => setTab(id)}
-                  aria-pressed={tab === id}
-                  className={cn(
-                    "flex flex-col items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium transition-colors",
-                    tab === id
-                      ? "bg-primary/10 text-primary"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4" />
-                  {label}
-                </button>
-              ))}
-            </div>
-
-            {/* Panel content */}
-            <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-10">
-              {tab === "shop" && (
-                <StudioDetailsPanel draft={draft} onPatch={patch} inviteOnly={inviteOnly} />
-              )}
-              {tab === "products" && (
-                <PanelSection
-                  title="Products"
-                  description="Add at least one product. Each can be Buy Now or a live auction."
-                >
-                  <WizardProductManager
-                    products={draft.products}
-                    onProductsChange={(products) => patch({ products })}
-                  />
-                </PanelSection>
-              )}
-              {tab === "stream" && (
-                <StudioStreamPanel
-                  draft={draft}
-                  onPatch={patch}
-                  nativeLiveEnabled={nativeLiveEnabled}
-                />
-              )}
-              {tab === "style" && (
-                <StudioStylePanel theme={draft.theme} onChange={(theme) => patch({ theme })} />
-              )}
-              {tab === "launch" && <StudioLaunchPanel draft={draft} onPatch={patch} />}
-            </div>
-          </aside>
+          {/* On desktop the editor is a right-hand rail; on mobile it collapses
+              into a draggable bottom sheet so the preview owns the screen. */}
+          {isDesktop ? (
+            <aside className="flex min-h-0 flex-col border-border/60 bg-card/30 lg:w-[400px] lg:shrink-0 lg:border-l">
+              {tabBar}
+              {panelBody}
+            </aside>
+          ) : (
+            <StudioBottomSheet header={tabBar}>{panelBody}</StudioBottomSheet>
+          )}
         </div>
       </div>
 
