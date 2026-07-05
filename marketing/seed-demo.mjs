@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import {
   AVATAR,
   COVER_HOLIDAY,
+  COVER_LIVE,
   COVER_STUDIO,
   COVER_SUMMER,
   COVER_WINTER,
@@ -226,7 +227,7 @@ async function main() {
     slug: "spring-studio-drop",
     description:
       "Fresh from the kiln: mugs, bowls, and one-of-a-kind vases. Limited window — when they're gone, they're gone.",
-    cover_url: COVER_STUDIO,
+    cover_url: COVER_LIVE,
     start_at: past(2),
     end_at: future(4),
     visibility: "public",
