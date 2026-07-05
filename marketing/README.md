@@ -25,6 +25,21 @@ Output: `marketing/screenshots/`
 | `sales.png` | `/dashboard/sales` |
 | `create-shop.png` | Shop Studio (`/dashboard/shops/{id}/setup`) |
 | `live-shop.png` | Live buyer shop page |
+| `step-shop.png` … `step-launch.png` | Each Studio tab (via `capture-studio-steps.mjs`) |
+
+## Marketing video
+
+Walkthrough video built from the screenshots above:
+
+```bash
+# Capture per-step Studio tabs (server must be running)
+node marketing/capture-studio-steps.mjs
+
+# Render 1080p walkthrough video
+node marketing/generate-marketing-video.mjs
+```
+
+Output: `marketing/video/create-shop-walkthrough.mp4` (~30s, 9 slides with crossfades)
 
 ## Demo account
 

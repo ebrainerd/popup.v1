@@ -132,6 +132,21 @@ async function main() {
     }
     await capture(page, "create-shop");
 
+    console.log("Studio steps…");
+    const stepTabs = [
+      { file: "step-shop", label: /^shop$/i },
+      { file: "step-products", label: /^products$/i },
+      { file: "step-stream", label: /^stream$/i },
+      { file: "step-design", label: /^design$/i },
+      { file: "step-launch", label: /^launch$/i },
+    ];
+    for (const tab of stepTabs) {
+      await page.getByRole("button", { name: tab.label }).click();
+      await page.waitForTimeout(1000);
+      await waitForImages(page);
+      await capture(page, tab.file);
+    }
+
     console.log("Live shop (buyer view)…");
     await context.clearCookies();
     await page.goto(`${BASE}${state.liveShopUrl}`);
