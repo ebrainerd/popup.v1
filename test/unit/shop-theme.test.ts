@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   contrastRatio,
   defaultShopTheme,
+  normalizeLayout,
   parseShopTheme,
   recommendedThemeForLayout,
   relativeLuminance,
@@ -9,6 +10,7 @@ import {
   SHOP_LAYOUT_DEFAULTS,
   SHOP_LAYOUT_MODE_META,
   SHOP_LAYOUT_MODES,
+  SHOP_PICKABLE_LAYOUTS,
   SHOP_PRESET_VISUAL,
   SHOP_THEME_PRESET_META,
   validateShopThemeContrast,
@@ -49,6 +51,20 @@ describe("shop theme", () => {
   it("migrates legacy broadcast preset to default", () => {
     const theme = parseShopTheme({ preset: "broadcast", layout: "classic" });
     expect(theme.preset).toBe("default");
+  });
+
+  it("folds retired layouts into a supported one on parse", () => {
+    expect(parseShopTheme({ layout: "broadcast" }).layout).toBe("classic");
+    expect(parseShopTheme({ layout: "countdown" }).layout).toBe("classic");
+    expect(parseShopTheme({ layout: "catalog" }).layout).toBe("catalog");
+    expect(parseShopTheme({ layout: "classic" }).layout).toBe("classic");
+    expect(parseShopTheme({ layout: "nonsense" }).layout).toBe("classic");
+  });
+
+  it("only offers The Room and Lookbook as pickable layouts", () => {
+    expect([...SHOP_PICKABLE_LAYOUTS]).toEqual(["classic", "catalog"]);
+    expect(normalizeLayout("broadcast")).toBe("classic");
+    expect(normalizeLayout("catalog")).toBe("catalog");
   });
 
   it("builds root class names for preset, layout, and grid", () => {

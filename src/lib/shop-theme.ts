@@ -16,6 +16,33 @@ export const SHOP_LAYOUT_MODES = [
 
 export type ShopLayoutMode = (typeof SHOP_LAYOUT_MODES)[number];
 
+/**
+ * Layouts a seller can actually pick. We offer just two, each with a clear,
+ * distinct purpose — one for live selling, one for photo-led shops. The other
+ * enum slugs are retained only for backward compatibility with shops saved
+ * before the picker was narrowed; `parseShopTheme` folds them into "classic".
+ */
+export const SHOP_PICKABLE_LAYOUTS = ["classic", "catalog"] as const satisfies readonly ShopLayoutMode[];
+
+export type ShopPickableLayout = (typeof SHOP_PICKABLE_LAYOUTS)[number];
+
+/** Legacy layouts that no longer render on their own; folded into The Room. */
+const RETIRED_LAYOUTS: Record<string, ShopLayoutMode> = {
+  broadcast: "classic",
+  countdown: "classic",
+};
+
+/** Resolve any stored layout to one of the two supported layouts. */
+export function normalizeLayout(value: unknown): ShopLayoutMode {
+  if (typeof value === "string" && value in RETIRED_LAYOUTS) {
+    return RETIRED_LAYOUTS[value]!;
+  }
+  if (isLayout(value) && (SHOP_PICKABLE_LAYOUTS as readonly string[]).includes(value)) {
+    return value;
+  }
+  return "classic";
+}
+
 export const SHOP_BACKGROUND_STYLES = ["solid", "gradient", "none"] as const;
 
 export type ShopBackgroundStyle = (typeof SHOP_BACKGROUND_STYLES)[number];
@@ -129,10 +156,10 @@ export const SHOP_LAYOUT_MODE_META: Record<ShopLayoutMode, ShopLayoutModeMeta> =
   catalog: {
     id: "catalog",
     label: "Lookbook",
-    tagline: "Let your work lead",
+    tagline: "Lead with your photos",
     description:
-      "Your product grid leads the page with larger imagery and room to read. Stream and chat tuck in below as supporting panels.",
-    bestFor: "Artists and makers with a few standout pieces that deserve a moment.",
+      "Your product grid leads the page with big imagery. Your live stream and chat sit together in a band just below — great when the photos do the selling.",
+    bestFor: "Best if your product photos sell themselves and you stream now and then.",
     recommendedPreset: "gallery",
   },
   countdown: {
@@ -147,10 +174,10 @@ export const SHOP_LAYOUT_MODE_META: Record<ShopLayoutMode, ShopLayoutModeMeta> =
   classic: {
     id: "classic",
     label: "The Room",
-    tagline: "Your regulars’ hangout",
+    tagline: "Live & chat up top",
     description:
-      "A balanced room: banner or stream beside a chat sidebar, seller bio up top, and a scannable product grid. Warm and conversational.",
-    bestFor: "Community sellers and repeat drops where chat and trust matter most.",
+      "Your stream sits beside a live chat sidebar at the very top, with your product grid right below — so watching, chatting, and buying all happen together.",
+    bestFor: "Best if you go live and sell in the moment — chat stays next to your stream.",
     recommendedPreset: "market_stall",
   },
 };
@@ -323,7 +350,7 @@ export function parseShopTheme(raw: unknown): ShopTheme {
 
   return {
     preset,
-    layout: isLayout(data.layout) ? data.layout : defaults.layout,
+    layout: normalizeLayout(data.layout),
     accent,
     background: isBackground(data.background) ? data.background : defaults.background,
     productGridColumns: data.productGridColumns === 3 ? 3 : 2,
