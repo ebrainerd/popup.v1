@@ -737,6 +737,8 @@ const shopThemeSchema = z.object({
   preset: z
     .enum(["default", "gallery", "dark_room", "market_stall", "broadcast"])
     .transform((v) => (v === "broadcast" ? "default" : v)),
+  // Retired layouts are still accepted for back-compat, then folded to a
+  // supported layout by shopThemeToJson -> parseShopTheme before storage.
   layout: z.enum(["classic", "broadcast", "countdown", "catalog"]),
   accent: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   background: z.enum(["solid", "gradient", "none"]),

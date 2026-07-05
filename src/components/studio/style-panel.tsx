@@ -1,10 +1,10 @@
 "use client";
 
-import { Check, RotateCcw, Sparkles } from "lucide-react";
+import { Check, LayoutGrid, RotateCcw, Sparkles, Tv } from "lucide-react";
 import {
   SHOP_BACKGROUND_META,
   SHOP_BACKGROUND_STYLES,
-  SHOP_LAYOUT_MODES,
+  SHOP_PICKABLE_LAYOUTS,
   SHOP_LAYOUT_MODE_META,
   SHOP_THEME_PRESET_META,
   SHOP_THEME_PRESETS,
@@ -17,6 +17,12 @@ import {
 } from "@/lib/shop-theme";
 import { PanelSection, PanelToggleRow, Segmented } from "@/components/studio/panel-ui";
 import { cn } from "@/lib/utils";
+
+/** Quick visual cue for each layout so the difference reads at a glance. */
+const LAYOUT_ICON: Record<string, typeof Tv> = {
+  classic: Tv,
+  catalog: LayoutGrid,
+};
 
 /** Quick accent swatches: brand colors plus each preset's signature accent. */
 const ACCENT_SWATCHES = ["#ff3b8b", "#00e6c8", "#ffd60a", "#2d4ff2", "#e4572e", "#16a34a"];
@@ -64,9 +70,10 @@ export function StudioStylePanel({
         description="How your shop page is arranged. Pick the one that fits how you sell — the preview updates as you choose."
       >
         <div className="grid gap-2">
-          {SHOP_LAYOUT_MODES.map((id) => {
+          {SHOP_PICKABLE_LAYOUTS.map((id) => {
             const meta = SHOP_LAYOUT_MODE_META[id];
             const active = theme.layout === id;
+            const Icon = LAYOUT_ICON[id] ?? Tv;
             return (
               <button
                 key={id}
@@ -80,15 +87,23 @@ export function StudioStylePanel({
                     : "border-border hover:border-primary/40",
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold leading-tight">{meta.label}</p>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "flex size-8 shrink-0 items-center justify-center rounded-lg",
+                      active ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+                    )}
+                  >
+                    <Icon className="size-4" />
+                  </span>
+                  <p className="flex-1 text-sm font-semibold leading-tight">{meta.label}</p>
                   {active && (
                     <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                       <Check className="size-3" />
                     </span>
                   )}
                 </div>
-                <p className="mt-0.5 text-[11px] font-medium text-primary/80">{meta.tagline}</p>
+                <p className="mt-1.5 text-[11px] font-medium text-primary/80">{meta.tagline}</p>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{meta.bestFor}</p>
               </button>
             );
