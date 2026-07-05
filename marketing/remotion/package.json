@@ -3,7 +3,7 @@
   "private": true,
   "description": "Remotion project that renders the PopUp product demo video (marketing/video/popup-product-demo.mp4)",
   "scripts": {
-    "sync-assets": "node scripts/sync-assets.mjs",
+    "sync-assets": "node scripts/sync-assets.mjs && node scripts/generate-sfx.mjs",
     "studio": "npm run sync-assets && remotion studio",
     "render": "npm run sync-assets && remotion render PopUpDemo ../video/popup-product-demo.mp4 --codec h264 --crf 16"
   },

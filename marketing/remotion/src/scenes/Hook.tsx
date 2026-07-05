@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors } from "../theme";
-import { DarkStage, Grain, KineticWord, LiveBadge, LogoBadge, useSpring, POP } from "../components/shared";
+import { DarkStage, Grain, KineticWord, LiveBadge, LogoBadge, Sfx, useSpring, POP } from "../components/shared";
 
 /**
  * Scene 1 — Hook: "Your drop. Live." kinetic type slam with LIVE badge,
@@ -22,6 +22,10 @@ export const Hook: React.FC = () => {
 
   return (
     <DarkStage>
+      <Sfx src="bass_hit" at={10} />
+      <Sfx src="bass_hit" at={26} volume={0.9} rate={1.12} />
+      <Sfx src="pop" at={40} volume={0.8} />
+      <Sfx src="whoosh" at={outStart} />
       <AbsoluteFill
         style={{
           alignItems: "center",

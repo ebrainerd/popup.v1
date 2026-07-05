@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts, glow } from "../theme";
-import { Card, DarkStage, Grain, KineticWord, POP, SNAP, useSpring } from "../components/shared";
+import { Card, DarkStage, Grain, KineticWord, POP, SNAP, Sfx, useSpring } from "../components/shared";
 
 const PRODUCTS = [
   { img: "demo/mug.jpg", name: "Speckled Mug", price: "$42", meta: "16oz wheel-thrown", tilt: -7, y: 40 },
@@ -82,6 +82,12 @@ export const ProductCascade: React.FC = () => {
 
   return (
     <DarkStage accent={colors.pink}>
+      <Sfx src="bass_hit" at={4} />
+      <Sfx src="bass_hit" at={14} volume={0.85} rate={1.12} />
+      {PRODUCTS.map((_, i) => (
+        <Sfx key={i} src="pop" at={16 + i * 8} volume={0.65} rate={0.92 + i * 0.09} />
+      ))}
+      <Sfx src="whoosh" at={outStart} />
       <AbsoluteFill style={{ transform: `scale(${zoom})`, transformOrigin: "38.5% 78%" }}>
         <AbsoluteFill style={{ alignItems: "center", justifyContent: "flex-start", paddingTop: 92 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 26 }}>

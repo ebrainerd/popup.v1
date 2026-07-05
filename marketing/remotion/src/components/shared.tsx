@@ -1,5 +1,5 @@
 import React from "react";
-import { AbsoluteFill, interpolate, spring, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Audio, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts, glow } from "../theme";
 
 type SpringConfig = { damping: number; mass: number; stiffness: number };
@@ -16,6 +16,18 @@ export const useSpring = (delay: number, config: SpringConfig = SNAP, durationIn
   const { fps } = useVideoConfig();
   return spring({ frame: frame - delay, fps, config, durationInFrames });
 };
+
+/** One-shot synthesized sound effect at a scene-local frame. */
+export const Sfx: React.FC<{ src: string; at: number; volume?: number; rate?: number }> = ({
+  src,
+  at,
+  volume = 1,
+  rate = 1,
+}) => (
+  <Sequence from={at}>
+    <Audio src={staticFile(`sfx/${src}.wav`)} volume={volume} playbackRate={rate} />
+  </Sequence>
+);
 
 /** Dark scene background: deep radial gradient + drifting glow blobs + vignette. */
 export const DarkStage: React.FC<{

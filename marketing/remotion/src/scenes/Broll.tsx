@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, OffthreadVideo, interpolate, random, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts } from "../theme";
-import { Grain, KineticWord } from "../components/shared";
+import { Grain, KineticWord, Sfx } from "../components/shared";
 
 /**
  * Cinematic b-roll scene. Uses the Veo clip when present; otherwise applies a
@@ -85,7 +85,13 @@ export const Broll: React.FC<{
         src={staticFile(clip)}
         startFrom={Math.round(clipOffsetSec * fps)}
         muted={muted}
-        volume={volume}
+        volume={(f) =>
+          volume *
+          interpolate(f, [0, 12, durationInFrames - 14, durationInFrames], [0, 1, 1, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })
+        }
         style={{ width: "100%", height: "100%", objectFit: "cover" }}
       />
     </AbsoluteFill>
@@ -138,11 +144,18 @@ export const Broll: React.FC<{
           background: "linear-gradient(0deg, rgba(5,4,8,0.75) 0%, transparent 34%)",
         }}
       />
+      {words.map((_, i) => (
+        <Sfx key={i} src="bass_hit" at={wordDelay + i * 13} volume={0.55} rate={1 + i * 0.1} />
+      ))}
       <AbsoluteFill
         style={{
           justifyContent: "flex-end",
           alignItems: align === "center" ? "center" : "flex-start",
           padding: align === "center" ? "0 0 120px 0" : "0 0 110px 130px",
+          // Continuous drift so the caption never sits dead on screen: a
+          // clearly perceptible push-in plus a gentle float bob.
+          transform: `scale(${1 + t * 0.2}) translate(${t * 26}px, ${t * -48 + Math.sin(frame / 21) * 4}px)`,
+          transformOrigin: align === "center" ? "50% 88%" : "12% 88%",
         }}
       >
         <div style={{ display: "flex", gap: 30, alignItems: "baseline" }}>

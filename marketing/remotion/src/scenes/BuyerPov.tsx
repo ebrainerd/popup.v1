@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts, glow } from "../theme";
-import { Card, DarkStage, Grain, LiveBadge, POP, SNAP, useSpring, useCountUp } from "../components/shared";
+import { Card, DarkStage, Grain, LiveBadge, POP, SNAP, Sfx, useSpring, useCountUp } from "../components/shared";
 
 const CHAT = [
   { user: "jordan.k", text: "that glaze 😍😍", color: "#8ab4ff" },
@@ -111,6 +111,12 @@ export const BuyerPov: React.FC = () => {
 
   return (
     <DarkStage accent={colors.teal}>
+      {CHAT.map((_, i) => (
+        <Sfx key={i} src="pop" at={CHAT_START + i * CHAT_GAP} volume={0.7} rate={0.95 + i * 0.06} />
+      ))}
+      <Sfx src="click" at={CLICK_AT} />
+      <Sfx src="cha" at={CLICK_AT + 14} volume={0.85} />
+      <Sfx src="whoosh" at={durationInFrames - 14} />
       <AbsoluteFill style={{ transform: `scale(${zoom})`, transformOrigin: "72% 63%" }}>
         {/* Stream card, floating left */}
         <div

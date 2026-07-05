@@ -1,7 +1,7 @@
 import React from "react";
 import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts } from "../theme";
-import { Card, CreamStage, Grain, KineticWord, POP, SNAP, useSpring, useCountUp } from "../components/shared";
+import { Card, CreamStage, Grain, KineticWord, POP, SNAP, Sfx, useSpring, useCountUp } from "../components/shared";
 
 const ORDERS = [
   { id: "#3b57e714", name: "Sunset Ring Dish", buyer: "@kai.collects · Austin, TX", price: "$38.00" },
@@ -105,8 +105,8 @@ const OrderRow: React.FC<{ order: (typeof ORDERS)[number]; delay: number }> = ({
 export const SellerPayoff: React.FC = () => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
-  const gross = useCountUp(16, 0, 468, 52);
-  const sales = Math.round(useCountUp(20, 0, 8, 46));
+  const gross = useCountUp(18, 0, 468, 52);
+  const sales = Math.round(useCountUp(22, 0, 8, 46));
 
   const outStart = durationInFrames - 12;
   const outT = interpolate(frame, [outStart, durationInFrames], [0, 1], {
@@ -116,13 +116,20 @@ export const SellerPayoff: React.FC = () => {
 
   return (
     <CreamStage>
+      <Sfx src="bass_hit" at={6} volume={0.65} rate={1.25} />
+      <Sfx src="bass_hit" at={16} volume={0.6} rate={1.4} />
+      <Sfx src="cha" at={64} volume={0.75} />
+      {ORDERS.map((o, i) => (
+        <Sfx key={o.id} src="pop" at={30 + i * 12} volume={0.55} rate={1 + i * 0.07} />
+      ))}
+      <Sfx src="whoosh" at={durationInFrames - 12} volume={0.85} />
       <AbsoluteFill style={{ transform: `scale(${1 + outT * outT * 1.6})`, transformOrigin: "30% 55%" }}>
         <AbsoluteFill style={{ paddingTop: 84, alignItems: "center" }}>
           <div style={{ display: "flex", gap: 24, alignItems: "baseline" }}>
-            <KineticWord delay={2} size={92} color={colors.ink}>
+            <KineticWord delay={6} size={92} color={colors.ink}>
               And you got
             </KineticWord>
-            <KineticWord delay={12} size={92} color={colors.pinkDeep} glowColor={colors.pink}>
+            <KineticWord delay={16} size={92} color={colors.pinkDeep} glowColor={colors.pink}>
               paid.
             </KineticWord>
           </div>

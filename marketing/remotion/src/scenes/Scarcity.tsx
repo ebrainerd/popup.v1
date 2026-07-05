@@ -1,14 +1,14 @@
 import React from "react";
 import { AbsoluteFill, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts, glow } from "../theme";
-import { Card, DarkStage, Grain, POP, SNAP, useSpring } from "../components/shared";
+import { Card, DarkStage, Grain, POP, SNAP, Sfx, useSpring } from "../components/shared";
 
 const TICKS = [
-  { at: 14, label: "3 left" },
-  { at: 40, label: "2 left" },
-  { at: 66, label: "1 left" },
+  { at: 22, label: "3 left" },
+  { at: 46, label: "2 left" },
+  { at: 70, label: "1 left" },
 ];
-const SOLD_AT = 92;
+const SOLD_AT = 94;
 
 const TickNumber: React.FC<{ label: string; at: number; retireAt: number }> = ({ label, at, retireAt }) => {
   const frame = useCurrentFrame();
@@ -50,7 +50,9 @@ export const Scarcity: React.FC = () => {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
 
-  const cardIn = useSpring(0, SNAP);
+  // Entrance starts after the incoming transition so it reads on screen.
+  const cardIn = useSpring(9, { damping: 13, mass: 0.85, stiffness: 115 });
+  const panelIn = useSpring(15, { damping: 14, mass: 0.8, stiffness: 120 });
   const stamp = useSpring(SOLD_AT, { damping: 13, mass: 0.8, stiffness: 240 });
   const shake = frame >= SOLD_AT && frame < SOLD_AT + 10 ? Math.sin(frame * 3.1) * (SOLD_AT + 10 - frame) * 1.15 : 0;
   const flash = interpolate(frame, [SOLD_AT, SOLD_AT + 3, SOLD_AT + 14], [0, 0.5, 0], {
@@ -75,6 +77,12 @@ export const Scarcity: React.FC = () => {
 
   return (
     <DarkStage accent={colors.pink} vignette={0.92}>
+      <Sfx src="pop" at={6} volume={0.5} rate={0.85} />
+      {TICKS.map((tk, i) => (
+        <Sfx key={tk.label} src="tick" at={tk.at} volume={0.9} rate={1 + i * 0.14} />
+      ))}
+      <Sfx src="stamp" at={SOLD_AT} />
+      <Sfx src="whoosh" at={durationInFrames - 12} volume={0.9} />
       <AbsoluteFill
         style={{
           alignItems: "center",
@@ -83,17 +91,15 @@ export const Scarcity: React.FC = () => {
           transformOrigin: "50% 50%",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            gap: 90,
-            alignItems: "center",
-            transform: `translateY(${interpolate(cardIn, [0, 1], [500, 0])}px)`,
-            opacity: Math.min(1, cardIn * 1.6),
-          }}
-        >
+        <div style={{ display: "flex", gap: 90, alignItems: "center" }}>
           {/* Product card that gets stamped */}
-          <div style={{ position: "relative", transform: `rotate(-2.6deg)` }}>
+          <div
+            style={{
+              position: "relative",
+              transform: `translateY(${interpolate(cardIn, [0, 1], [780, 0])}px) rotate(${-2.6 - (1 - cardIn) * 16}deg) scale(${0.72 + cardIn * 0.28})`,
+              opacity: Math.min(1, cardIn * 1.7),
+            }}
+          >
             <Card style={{ width: 470 }}>
               <div style={{ height: 330, overflow: "hidden", position: "relative" }}>
                 <Img
@@ -166,7 +172,16 @@ export const Scarcity: React.FC = () => {
           </div>
 
           {/* Counter panel */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8 }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 8,
+              transform: `translateY(${interpolate(panelIn, [0, 1], [520, 0])}px) scale(${0.78 + panelIn * 0.22})`,
+              opacity: Math.min(1, panelIn * 1.7),
+            }}
+          >
             <div
               style={{
                 fontFamily: fonts.sans,
@@ -192,9 +207,9 @@ export const Scarcity: React.FC = () => {
                     alignItems: "center",
                     justifyContent: "center",
                     transform: `scale(${0.7 + Math.min(1, stamp) * 0.3})`,
-                    fontFamily: fonts.mono,
-                    fontWeight: 700,
-                    fontSize: 130,
+                    fontFamily: fonts.sans,
+                    fontWeight: 900,
+                    fontSize: 128,
                     letterSpacing: -3,
                     color: colors.pink,
                     textShadow: glow(colors.pink, 0.8),

@@ -1,7 +1,7 @@
 import React from "react";
-import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
+import { AbsoluteFill, interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { colors, fonts, glow } from "../theme";
-import { DarkStage, Grain, KineticWord, LogoBadge, POP, SNAP, useSpring } from "../components/shared";
+import { DarkStage, Grain, KineticWord, LogoBadge, POP, SNAP, Sfx, useSpring } from "../components/shared";
 
 /**
  * Scene 9 — outro: the P badge drops in with a glow shockwave, wordmark and
@@ -9,6 +9,7 @@ import { DarkStage, Grain, KineticWord, LogoBadge, POP, SNAP, useSpring } from "
  */
 export const Outro: React.FC = () => {
   const frame = useCurrentFrame();
+  const { durationInFrames } = useVideoConfig();
   const logoIn = useSpring(4, { damping: 12, mass: 0.9, stiffness: 190 });
   const wordIn = useSpring(12, SNAP);
   const ctaIn = useSpring(34, POP);
@@ -17,9 +18,21 @@ export const Outro: React.FC = () => {
   const breathe = 1 + Math.sin(Math.max(0, frame - 44) / 9) * 0.022;
   const glowBreathe = 0.9 + Math.sin(Math.max(0, frame - 44) / 9) * 0.45;
 
+  // Slow continuous push so the end card never sits still; gentle fade out.
+  const push = 1 + (frame / durationInFrames) * 0.07;
+  const fadeOut = interpolate(frame, [durationInFrames - 14, durationInFrames - 2], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
     <DarkStage>
-      <AbsoluteFill style={{ alignItems: "center", justifyContent: "center" }}>
+      <Sfx src="shimmer" at={4} volume={0.8} />
+      <Sfx src="bass_hit" at={22} volume={0.7} rate={1.15} />
+      <Sfx src="pop" at={34} volume={0.75} />
+      <AbsoluteFill
+        style={{ alignItems: "center", justifyContent: "center", transform: `scale(${push})`, opacity: fadeOut }}
+      >
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 40 }}>
           <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 26 }}>
             {ring > 0 && ring < 1 && (

@@ -15,7 +15,7 @@ import { Outro } from "./scenes/Outro";
 loadFonts();
 
 const T = 8; // transition length (frames) — fast cuts
-const SCENES = [100, 145, 150, 185, 135, 90, 155, 100, 130];
+const SCENES = [100, 145, 150, 185, 135, 85, 70, 155, 100, 130];
 export const TOTAL_FRAMES = SCENES.reduce((a, b) => a + b, 0) - T * (SCENES.length - 1);
 
 /** Use the Veo clip when it has been generated, else animate the source still. */
@@ -55,21 +55,32 @@ export const PopUpDemo: React.FC = () => {
         <Scarcity />
       </TransitionSeries.Sequence>
       {cut}
+      {/* Two-shot montage: the phrase continues across the match cut */}
       <TransitionSeries.Sequence durationInFrames={SCENES[5]}>
         <Broll
-          clip={clipOrFallback("bowls")}
+          clip={clipOrFallback("kiln")}
           fallbackImage="demo/bowl.jpg"
-          words={["Small batches.", "Big demand."]}
-          accent={colors.teal}
+          words={["Small batches."]}
+          accent={colors.white}
           wordDelay={8}
         />
       </TransitionSeries.Sequence>
       {cut}
       <TransitionSeries.Sequence durationInFrames={SCENES[6]}>
-        <SellerPayoff />
+        <Broll
+          clip={clipOrFallback("bowls")}
+          fallbackImage="demo/bowl.jpg"
+          words={["Big demand."]}
+          accent={colors.teal}
+          wordDelay={4}
+        />
       </TransitionSeries.Sequence>
       {cut}
       <TransitionSeries.Sequence durationInFrames={SCENES[7]}>
+        <SellerPayoff />
+      </TransitionSeries.Sequence>
+      {cut}
+      <TransitionSeries.Sequence durationInFrames={SCENES[8]}>
         <Broll
           clip={clipOrFallback("mug")}
           fallbackImage="demo/ring-dish.jpg"
@@ -79,7 +90,7 @@ export const PopUpDemo: React.FC = () => {
         />
       </TransitionSeries.Sequence>
       {cut}
-      <TransitionSeries.Sequence durationInFrames={SCENES[8]}>
+      <TransitionSeries.Sequence durationInFrames={SCENES[9]}>
         <Outro />
       </TransitionSeries.Sequence>
     </TransitionSeries>
