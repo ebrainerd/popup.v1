@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { MessageCircle, Monitor, Package, Radio, ShoppingBag, User } from "lucide-react";
+import { MessageCircle, Monitor, Package, ShoppingBag, User } from "lucide-react";
 import {
   SHOP_LAYOUT_MODE_META,
   SHOP_THEME_PRESET_META,
@@ -181,7 +181,6 @@ function LayoutPreview({
   phase: ShopPreviewPhase;
 }) {
   const isScheduled = phase === "scheduled";
-  const isLive = phase === "live";
 
   const hero = (
     <HeroBlock
@@ -246,99 +245,34 @@ function LayoutPreview({
     </p>
   ) : null;
 
-  if (layout === "broadcast") {
-    // Keep section order in sync with shop-page-view.tsx Live Stage branch (§5.1).
-    return (
-      <div className="space-y-3">
-        {title}
-        {hero}
-        {reminder}
-        {sneakPeek}
-        {productGrid}
-        {chat}
-      </div>
-    );
-  }
-
-  if (layout === "countdown") {
-    // Keep section order in sync with shop-page-view.tsx Drop Clock branch (§5.3).
-    const announcementsStub = isScheduled ? (
-      <div
-        className="flex min-h-[60px] flex-col rounded-lg border p-2"
-        style={{ borderColor: visual.border, background: visual.cardBackground, borderRadius: visual.radius }}
-      >
-        <p className="mb-1 text-[9px] font-medium" style={{ color: visual.mutedForeground }}>
-          Announcements
-        </p>
-        <div className="space-y-1">
-          <div className="h-1.5 w-3/4 rounded-full" style={{ background: `${visual.mutedForeground}33` }} />
-          <div className="h-1.5 w-1/2 rounded-full" style={{ background: `${visual.mutedForeground}22` }} />
-        </div>
-      </div>
-    ) : null;
-
-    return (
-      <div className="space-y-3">
-        {!isScheduled && title}
-        <HeroBlock
-          theme={theme}
-          coverUrl={coverUrl}
-          visual={visual}
-          layout={layout}
-          phase={phase}
-          large={isScheduled}
-          shopName={shopName}
-        />
-        {reminder}
-        {isScheduled && sneakPeek}
-        {productGrid}
-        {isScheduled ? announcementsStub : chat}
-      </div>
-    );
-  }
+  // Stream + chat always travel together as a band (chat beside the stream on
+  // desktop, stacked on mobile). Keep in sync with shop-page-view.tsx.
+  const streamChatBand = (
+    <div className={cn("grid gap-3", !isMobile && chat && "grid-cols-[1fr_120px]")}>
+      {hero}
+      {chat}
+    </div>
+  );
 
   if (layout === "catalog") {
-    // Keep section order in sync with shop-page-view.tsx Lookbook branch (§5.2).
-    const slimStreamBand = (
-      <div
-        className="flex aspect-[21/9] max-h-[72px] items-center justify-center rounded-lg border text-[10px]"
-        style={{ borderColor: visual.border, background: visual.cardBackground, color: visual.mutedForeground }}
-      >
-        {isScheduled ? (
-          <span className="flex flex-col items-start px-3 py-2 text-left">
-            <span className="text-[8px] font-medium uppercase tracking-widest opacity-90">Opens in</span>
-            <span className="text-sm font-extrabold tabular-nums">02:14:08</span>
-          </span>
-        ) : (
-          <>
-            <Radio className="mr-1 size-3" /> {isLive ? "Live now" : "Live stream"}
-          </>
-        )}
-      </div>
-    );
-
+    // Lookbook: products lead, then the stream + chat band, then reminders.
     return (
       <div className="space-y-3">
         {title}
         {sneakPeek}
         {productGrid}
-        {slimStreamBand}
+        {streamChatBand}
         {reminder}
-        {chat}
       </div>
     );
   }
 
-  // classic — The Room §5.4: header → [stream + chat sidebar] → products.
-  // Keep section order in sync with shop-page-view.tsx classic branch.
+  // classic — The Room: header → [stream + chat band] → products.
   return (
     <div className="space-y-3">
       {title}
       {reminder}
-      <div className={cn("grid gap-3", !isMobile && "grid-cols-[1fr_120px]")}>
-        {hero}
-        {chat}
-      </div>
+      {streamChatBand}
       {productGrid}
     </div>
   );
@@ -361,8 +295,6 @@ function HeroBlock({
   large: boolean;
   shopName?: string;
 }) {
-  if (layout === "catalog") return null;
-
   const isScheduled = phase === "scheduled";
   const isLive = phase === "live";
   const isCountdownOpen = layout === "countdown" && phase === "open";
