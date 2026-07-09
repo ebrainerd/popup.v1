@@ -229,7 +229,22 @@ Connect onboarding. Start from a shop manage page with the payments banner.
 
 ---
 
-Copy this block when adding the next checklist:
+## Unshipped orders (seller fulfillment)
+
+**Requires:** local stack with a seller account; at least one shop with a completed checkout
+(Stripe test mode or local webhook). Paid orders use `status === "paid"` until marked shipped.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| U1 | Complete a buyer checkout for a physical item | Order appears in seller **Dashboard** banner: “N sale(s) waiting to ship” with **Manage sales** |
+| U2 | Dashboard header **Sales** button | Badge shows same unshipped count; links to `/dashboard/sales` |
+| U3 | Open **Sales** → default **To ship** tab | Tab selected with count badge; paid order listed with full **Ship to** address and tracking form |
+| U4 | Enter carrier + tracking → **Mark shipped** | Row updates to shipped; order drops off **To ship** tab; empty state shows “All caught up” |
+| U5 | **All sales** tab | Full order history; if any still paid, banner links back to **To ship** |
+| U6 | **Manage shop** → **Orders** section (collapsed by default unless unshipped) | **N to ship** button in header links to `/dashboard/sales`; ship form works inline when expanded |
+
+---
+
 
 ```markdown
 ## [Feature name]

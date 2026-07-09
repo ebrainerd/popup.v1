@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Eye, Palette } from "lucide-react";
 import { getCurrentProfile } from "@/lib/auth";
 import { getOwnedShopWithProducts } from "@/lib/shops";
-import { getSellerOrders } from "@/lib/orders";
+import { filterUnshippedSellerOrders, getSellerOrders } from "@/lib/orders";
 import { getDropReminderCount } from "@/lib/drop-reminders";
 import { computeDropHealth } from "@/lib/drop-readiness";
 import { getDropReport } from "@/lib/drop-analytics";
@@ -68,6 +68,7 @@ export default async function ManageShopPage({
     getSellerOrders(shop.id),
     getDropReminderCount(shop.id),
   ]);
+  const unshippedCount = filterUnshippedSellerOrders(orders).length;
 
   const health = computeDropHealth(shop, sellerProfile, reminderCount);
   const payoutsConnected = arePayoutsConnected(sellerProfile);
@@ -269,7 +270,14 @@ export default async function ManageShopPage({
             ? "No orders yet."
             : `${orders.length} order${orders.length === 1 ? "" : "s"}.`
         }
-        defaultOpen={false}
+        defaultOpen={unshippedCount > 0}
+        action={
+          unshippedCount > 0 ? (
+            <Button asChild size="sm" variant="outline" className="rounded-full whitespace-nowrap">
+              <Link href="/dashboard/sales">{unshippedCount} to ship</Link>
+            </Button>
+          ) : undefined
+        }
       >
         <PayoutHoldNotice />
         <SellerOrdersTable orders={orders} />
