@@ -15,6 +15,7 @@ section by section, record pass/fail, and fix bugs before launch.
 | `docs/PRODUCTION_READINESS.md` | Infrastructure launch gate + load testing |
 | `docs/DEPLOYMENT.md` | Env vars, cron URLs, Stripe/Resend setup |
 | `docs/HANDOFF.md` | Current project status |
+| `docs/MARKETING_LAUNCH_GATE.md` | **Evidence-based GO/NO-GO** — scored status per phase (update after each prod test session) |
 
 ---
 
@@ -524,6 +525,8 @@ Production only (service worker registers when `NODE_ENV=production`).
 ---
 
 ## Marketing sign-off gate
+
+**Current evidence-based status:** see `docs/MARKETING_LAUNCH_GATE.md` (update after each prod test session).
 
 Do **not** start paid ads until all are true:
 

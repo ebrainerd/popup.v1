@@ -28,6 +28,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | ----- | ---- |
 | Run locally / scripts | `README.md` |
 | **Pre-marketing manual test (full checklist)** | **`docs/PRE_MARKETING_TEST.md`** |
+| **Marketing launch gate (GO/NO-GO status)** | **`docs/MARKETING_LAUNCH_GATE.md`** |
 | Feature roadmap (M1–M3 done) | `docs/ROADMAP.md` |
 | Creator-led drop loop PRD | `docs/CREATOR_DROP_LOOP.md` |
 | Invite-only launch plan | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
