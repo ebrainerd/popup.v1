@@ -147,7 +147,7 @@ export function AuctionFields({
         <select
           id="auction_duration_seconds"
           name="auction_duration_seconds"
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-base sm:text-sm"
           value={state.durationSeconds}
           onChange={(e) => onChange({ durationSeconds: Number(e.target.value) })}
         >

@@ -175,7 +175,90 @@ enabled).
 
 ---
 
-Copy this block when adding the next checklist:
+## Seller mobile forms
+
+**Requires:** iPhone Safari (or iOS Simulator); seller shop setup or manage page with text inputs and selects.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| F1 | Focus a text input or textarea on a seller form (e.g. product title, shop name) | Page does not zoom in on focus |
+| F2 | Blur the field after typing | Zoom level returns to normal (no sticky zoom) |
+| F3 | Open a native `<select>` (e.g. auction duration, flash product picker) | Same — no focus zoom on mobile |
+
+---
+
+## Dashboard — copy shop link
+
+**Requires:** seller account with at least one draft and one published/scheduled shop on `/dashboard`.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| CL1 | Open `/dashboard` → **Drafts** row | Link icon appears before view/manage; `aria-label` is "Copy shop link" |
+| CL2 | Click copy on a draft | Icon swaps to check (~1.5s); clipboard has `https://…/shop/{id}` (owner preview URL) |
+| CL3 | **Published / scheduled** row | Same copy control; pasted URL opens the shop while logged out |
+| CL4 | Paste a **draft** URL while logged out | Shop 404 / closed (drafts are owner-only); paste while logged in as owner to see draft preview |
+
+---
+
+## Duplicate product (shop manager / setup wizard)
+
+**Requires:** seller account with a shop in setup or on `/dashboard/shops/[id]` manage page.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| DUP1 | Open **Products** with at least one saved product | Each product row shows Edit, **Duplicate** (copy icon), and Delete |
+| DUP2 | Click **Duplicate** on a buy-now product (editor closed) | New row appears **immediately below** with title `… (copy)`; editor opens with copied price, qty, shipping, photos, description |
+| DUP3 | Save without changes (manage page) | Autosave inserts a **new** DB row; original product unchanged |
+| DUP4 | Duplicate an **auction** product | Clone keeps sale type, starting bid, increment, duration, prebid/sudden-death toggles |
+| DUP5 | While editor is open for product A, Duplicate on product B | Duplicate button disabled / no-op until save or cancel (protects unsaved edits) |
+| DUP6 | Edit duplicate title (e.g. color variant) and save | Both products persist as separate rows |
+
+---
+
+## Stripe Connect — cancel / incomplete return
+
+**Requires:** Stripe keys configured (`STRIPE_SECRET_KEY`); seller account without completed
+Connect onboarding. Start from a shop manage page with the payments banner.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| P1 | On `/dashboard/shops/[id]`, click **Set up payouts** (or **Finish setup**) | Redirected to Stripe Connect onboarding |
+| P2 | Cancel or close Stripe before finishing (or use browser back) | Land on `/dashboard/payouts?status=return&redirectTo=...` |
+| P3 | Incomplete return page | Banner: payout setup isn't finished; full-width **Back to shop** (or dashboard) CTA; page not cropped / scrolled oddly on mobile |
+| P4 | Wait ~8s or tap **Back to shop** | Return to the shop manage page (or dashboard if no `redirectTo`) |
+| P5 | Complete Stripe onboarding instead | Auto-redirect to the original `redirectTo` destination |
+
+---
+
+## Unshipped orders (seller fulfillment)
+
+**Requires:** local stack with a seller account; at least one shop with a completed checkout
+(Stripe test mode or local webhook). Paid orders use `status === "paid"` until marked shipped.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| U1 | Complete a buyer checkout for a physical item | Order appears in seller **Dashboard** banner: “N sale(s) waiting to ship” with **Manage sales** |
+| U2 | Dashboard header **Sales** button | Badge shows same unshipped count; links to `/dashboard/sales` |
+| U3 | Open **Sales** → default **To ship** tab | Tab selected with count badge; paid order listed with full **Ship to** address and tracking form |
+| U4 | Enter carrier + tracking → **Mark shipped** | Row updates to shipped; order drops off **To ship** tab; empty state shows “All caught up” |
+| U5 | **All sales** tab | Full order history; if any still paid, banner links back to **To ship** |
+| U6 | **Manage shop** → **Orders** section (collapsed by default unless unshipped) | **N to ship** button in header links to `/dashboard/sales`; ship form works inline when expanded |
+
+---
+
+## Dashboard — grow sales time range
+
+**Requires:** seller account on `/dashboard` (with or without orders).
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| R1 | Open `/dashboard` with no sales | Gross sales shows `$0.00`; pill **30 days** is selected; stat label reads **Gross sales · 30 days** |
+| R2 | Click **7 days**, **This month**, **All time** | URL updates `?range=` (30 days uses clean `/dashboard`); selected pill highlights; gross sales label reflects range |
+| R3 | Seller with mixed orders (incl. refunded/canceled) | Gross sales for a bounded range excludes refunded/canceled; counts only orders in range |
+| R4 | Active shops / Total shops / Avg rating | Unchanged by range pills (not order-scoped) |
+
+---
+
 
 ```markdown
 ## [Feature name]

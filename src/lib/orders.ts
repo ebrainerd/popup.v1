@@ -72,6 +72,11 @@ export async function getAllSellerOrders(sellerId: string): Promise<SellerOrder[
   return data as unknown as SellerOrder[];
 }
 
+/** Paid orders the seller still needs to ship (`status === "paid"`). */
+export function filterUnshippedSellerOrders(orders: SellerOrder[]): SellerOrder[] {
+  return orders.filter((o) => o.status === "paid");
+}
+
 export async function getSellerOrders(shopId: string): Promise<SellerOrder[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

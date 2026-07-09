@@ -20,13 +20,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShopCalendar } from "@/components/shop-calendar";
 import { SellerShopRow } from "@/components/seller-shop-row";
-import { deriveShopStatus, formatCurrency } from "@/lib/utils";
+import {
+  getSellerDashboardStats,
+  getSellerStatsRangeLabel,
+  parseSellerStatsRange,
+  SELLER_STATS_RANGES,
+  type SellerStatsRange,
+} from "@/lib/seller-stats";
+import { cn, deriveShopStatus, formatCurrency } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard" };
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
   const profile = (await getCurrentProfile())!;
+  const { range: rangeParam } = await searchParams;
+  const range = parseSellerStatsRange(rangeParam);
+  const rangeLabel = getSellerStatsRangeLabel(range);
+
   const stripeOnboarded = isStripePaymentsRequired()
     ? await syncStripeStatus()
     : profile.stripe_onboarded;
@@ -35,13 +50,11 @@ export default async function DashboardPage() {
   const shops = await getSellerShops(profile.id);
 
   const supabase = await createClient();
-  const { data: orders } = await supabase
-    .from("orders")
-    .select("amount_paid, platform_fee, status")
-    .in("shop_id", shops.length ? shops.map((s) => s.id) : ["00000000-0000-0000-0000-000000000000"]);
-
-  const grossSales = (orders ?? []).reduce((sum, o) => sum + (o.amount_paid ?? 0), 0);
-  const needsShippingCount = (orders ?? []).filter((o) => o.status === "paid").length;
+  const { grossSales, needsShippingCount } = await getSellerDashboardStats(
+    supabase,
+    shops.map((s) => s.id),
+    { range },
+  );
   const published = shops.filter((s) => s.status !== "draft");
   const drafts = shops.filter((s) => s.status === "draft");
 
@@ -126,18 +139,45 @@ export default async function DashboardPage() {
       )}
 
       {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Link href="/dashboard/sales" className="contents">
-          <StatCard tone="success" icon={<DollarSign />} label="Gross sales" value={formatCurrency(grossSales)} />
-        </Link>
-        <StatCard tone="accent" icon={<Store />} label="Active shops" value={String(activeCount)} />
-        <StatCard tone="highlight" icon={<CalendarDays />} label="Total shops" value={String(shops.length)} />
-        <StatCard
-          tone="primary"
-          icon={<Star />}
-          label="Avg rating"
-          value={profile.rating_count > 0 ? Number(profile.rating_avg ?? 0).toFixed(1) : "—"}
-        />
+      <div className="space-y-3">
+        <nav
+          className="flex flex-wrap gap-1 rounded-xl border border-border bg-muted/40 p-1"
+          aria-label="Sales time range"
+        >
+          {SELLER_STATS_RANGES.map(({ value, label }) => (
+            <Link
+              key={value}
+              href={sellerStatsRangeHref(value)}
+              className={cn(
+                "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                range === value
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+              aria-current={range === value ? "true" : undefined}
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Link href="/dashboard/sales" className="contents">
+            <StatCard
+              tone="success"
+              icon={<DollarSign />}
+              label={`Gross sales · ${rangeLabel}`}
+              value={formatCurrency(grossSales)}
+            />
+          </Link>
+          <StatCard tone="accent" icon={<Store />} label="Active shops" value={String(activeCount)} />
+          <StatCard tone="highlight" icon={<CalendarDays />} label="Total shops" value={String(shops.length)} />
+          <StatCard
+            tone="primary"
+            icon={<Star />}
+            label="Avg rating"
+            value={profile.rating_count > 0 ? Number(profile.rating_avg ?? 0).toFixed(1) : "—"}
+          />
+        </div>
       </div>
 
       {shops.length === 0 ? (
@@ -175,6 +215,11 @@ export default async function DashboardPage() {
       )}
     </div>
   );
+}
+
+function sellerStatsRangeHref(value: SellerStatsRange): string {
+  if (value === "30d") return "/dashboard";
+  return `/dashboard?range=${value}`;
 }
 
 const STAT_TONES = {
