@@ -376,7 +376,7 @@ File: `src/components/shop-theme-editor.tsx` — layout section (~line 139).
 
 When seller selects a layout, **offer** (modal or inline confirm):
 
-> Apply recommended settings for Live Stage? (Neon PopUp theme, chat on, 2-column grid)
+> Apply recommended settings for The Room? (Market Stall theme, chat on, 2-column grid)
 
 If accepted, patch `preset`, `accent`, toggles, and `productGridColumns` per §5 defaults.
 If declined, only change `layout`.
@@ -561,7 +561,7 @@ Extend `test/unit/shop-theme.test.ts`:
 
 1. **Rename slugs?** Recommendation: **no** — rebrand UI only unless marketing needs new URLs.
 2. **Auto-apply defaults on layout pick?** Recommendation: **confirm dialog**, not silent.
-3. **Layout-specific auction panel placement?** Live Stage may pin panel above products; Lookbook may tuck panel below hero — document per layout when implementing.
+3. **Layout-specific auction panel placement?** The Room may pin panel near stream; Lookbook may tuck panel above/below the product grid — document per layout when changing.
 4. **Explore/marketplace discovery cards** — do shop cards show layout badge? Defer.
 
 ---

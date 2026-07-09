@@ -116,7 +116,7 @@ Maps to Phases 6–7, 8 (viewer), 15.8, 17, 20.
 | D4 | Chat send on mobile | **unknown** | Phase 7.4 — unchecked |
 | D5 | Native live video on phone within ~5s | **unknown** | Phase 8.3 — unchecked |
 | D6 | Mobile viewport layout usable (Phase 15.8) | **unknown** | Phase 15.8 — unchecked |
-| D7 | Two pickable layouts on mobile 375px (The Room + Lookbook) | **unknown** | Phase 17.2, 17.8–17.10; `MANUAL_TESTING.md` B4, M1–M6 — unchecked |
+| D7 | Two pickable layouts on mobile 375px (The Room + Lookbook) | **unknown** | Phase 17.4–17.10; `MANUAL_TESTING.md` B4, M1–M6 — unchecked |
 | D8 | PWA add-to-home-screen + shop load | **unknown** | Phase 20.1–20.2 — unchecked |
 
 ### E — Commerce & money clears
