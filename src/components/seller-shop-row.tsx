@@ -4,6 +4,7 @@ import { ExternalLink, Settings } from "lucide-react";
 import type { Shop } from "@/lib/database.types";
 import { Badge } from "@/components/ui/badge";
 import { Countdown } from "@/components/countdown";
+import { CopyLink } from "@/components/copy-link";
 import { DeleteDraftButton } from "@/components/delete-draft-button";
 import { deriveShopStatus } from "@/lib/utils";
 import { isShopScheduleSet } from "@/lib/shop-schedule";
@@ -43,6 +44,7 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
       </div>
 
       <div className="flex items-center gap-1">
+        <CopyLink path={`/shop/${shop.id}`} label="Copy shop link" iconOnly />
         <Link
           href={`/shop/${shop.id}`}
           className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"

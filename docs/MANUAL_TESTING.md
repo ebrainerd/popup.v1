@@ -187,6 +187,19 @@ enabled).
 
 ---
 
+## Dashboard — copy shop link
+
+**Requires:** seller account with at least one draft and one published/scheduled shop on `/dashboard`.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| D1 | Open `/dashboard` → **Drafts** row | Link icon appears before view/manage; `aria-label` is "Copy shop link" |
+| D2 | Click copy on a draft | Icon swaps to check (~1.5s); clipboard has `https://…/shop/{id}` (draft preview URL) |
+| D3 | **Published / scheduled** row | Same copy control; pasted URL opens the shop (or scheduled buyer page) |
+| D4 | Paste URL in a new tab while logged out | Draft shows preview banner; published shop loads normally |
+
+---
+
 Copy this block when adding the next checklist:
 
 ```markdown
