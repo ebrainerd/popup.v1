@@ -20,7 +20,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | **Discovery mode** | `invite_only` (default) — link-only shops; Explore is a holding page |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations** | Through **`0022_auto_queue_shop_auctions.sql`** |
+| **Migrations** | Through **`0022_auto_queue_shop_auctions.sql`** (repo may include later migrations — apply in order) |
 
 ## Where to look
 
@@ -59,24 +59,25 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - **Seller terms gate** on first shop create (`0020`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — four seller personas → layout redesign. **All phases (0–6) complete** (metadata, editor picker, Live Stage / `broadcast`, Lookbook / `catalog`, Drop Clock / `countdown`, The Room / `classic` buyer-page parity, plus Phase 6 QA & docs). Smoke matrix lives in `docs/MANUAL_TESTING.md` → "Shop layout archetypes"; pre-marketing checks in `docs/PRE_MARKETING_TEST.md` Phase 17.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — phases 0–6 landed.
+  **Pickable layouts today:** The Room (`classic`) and Lookbook (`catalog`) via
+  `SHOP_PICKABLE_LAYOUTS`. Legacy `broadcast` / `countdown` themes fold into
+  `classic` (`normalizeLayout`). Smoke: `docs/MANUAL_TESTING.md` → shop layouts +
+  mobile room; pre-marketing Phase 17.
 
 ## Shop layout archetypes — COMPLETE (Phases 0–6)
 
-**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md`. All six phases have landed; there is
-no remaining layout work queued.
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md`. Implementation complete; **seller picker
+ships two layouts** (The Room + Lookbook). Retired slugs remain in the enum for
+backward compatibility only.
 
 - **Phases 0–3, 5:** metadata + defaults, editor archetype picker + preview phase
-  toggle, and buyer-page parity for Live Stage (`broadcast`), Lookbook
-  (`catalog`), and The Room (`classic`).
-- **Phase 4 — Drop Clock (`countdown`):** oversized hero countdown with shop name,
-  reminder CTAs below hero, announcements pre-open / chat when open, hero shrink at
-  `start_at`, `WaitingRoomBanner` skipped for the countdown layout.
-- **Phase 6 — QA & docs (this PR):** four layouts × two presets smoke matrix added
-  to `docs/MANUAL_TESTING.md`; `docs/PRE_MARKETING_TEST.md` Phase 17 expanded to
-  17.1–17.10; `docs/PRODUCT_UX_REVIEW.md` cross-linked. Automated gate
-  (`typecheck`/`lint`/`test`/`build`) green and a manual GUI smoke of all four
-  layouts × phases in the customize preview passed (no preview drift / errors).
+  toggle, buyer-page parity for Lookbook (`catalog`) and The Room (`classic`).
+- **Phase 4 — Drop Clock (`countdown`):** built, then folded into The Room for the
+  narrowed picker (`normalizeLayout`).
+- **Phase 6 — QA & docs:** smoke matrices in `docs/MANUAL_TESTING.md`; prefer the
+  **two pickable** layouts for ongoing QA. Automated gate
+  (`typecheck`/`lint`/`test`/`build`) green.
 
 ### Key files
 
@@ -114,8 +115,17 @@ sync if you touch any layout (comment cross-links exist in `shop-page-view.tsx`
 - [x] `CRON_SECRET` + daily `release-funds` on Vercel
 - [x] Drop reminders via **cron-job.org** every 15 min (Hobby-safe)
 - [x] Sentry + uptime monitor on `/api/health`
-- [x] Migrations through `0020` applied on production
+- [x] Migrations through `0022` applied on production (apply any later repo migrations in order)
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
+
+## Marketing gate (GO / NO-GO)
+
+**Gate:** One founding seller can run a real drop to a phone-heavy audience; money
+clears; emails land; they want to schedule the next drop.
+
+**Current status: NO-GO** — see scored checklist in **`docs/MARKETING_LAUNCH_GATE.md`**.
+Eng readiness work on this branch (mobile room, seller kit, trust copy, non-goals)
+does **not** replace the human production dry-run.
 
 ## Not for first marketing (non-goals)
 

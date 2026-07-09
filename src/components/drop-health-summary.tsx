@@ -1,7 +1,13 @@
 import { Bell, Clock, Package, Users } from "lucide-react";
 import type { DropHealth } from "@/lib/drop-readiness";
 
-export function DropHealthSummary({ health }: { health: DropHealth }) {
+export function DropHealthSummary({
+  health,
+  isEnded = false,
+}: {
+  health: DropHealth;
+  isEnded?: boolean;
+}) {
   const opensAt = new Date(health.openingAt).toLocaleString("en-US", {
     weekday: "short",
     month: "short",
@@ -20,7 +26,12 @@ export function DropHealthSummary({ health }: { health: DropHealth }) {
         value={String(health.availableUnits)}
         hint={`${health.productCount} product${health.productCount === 1 ? "" : "s"}`}
       />
-      <Stat icon={Clock} label="Opens" value={opensAt} compact />
+      <Stat
+        icon={Clock}
+        label={isEnded ? "Opened" : "Opens"}
+        value={opensAt}
+        compact
+      />
     </div>
   );
 }

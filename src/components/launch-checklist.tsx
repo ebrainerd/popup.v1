@@ -35,7 +35,6 @@ export function LaunchChecklist({
   paymentsRequired?: boolean;
   payoutsConnected?: boolean;
 }) {
-  const [promoShopId, setPromoShopId] = useState(shopId);
   const [promoDone, setPromoDone] = useState<Record<string, boolean>>(() => {
     const next: Record<string, boolean> = {};
     for (const id of PROMO_TRACKED_IDS) {
@@ -43,15 +42,6 @@ export function LaunchChecklist({
     }
     return next;
   });
-
-  if (promoShopId !== shopId) {
-    setPromoShopId(shopId);
-    const next: Record<string, boolean> = {};
-    for (const id of PROMO_TRACKED_IDS) {
-      next[id] = readPromoDone(shopId, id);
-    }
-    setPromoDone(next);
-  }
 
   useEffect(() => {
     function refresh() {
@@ -62,6 +52,7 @@ export function LaunchChecklist({
       setPromoDone(updated);
     }
 
+    refresh();
     window.addEventListener("storage", refresh);
     window.addEventListener("popup-share-copied", refresh);
     return () => {

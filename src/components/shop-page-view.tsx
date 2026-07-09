@@ -188,7 +188,14 @@ export function ShopPageView({
         <p className="mt-1 text-sm text-muted-foreground">
           Follow @{seller.username} and set a reminder for their next drop.
         </p>
-        <div className="mt-4 flex justify-center gap-2">
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <RemindMeButton
+            shopId={shop.id}
+            initialSubscribed={hasReminder}
+            isAuthed={Boolean(profileId)}
+            reminderCount={reminderCount}
+            deliveryConfigured={reminderDeliveryConfigured}
+          />
           <FollowButton
             sellerId={seller.id}
             initialFollowing={isFollowing}
@@ -267,13 +274,11 @@ export function ShopPageView({
         <DraftPreviewBanner shopId={shop.id} scheduleLabel={draftPreviewScheduleLabel} />
       )}
 
-      {isScheduled &&
-        !isDraftPreview &&
-        layout !== "countdown" &&
-        layout !== "classic" &&
-        layout !== "catalog" && (
-          <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
-        )}
+      {/* Status only (final stretch / on the list) — not a second countdown clock.
+          StreamSlot owns the timer; this banner returns null otherwise. */}
+      {isScheduled && !isDraftPreview && (
+        <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
+      )}
 
       <ShopRoom shopId={shop.id} currentUser={currentUser} isOwner={isOwner}>
         <OpeningReminderTrigger

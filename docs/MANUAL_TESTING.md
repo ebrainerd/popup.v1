@@ -110,15 +110,17 @@ that order (preview drift is the most common regression here).
 
 Open `/dashboard/shops/[id]/customize` (or the wizard **Layout & theme** step —
 same `ShopThemeEditor`). Above the preview, use the **Scheduled / Open / Live**
-phase toggle and the **Desktop / Mobile** viewport toggle. For each layout, run
-its **recommended** preset and one **off-pairing** preset (the two columns
-below) to confirm theme + layout are independent.
+phase toggle and the **Desktop / Mobile** viewport toggle.
+
+**Pickable layouts (current):** The Room (`classic`) and Lookbook (`catalog`) —
+see `SHOP_PICKABLE_LAYOUTS` in `src/lib/shop-theme.ts`. Legacy `broadcast` /
+`countdown` fold into The Room; L1/L3 rows below are historical reference only.
 
 | # | Layout | Presets to try | Expected preview (Desktop) | ✓ |
 | - | ------ | -------------- | -------------------------- | - |
-| L1 | **Live Stage** (`broadcast`) | Neon PopUp (rec.) + Gallery | Title → **wide stream/cover hero** → product grid → chat full-width below. Scheduled overlays a countdown on the hero; Live shows a LIVE badge. | |
+| L1 | ~~Live Stage (`broadcast`)~~ → use **The Room** | — | Retired; folds to classic | |
 | L2 | **Lookbook** (`catalog`) | Gallery (rec.) + Dark Room | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
-| L3 | **Drop Clock** (`countdown`) | Dark Room (rec.) + Market Stall | Scheduled: **oversized countdown hero** with shop name + "Remind me", then sneak-peek grid + announcements. Open: hero shrinks to "We're open", full products, chat. | |
+| L3 | ~~Drop Clock (`countdown`)~~ → use **The Room** | — | Retired; folds to classic | |
 | L4 | **The Room** (`classic`) | Market Stall (rec.) + Neon PopUp | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
 
 | # | Step | Expected | ✓ |
@@ -139,12 +141,12 @@ layout and phase.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
-| B1 | **Live Stage**, shop scheduled then open | Stream/cover hero leads; products reachable in one scroll; chat full width below | |
+| B1 | *(skip — Live Stage retired)* | — | |
 | B2 | **Lookbook**, scheduled then open | Product grid is first paint above the fold; stream band capped (~40vh) below grid; seller bio shown | |
-| B3 | **Drop Clock**, scheduled | Countdown is the largest hero element; `WaitingRoomBanner` does **not** duplicate it; reminder CTA prominent | |
-| B4 | **Drop Clock** at `start_at` | Hero shrinks / swaps to open state **without a full page reload** | |
+| B3 | *(skip — Drop Clock retired)* | Stream countdown owns the timer; `WaitingRoomBanner` is status-only (final stretch / on the list), not a second clock | |
+| B4 | *(skip — Drop Clock retired)* | — | |
 | B5 | **The Room**, open on desktop | Chat sidebar visible beside the stream without scrolling; seller bio in header | |
-| B6 | Any layout on mobile 375px | Hero/stream visible; products and checkout usable; chat collapses below fold | |
+| B6 | Pickable layout on mobile 375px | Hero/stream visible; products and checkout usable; chat accordion collapsed by default | |
 
 ### Shop room mobile smoke (~375px)
 

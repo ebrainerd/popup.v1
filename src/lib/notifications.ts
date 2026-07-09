@@ -786,7 +786,8 @@ export async function sendDropReminders(): Promise<number> {
             emailSucceeded = await sendResendEmail(
               email,
               copy.subject(shop.name),
-              copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url, when),
+              `${copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url, when)}
+               ${emailFooter(site)}`,
             );
           }
         }
@@ -911,7 +912,8 @@ export async function sendOpeningRemindersForShop(shopId: string): Promise<numbe
             emailSucceeded = await sendResendEmail(
               email,
               copy.subject(shop.name),
-              copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url),
+              `${copy.html(escapeHtml(shop.name), escapeHtml(sellerName), url)}
+               ${emailFooter(site)}`,
             );
           }
         }

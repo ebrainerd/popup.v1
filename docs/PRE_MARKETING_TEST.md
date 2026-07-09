@@ -591,4 +591,4 @@ Severity: blocker | major | minor
 
 ---
 
-*Last updated: June 2026 — production at https://www.popupdrop.co, migrations through `0020_seller_terms_accepted.sql`.*
+*Last updated: July 2026 — production at https://www.popupdrop.co, migrations through `0022_auto_queue_shop_auctions.sql` (apply later migrations in order).*

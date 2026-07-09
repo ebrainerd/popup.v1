@@ -150,7 +150,7 @@ export default async function ManageShopPage({
 
       {showSellerKit && (
         <>
-          <DropHealthSummary health={health} />
+          <DropHealthSummary health={health} isEnded={window.isEnded} />
           {(window.isScheduled || window.isOpen) && (
             <ShareDropCard
               shopId={shop.id}

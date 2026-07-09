@@ -78,7 +78,7 @@ export function ShopThemePreview({
           <span className="size-2 rounded-full bg-emerald-400/80" />
         </div>
         <span className="ml-1 truncate font-medium">
-          {isMobile ? "popup.app · mobile" : "popup.app/shop/preview"}
+          {isMobile ? "popupdrop.co · mobile" : "popupdrop.co/shop/preview"}
         </span>
         <span className="ml-auto flex items-center gap-1">
           <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: `${visual.mutedForeground}22`, color: visual.mutedForeground }}>
