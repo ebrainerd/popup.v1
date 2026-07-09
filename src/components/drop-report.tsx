@@ -19,6 +19,10 @@ export function DropReportCard({
           <BarChart3 className="size-5" />
           Drop report
         </CardTitle>
+        <p className="text-sm text-muted-foreground">
+          Your drop has ended. Review what worked, then run it again — duplicate keeps your
+          products and theme so you can tweak dates and promote the next one.
+        </p>
       </CardHeader>
       <CardContent className="space-y-4">
         <dl className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
@@ -27,10 +31,10 @@ export function DropReportCard({
           <Metric label="Units sold" value={String(report.unitsSold)} />
           <Metric label="Peak viewers" value={String(report.peakViewers)} />
           <Metric label="Chat messages" value={String(report.chatCount)} />
-          <Metric label="Waitlist" value={String(report.reminderSignups)} />
+          <Metric label="Waitlist signups" value={String(report.reminderSignups)} />
           <Metric label="New followers" value={String(report.followersGained)} />
           <Metric
-            label="Reminder → purchase"
+            label="Waitlist → purchase"
             value={
               report.reminderToPurchase !== null ? `${report.reminderToPurchase}%` : "—"
             }
@@ -70,19 +74,29 @@ export function DropReportCard({
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2 border-t border-border pt-4">
-          <Button asChild className="rounded-full">
-            <Link href="/dashboard/shops/new">
-              <Plus className="size-4" />
-              Schedule next drop
-            </Link>
-          </Button>
-          <form action={`/dashboard/shops/${shopId}/duplicate`} method="POST">
-            <Button type="submit" variant="outline" className="rounded-full">
-              <Copy className="size-4" />
-              Duplicate this drop
+        <div className="space-y-3 border-t border-border pt-4">
+          <div className="rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+            <p className="font-medium">Run this drop again</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              <strong className="font-medium text-foreground">Duplicate this drop</strong> copies
+              products, cover, and theme — update the schedule, publish, and share the new link.
+              Or start fresh with a blank shop.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <form action={`/dashboard/shops/${shopId}/duplicate`} method="POST">
+              <Button type="submit" className="rounded-full">
+                <Copy className="size-4" />
+                Duplicate this drop
+              </Button>
+            </form>
+            <Button asChild variant="outline" className="rounded-full">
+              <Link href="/dashboard/shops/new">
+                <Plus className="size-4" />
+                Start a new shop
+              </Link>
             </Button>
-          </form>
+          </div>
         </div>
       </CardContent>
     </Card>
