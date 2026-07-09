@@ -133,7 +133,7 @@ export function FlashControls({ products }: { products: Product[] }) {
           <select
             value={productId}
             onChange={(e) => setProductId(e.target.value)}
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-base sm:text-sm"
           >
             {sellable.length === 0 && <option value="">No products</option>}
             {sellable.map((p) => (

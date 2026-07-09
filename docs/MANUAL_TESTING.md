@@ -175,6 +175,18 @@ enabled).
 
 ---
 
+## Seller mobile forms
+
+**Requires:** iPhone Safari (or iOS Simulator); seller shop setup or manage page with text inputs and selects.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| F1 | Focus a text input or textarea on a seller form (e.g. product title, shop name) | Page does not zoom in on focus |
+| F2 | Blur the field after typing | Zoom level returns to normal (no sticky zoom) |
+| F3 | Open a native `<select>` (e.g. auction duration, flash product picker) | Same — no focus zoom on mobile |
+
+---
+
 Copy this block when adding the next checklist:
 
 ```markdown
