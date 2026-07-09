@@ -142,6 +142,9 @@ export default async function ManageShopPage({
         </div>
       </div>
 
+      {/* Sticky under site header on mobile; placed early so it sticks while scrolling the long page. */}
+      <ManageShopSectionNav />
+
       <LaunchChecklist
         health={health}
         shopId={shop.id}
@@ -200,8 +203,6 @@ export default async function ManageShopPage({
         termsAccepted={termsAccepted}
         scheduleSet={scheduleSet}
       />
-
-      <ManageShopSectionNav />
 
       <div className="space-y-4">
         <CollapsibleSection

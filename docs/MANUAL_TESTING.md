@@ -189,7 +189,7 @@ enabled).
 
 | # | Step | Expected |
 | - | ---- | -------- |
-| MN1 | Open `/dashboard/shops/[id]` on a narrow viewport | Sticky section pills under the header: Details / Products / Appearance / Live / Orders (`md:hidden`) |
+| MN1 | Open `/dashboard/shops/[id]` on a narrow viewport | Sticky section pills under the shop title (before checklist): Details / Products / Appearance / Live / Orders (`md:hidden`) |
 | MN2 | Tap **Products** while that section is collapsed | Section expands and scrolls into view (hash `#products`) |
 | MN3 | Tap **Orders** | Same for `#orders` |
 | MN4 | Desktop (≥768px) | Jump nav is hidden; page still scrolls normally |
