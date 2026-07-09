@@ -245,6 +245,19 @@ Connect onboarding. Start from a shop manage page with the payments banner.
 
 ---
 
+## Dashboard — grow sales time range
+
+**Requires:** seller account on `/dashboard` (with or without orders).
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| R1 | Open `/dashboard` with no sales | Gross sales shows `$0.00`; pill **30 days** is selected; stat label reads **Gross sales · 30 days** |
+| R2 | Click **7 days**, **This month**, **All time** | URL updates `?range=` (30 days uses clean `/dashboard`); selected pill highlights; gross sales label reflects range |
+| R3 | Seller with mixed orders (incl. refunded/canceled) | Gross sales for a bounded range excludes refunded/canceled; counts only orders in range |
+| R4 | Active shops / Total shops / Avg rating | Unchanged by range pills (not order-scoped) |
+
+---
+
 
 ```markdown
 ## [Feature name]
