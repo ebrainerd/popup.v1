@@ -29,6 +29,15 @@ Paid marketing (founding-seller outreach, ads, broad announcements) should not s
 
 **Gate score:** **18 / 62 scored items (29%)** — infra and code health only; **0% of buyer/seller drop-loop items verified in prod.**
 
+### Eng readiness landed on this branch (does not flip GO)
+
+| Theme | What shipped | Still needs |
+| ----- | ------------ | ----------- |
+| Mobile shop room | Collapsible chat, stacked bid/buy, sticky auction bar, iOS 16px inputs | Human phone smoke (MANUAL_TESTING M1–M6) |
+| Seller success kit | Share kit + drop health + promotion checklist on manage page | Human S1–S6 on a real seller account |
+| Trust edges | Buyer-safe signup, order dispute hints, email support footers | Real-inbox email proof in prod dry-run |
+| Docs / strategy | Non-goals, `NATIVE_APP_DECISION.md`, this gate | Owner dry-run + optional attorney |
+
 ---
 
 ## Recommendation: **NO-GO**
