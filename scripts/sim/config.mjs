@@ -20,6 +20,10 @@ export const BUYER_PASSWORD = "sim-buyer-pass";
 export const CRON_SECRET =
   process.env.SIM_CRON_SECRET ?? process.env.CRON_SECRET ?? "sim-cron-secret";
 
+/** Always hit the local Next server — never injected hosted NEXT_PUBLIC_SITE_URL. */
+export const SIM_SITE_URL =
+  process.env.SIM_SITE_URL ?? "http://127.0.0.1:3000";
+
 const LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1"]);
 
 /**
@@ -40,6 +44,21 @@ export function assertLocalOnly(url = SUPABASE_URL) {
   }
 }
 
+/** Refuse hosted site URLs for cron / app probes. */
+export function assertLocalSiteUrl(url = SIM_SITE_URL) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(`sim: invalid site URL: ${url}`);
+  }
+  if (!LOCAL_HOSTS.has(parsed.hostname)) {
+    throw new Error(
+      `sim: refusing non-local site URL "${url}" — use SIM_SITE_URL=http://127.0.0.1:3000`,
+    );
+  }
+}
+
 /**
  * Stripe checkout mode for sim runs.
  * - `stripe_test` when STRIPE_SECRET_KEY is set (must be sk_test_*)
@@ -56,4 +75,9 @@ export function assertStripeTestOrSkip() {
     );
   }
   return { checkoutMode: "stripe_test" };
+}
+
+/** Promise-based delay for auction waits / soak pacing. */
+export function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

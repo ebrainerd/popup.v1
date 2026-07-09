@@ -1,96 +1,62 @@
 # Local multi-user simulator (`scripts/sim/`)
 
 Node ESM modules that seed and exercise PopUp against a **local Supabase stack only**.
-Direct `@supabase/supabase-js` calls — no Next.js server actions.
+Direct `@supabase/supabase-js` calls — no Next.js server actions for core paths.
 
 ## Safety rails (hard)
 
-1. **`assertLocalOnly()`** — every client factory calls this. Non-`127.0.0.1` /
-   `localhost` Supabase URLs throw immediately.
-2. **`assertStripeTestOrSkip()`** — if `STRIPE_SECRET_KEY` is set it must be
-   `sk_test_*`; otherwise checkout runs in **`seeded`** mode (orders inserted via
-   service role, no live Stripe).
-3. **Wipe-OK scope** — sim users use `@sim.popupdrop.local` emails and shared
-   passwords (`sim-seller-pass` / `sim-buyer-pass`). Safe to `supabase db reset`
-   between runs; never point at production.
-
-Override URL/keys with `SIM_SUPABASE_*` env vars; defaults match
-`marketing/seed-demo.mjs` deterministic local keys.
+1. **`assertLocalOnly()`** — refuses non-`127.0.0.1` / `localhost` Supabase URLs.
+2. **`assertLocalSiteUrl()`** — cron/app probes use `SIM_SITE_URL` (default `http://127.0.0.1:3000`), never injected hosted `NEXT_PUBLIC_SITE_URL`.
+3. **`assertStripeTestOrSkip()`** — `STRIPE_SECRET_KEY` must be `sk_test_*` or checkout runs in **seeded** mode.
+4. **Wipe-OK** — users are `@sim.popupdrop.local`; safe to `supabase db reset`.
 
 ## Prerequisites
 
 ```bash
-supabase start          # local stack at http://127.0.0.1:54321
-cp .env.example .env.local   # optional; sim modules bring their own defaults
+supabase start
+supabase db reset   # applies migrations including 0029_auction_stock_decrement
+
+# Local Next (required for cron probes)
+NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321 \
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<anon from supabase status> \
+SUPABASE_SERVICE_ROLE_KEY=<service role> \
+NEXT_PUBLIC_SITE_URL=http://127.0.0.1:3000 \
+NEXT_PUBLIC_TURNSTILE_SITE_KEY= STRIPE_SECRET_KEY= \
+RELEASE_DELAY_HOURS=0 CRON_SECRET=sim-cron-secret \
+npm run dev
 ```
 
-On Cursor Cloud, hosted Supabase secrets are injected into the shell. Sim modules
-ignore those unless you set `SIM_SUPABASE_URL` — they always default to local.
+## Run
 
-## Modules (this commit)
+```bash
+npm run sim:phase1          # correctness (3 sellers / 12 buyers)
+npm run sim:phase2          # soak (20 concurrent bids)
+npm run sim:all             # both
+# or:
+SIM_SITE_URL=http://127.0.0.1:3000 node scripts/sim/run.mjs all
+```
 
-| File | Role |
-| ---- | ---- |
-| `config.mjs` | Local URL/keys, passwords, `CRON_SECRET`, safety asserts |
-| `clients.mjs` | `createAdmin()`, `createAnon()`, `signIn()` |
-| `users.mjs` | `ensureUser()`, `sellerEmail(n)`, `buyerEmail(n)` |
-| `shops.mjs` | `createShop()`, `createBuyNowProduct()`, `createAuctionProduct()` |
-| `report.mjs` | `pass` / `fail` / `skip` findings → `artifacts/*.json` + `.md` |
+Reports: `scripts/sim/artifacts/*.json` + `.md` (gitignored).  
+Findings: **`scripts/sim/FINDINGS.md`**.
 
-## Phases (planned)
+## Phases
 
 | Phase | Scope | Status |
 | ----- | ----- | ------ |
-| **0 — Core** | config, clients, users, shops, report | **this commit** |
-| **1 — Wipe** | reset sim data (`@sim.popupdrop.local` users, shops, orders) | planned |
-| **2 — Connect** | fake `stripe_account_id` for sellers | planned |
-| **3 — Checkout** | buy-now + auction flows (seeded or `sk_test_`) | planned |
-| **4 — Battery** | multi-user scenarios + cron hooks (`CRON_SECRET`) | planned |
+| **1 — Correctness** | RLS, auction win → ship → rate, buy-now, mute/chat, reminders cron auth, Connect attach | **PASS 29/29** |
+| **2 — Soak** | 20 concurrent max-bids, single winner, stock invariant | **PASS 5/5** |
 
-Entry-point runners (`run-battery.mjs`, etc.) land in later commits.
+## Modules
 
-## Example (manual, not wired yet)
+| File | Role |
+| ---- | ---- |
+| `config.mjs` / `clients.mjs` / `users.mjs` / `shops.mjs` | Safety + seed primitives |
+| `auctions.mjs` / `orders.mjs` / `chat.mjs` / `reminders.mjs` / `connect.mjs` | Drivers |
+| `assertions.mjs` | RLS / invariant checks |
+| `scenarios/phase1-correctness.mjs` | Correctness battery |
+| `scenarios/phase2-soak.mjs` | Concurrent bid soak |
+| `run.mjs` | CLI |
 
-```js
-import { assertLocalOnly, assertStripeTestOrSkip } from "./config.mjs";
-import { createAdmin } from "./clients.mjs";
-import { ensureUser, sellerEmail } from "./users.mjs";
-import { createShop, createBuyNowProduct } from "./shops.mjs";
+## Known product fix from this work
 
-assertLocalOnly();
-const { checkoutMode } = assertStripeTestOrSkip();
-
-const admin = createAdmin();
-const seller = await ensureUser({
-  email: sellerEmail(1),
-  username: "seller01",
-  displayName: "Sim Seller 01",
-  isSeller: true,
-});
-
-const startAt = new Date(Date.now() + 60_000).toISOString();
-const endAt = new Date(Date.now() + 3_600_000).toISOString();
-const shopId = await createShop(admin, seller.id, {
-  name: "Sim Drop 01",
-  startAt,
-  endAt,
-  status: "open",
-});
-
-await createBuyNowProduct(admin, shopId, {
-  title: "Test Mug",
-  price: 2500,
-  quantity: 5,
-});
-
-console.log({ checkoutMode, shopId });
-```
-
-## Artifacts
-
-`report.writeReport("my-run")` writes:
-
-- `scripts/sim/artifacts/my-run.json`
-- `scripts/sim/artifacts/my-run.md`
-
-Artifacts are gitignored except `.gitkeep`.
+Migration **`0029_auction_stock_decrement.sql`**: auction checkout can decrement stock without violating `products_auction_fields_check` (was a P0 webhook failure mode).

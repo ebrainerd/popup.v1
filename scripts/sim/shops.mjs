@@ -30,8 +30,7 @@ export async function createShop(admin, sellerId, fields) {
     is_live: rest.is_live ?? false,
     description: rest.description ?? null,
     cover_url: rest.cover_url ?? null,
-    shop_theme: rest.shop_theme ?? null,
-    ...rest,
+    shop_theme: rest.shop_theme ?? {},
   };
 
   const { data, error } = await admin
@@ -62,8 +61,8 @@ export async function createBuyNowProduct(admin, shopId, fields) {
     is_flash_only: rest.is_flash_only ?? false,
     description: rest.description ?? null,
     photo_url: rest.photo_url ?? null,
-    photo_urls: rest.photo_urls ?? null,
-    ...rest,
+    photo_urls: rest.photo_urls ?? [],
+    shipping_rate: rest.shipping_rate ?? 0,
   };
 
   const { data, error } = await admin
@@ -120,8 +119,8 @@ export async function createAuctionProduct(admin, shopId, fields) {
     is_flash_only: false,
     description: rest.description ?? null,
     photo_url: rest.photo_url ?? null,
-    photo_urls: rest.photo_urls ?? null,
-    ...rest,
+    photo_urls: rest.photo_urls ?? [],
+    shipping_rate: rest.shipping_rate ?? 0,
   };
 
   const { data, error } = await admin

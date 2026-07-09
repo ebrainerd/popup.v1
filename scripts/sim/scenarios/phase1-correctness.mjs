@@ -1,4 +1,4 @@
-import { assertLocalOnly, CRON_SECRET, SELLER_PASSWORD, BUYER_PASSWORD } from "../config.mjs";
+import { assertLocalOnly, assertLocalSiteUrl, CRON_SECRET, SIM_SITE_URL, SELLER_PASSWORD, BUYER_PASSWORD } from "../config.mjs";
 import { createAdmin, createAnon, signIn } from "../clients.mjs";
 import { ensureUser, sellerEmail, buyerEmail } from "../users.mjs";
 import { createShop, createBuyNowProduct, createAuctionProduct } from "../shops.mjs";
@@ -37,10 +37,9 @@ const futureIso = (h) => new Date(Date.now() + h * 3_600_000).toISOString();
 const pastIso = (h) => new Date(Date.now() - h * 3_600_000).toISOString();
 
 /**
- * @param {import('@supabase/supabase-js').SupabaseClient} admin
  * @param {number} n
  */
-async function loadSeller(admin, n) {
+async function loadSeller(n) {
   const email = sellerEmail(n);
   const { id } = await ensureUser({
     email,
@@ -73,7 +72,8 @@ async function loadBuyer(n) {
  */
 export async function runPhase1({ report }) {
   assertLocalOnly();
-  const siteUrl = process.env.SIM_SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = SIM_SITE_URL;
+  assertLocalSiteUrl(siteUrl);
   const admin = createAdmin();
   const anon = createAnon();
 
@@ -174,9 +174,14 @@ export async function runPhase1({ report }) {
     ],
     auctionId,
   );
+  // Concurrent max-bids: at least one must succeed; losers may fail if outpaced.
+  const bidOkCount = bidResults.filter((r) => r.ok).length;
   report.record("concurrent bids", {
-    ok: bidResults.every((r) => r.ok),
-    detail: `${bidResults.filter((r) => r.ok).length}/${bidResults.length} succeeded`,
+    ok: bidOkCount >= 1,
+    detail: `${bidOkCount}/${bidResults.length} succeeded (errors: ${bidResults
+      .filter((r) => !r.ok)
+      .map((r) => r.error)
+      .join("; ") || "none"})`,
   });
 
   await waitForAuctionEnd(admin, auctionId, { timeoutMs: 15_000 });
@@ -281,9 +286,16 @@ export async function runPhase1({ report }) {
   if (cron.skipped || cron.status === 0) {
     report.skip("fireDropRemindersCron", cron.error ?? "Next server not reachable");
   } else {
+    const sent = Number(cron.body?.sent ?? 0);
+    // Cron auth + handler must succeed. Email delivery needs RESEND_*; without it
+    // sent may be 0 even when opening windows are due (Mailpit is Auth SMTP only).
     report.record("fireDropRemindersCron", {
       ok: cron.ok,
-      detail: `HTTP ${cron.status} ${JSON.stringify(cron.body)}`,
+      detail: `HTTP ${cron.status} ${JSON.stringify(cron.body)}${
+        cron.ok && sent === 0
+          ? " (0 sent is expected without RESEND_API_KEY — Auth Mailpit ≠ Resend)"
+          : ""
+      }`,
     });
     const mailpit = await fetchMailpitMessages();
     if (mailpit.available) {

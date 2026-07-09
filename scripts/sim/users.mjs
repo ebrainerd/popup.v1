@@ -45,7 +45,9 @@ export async function ensureUser({
       user_metadata: { username, full_name: displayName },
     });
     if (error || !data.user) {
-      throw new Error(`createUser(${email}): ${error?.message ?? "no user"}`);
+      throw new Error(
+        `createUser(${email}): ${error?.message ?? JSON.stringify(error) ?? "no user"}`,
+      );
     }
     user = data.user;
   } else {

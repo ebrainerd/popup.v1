@@ -20,7 +20,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | **Discovery mode** | `invite_only` (default) — link-only shops; Explore is a holding page |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations** | Through **`0022_auto_queue_shop_auctions.sql`** (repo may include later migrations — apply in order) |
+| **Migrations** | Through **`0029_auction_stock_decrement.sql`** (apply in order; HANDOFF production table may lag until owner applies) |
 
 ## Where to look
 
