@@ -23,7 +23,7 @@ export default async function LoginPage({
       <Card>
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Log in to manage your shops and orders.</CardDescription>
+          <CardDescription>Log in to your shops and orders.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {checkEmail && <CheckEmailNotice />}

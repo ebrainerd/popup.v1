@@ -543,6 +543,32 @@ When ready to open discovery:
 - [ ] Enough scheduled seller supply for Explore
 - [ ] Switch `NEXT_PUBLIC_DISCOVERY_MODE=marketplace` and run Phase 21
 
+### Trust-critical (invite-only launch)
+
+- [ ] `/signup` copy works for buyers **and** sellers (not seller-only headline)
+- [ ] `/login` subhead is buyer/seller neutral (shops **and** orders)
+- [ ] `/orders` refunded/canceled states show clear next steps + seller/support links (no misleading progress timeline)
+- [ ] Order transactional emails include `support@popupdrop.co` footer + Terms link
+- [ ] Site footer surfaces `support@popupdrop.co` alongside `/support`
+- [ ] `/about` includes buyer-protection line (Stripe, ratings, order tracking)
+
+---
+
+## Phase 22 — Trust at the edges (~15 min)
+
+Quick pass before paid marketing — buyer-safe copy and support paths.
+
+| # | Step | Expected | ✓ |
+| - | ---- | -------- | - |
+| 22.1 | Buyer opens `/signup?redirectTo=/shop/<id>` from a shop link | Headline invites joining drops, not only selling | |
+| 22.2 | Seller opens `/signup` from marketing CTA | Secondary line mentions creating first shop after signup | |
+| 22.3 | `/login` | Subhead mentions shops and orders (not manage-shops-only) | |
+| 22.4 | `/orders` — refunded or canceled test order | No shipped/received timeline; hint links to seller profile + `/support` | |
+| 22.5 | Complete a purchase; check buyer order-confirmation email | Footer shows `support@popupdrop.co`, Support link, Terms link | |
+| 22.6 | Seller ships; check buyer shipped email | Same support footer present | |
+| 22.7 | Site footer on any public page | `support@popupdrop.co` visible next to Support | |
+| 22.8 | `/about` | One sentence on Stripe payments, order tracking, seller ratings | |
+
 ---
 
 ## Bug report template

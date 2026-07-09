@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/nextjs";
 import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/env";
 import { carrierTrackingUrl } from "@/lib/utils";
+import { transactionalEmailFooter } from "@/lib/support-copy";
 
 let vapidConfigured: boolean | null = null;
 
@@ -12,7 +13,7 @@ function ensureVapid(): boolean {
   if (vapidConfigured !== null) return vapidConfigured;
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
-  const subject = process.env.VAPID_SUBJECT || "mailto:hello@popup.app";
+  const subject = process.env.VAPID_SUBJECT || "mailto:support@popupdrop.co";
   if (!publicKey || !privateKey) {
     vapidConfigured = false;
     return false;
@@ -273,6 +274,10 @@ function formatShippingAddress(raw: unknown): string | null {
  */
 const SUPPORT_INBOX = "support@popupdrop.co";
 
+function emailFooter(site: string): string {
+  return transactionalEmailFooter(site);
+}
+
 /** Email the owner about a new support ticket (best-effort). */
 export async function notifySupportTicket(ticket: {
   id: string;
@@ -348,7 +353,8 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
              <p><strong>Order #${shortId}</strong> · Total ${total}</p>
              ${shipToBlock}
              <p>Track its status anytime in <a href="${site}/orders">Your orders</a>. We'll email
-             you again when it ships.</p>`,
+             you again when it ships.</p>
+             ${emailFooter(site)}`,
           )
         : Promise.resolve(),
       sellerEmail && o.shop
@@ -360,7 +366,8 @@ export async function notifyOrderPlaced(orderId: string): Promise<void> {
              <p><strong>Order #${shortId}</strong></p>
              ${shipToBlock}
              <p>Pack it up and <a href="${site}/dashboard/shops/${o.shop.id}">mark it shipped with a
-             tracking number</a> so your payout is released. Ship within 3 days to avoid a reminder.</p>`,
+             tracking number</a> so your payout is released. Ship within 3 days to avoid a reminder.</p>
+             ${emailFooter(site)}`,
           )
         : Promise.resolve(),
     ]);
@@ -410,7 +417,8 @@ export async function notifyReceiptConfirmed(orderId: string): Promise<void> {
            ? "<p>Your funds for this order have been released to your Stripe account.</p>"
            : "<p>Your funds release automatically after the payout hold.</p>"
        }
-       <p>Track it in your <a href="${site}/dashboard/sales">Sales</a>.</p>`,
+       <p>Track it in your <a href="${site}/dashboard/sales">Sales</a>.</p>
+       ${emailFooter(site)}`,
     );
   } catch (err) {
     console.error("notifyReceiptConfirmed failed", err);
@@ -455,7 +463,8 @@ export async function notifyFundsReleased(orderId: string, amountCents: number):
        <p><strong>${amount}</strong> for <strong>${itemTitle}</strong>
        (order <strong>#${o.id.slice(0, 8)}</strong>) was just released to your Stripe account.</p>
        <p>Stripe deposits it to your bank on your payout schedule — see the timing in your
-       <a href="${getSiteUrl()}/api/stripe/express-login">Stripe dashboard</a>.</p>`,
+       <a href="${getSiteUrl()}/api/stripe/express-login">Stripe dashboard</a>.</p>
+       ${emailFooter(getSiteUrl())}`,
     );
   } catch (err) {
     console.error("notifyFundsReleased failed", err);
@@ -509,7 +518,8 @@ export async function notifyOrderShipped(orderId: string): Promise<void> {
       `<h2>It's on its way! 📦</h2>
        <p><strong>${itemTitle}</strong> from <strong>${shopName}</strong> has shipped.</p>
        ${trackingBlock}
-       <p>See full details in <a href="${site}/orders">Your orders</a>.</p>`,
+       <p>See full details in <a href="${site}/orders">Your orders</a>.</p>
+       ${emailFooter(site)}`,
     );
   } catch (err) {
     console.error("notifyOrderShipped failed", err);
@@ -564,7 +574,8 @@ export async function nudgeAwaitingReceipt(): Promise<number> {
            <p>Your order of <strong>${escapeHtml(o.product?.title ?? "your item")}</strong> from
            <strong>${escapeHtml(o.shop?.name ?? "the shop")}</strong> shipped a few days ago.</p>
            <p>If it's here, please <a href="${site}/orders">confirm you received it</a> — it lets the
-           seller know it arrived and unlocks rating them. If it hasn't arrived, reach out to the seller.</p>`,
+           seller know it arrived and unlocks rating them. If it hasn't arrived, reach out to the seller.</p>
+           ${emailFooter(site)}`,
         );
         sent++;
       }
@@ -625,7 +636,8 @@ export async function remindUnshippedOrders(): Promise<number> {
            <p>Order <strong>#${o.id.slice(0, 8)}</strong> from <strong>${escapeHtml(o.shop.name)}</strong>
            has been paid for over 3 days and hasn't shipped yet.</p>
            <p><strong>Your payout stays on hold until you ship.</strong>
-           <a href="${site}/dashboard/shops/${o.shop.id}">Mark it shipped with tracking →</a></p>`,
+           <a href="${site}/dashboard/shops/${o.shop.id}">Mark it shipped with tracking →</a></p>
+           ${emailFooter(site)}`,
         );
         sent++;
       }

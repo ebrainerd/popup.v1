@@ -33,9 +33,14 @@ export default async function SignupPage({
       </div>
       <Card>
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Start selling on PopUp</CardTitle>
-          <CardDescription>
-            Create your account to launch time-boxed drops in minutes.
+          <CardTitle className="text-2xl">Create your PopUp account</CardTitle>
+          <CardDescription className="space-y-2">
+            <span className="block">
+              Join drops, bid in live auctions, and track your orders.
+            </span>
+            <span className="block text-xs">
+              Want to run a drop? You&apos;ll create your first shop right after signup.
+            </span>
           </CardDescription>
         </CardHeader>
         <CardContent>

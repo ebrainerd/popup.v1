@@ -30,6 +30,10 @@ export default async function AboutPage() {
           live, and a clean close when time&apos;s up. Buyers join through your link, so there&apos;s
           no browsing a public catalog.
         </p>
+        <p>
+          Buyers pay through Stripe, track every order, and rate sellers after delivery — so you
+          know who you&apos;re buying from before the drop opens.
+        </p>
 
         <h2 className="pt-2 text-xl font-bold">How it works</h2>
         <ol className="list-decimal space-y-2 pl-5">

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { isInviteOnlyMode } from "@/lib/discovery";
+import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/support-copy";
 
 export function SiteFooter() {
   const inviteOnly = isInviteOnlyMode();
@@ -25,6 +26,9 @@ export function SiteFooter() {
           <Link href="/support" className="hover:text-foreground">
             Support
           </Link>
+          <a href={SUPPORT_MAILTO} className="hover:text-foreground">
+            {SUPPORT_EMAIL}
+          </a>
           <Link href="/legal/terms" className="hover:text-foreground">
             Terms
           </Link>
