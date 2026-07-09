@@ -21,6 +21,7 @@ import { LaunchChecklist } from "@/components/launch-checklist";
 import { PaymentsSetupBanner } from "@/components/payments-setup-banner";
 import { SellerTermsBanner } from "@/components/seller-terms-banner";
 import { CollapsibleSection } from "@/components/collapsible-section";
+import { ManageShopSectionNav } from "@/components/manage-shop-section-nav";
 import { DropReportCard } from "@/components/drop-report";
 import { DropHealthSummary } from "@/components/drop-health-summary";
 import { ShareDropCard } from "@/components/share-drop-card";
@@ -141,6 +142,9 @@ export default async function ManageShopPage({
         </div>
       </div>
 
+      {/* Sticky under site header on mobile; placed early so it sticks while scrolling the long page. */}
+      <ManageShopSectionNav />
+
       <LaunchChecklist
         health={health}
         shopId={shop.id}
@@ -222,6 +226,7 @@ export default async function ManageShopPage({
         </CollapsibleSection>
 
         <CollapsibleSection
+          id="shop-appearance"
           title="Shop appearance"
           description="Theme, layout, and what buyers see on your drop page."
           defaultOpen={false}
@@ -264,6 +269,7 @@ export default async function ManageShopPage({
       {report && <DropReportCard report={report} shopId={shop.id} />}
 
       <CollapsibleSection
+        id="orders"
         title="Orders"
         description={
           orders.length === 0

@@ -67,7 +67,7 @@ export function DeleteDraftButton({
       onClick={onDelete}
       disabled={pending}
       className={cn(
-        "inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-destructive",
+        "inline-flex size-11 items-center justify-center rounded-md text-muted-foreground touch-manipulation hover:bg-muted hover:text-destructive md:size-9",
         pending && "opacity-50",
       )}
       aria-label="Delete draft"

@@ -264,20 +264,35 @@ function ProductRow({
           {shippingCents > 0 ? `${formatCurrency(shippingCents)} shipping` : "Free shipping"}
         </p>
       </div>
-      <Button type="button" variant="ghost" size="icon" onClick={onEdit} aria-label="Edit product">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11 touch-manipulation md:size-10"
+        onClick={onEdit}
+        aria-label="Edit product"
+      >
         <Pencil className="size-4" />
       </Button>
       <Button
         type="button"
         variant="ghost"
         size="icon"
+        className="size-11 touch-manipulation md:size-10"
         disabled={duplicateDisabled}
         onClick={onDuplicate}
         aria-label="Duplicate product"
       >
         <Copy className="size-4" />
       </Button>
-      <Button type="button" variant="ghost" size="icon" onClick={onDelete} aria-label="Delete product">
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-11 touch-manipulation md:size-10"
+        onClick={onDelete}
+        aria-label="Delete product"
+      >
         <Trash2 className="size-4 text-live" />
       </Button>
     </div>

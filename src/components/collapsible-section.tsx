@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,23 @@ export function CollapsibleSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
 
+  // Deep links / mobile section nav: open when hash matches this section.
+  useEffect(() => {
+    if (!id) return;
+
+    function syncFromHash() {
+      if (window.location.hash === `#${id}`) {
+        setOpen(true);
+      }
+    }
+
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, [id]);
+
   return (
-    <Card id={id}>
+    <Card id={id} className={cn(id && "scroll-mt-32")}>
       <CardHeader className="p-0">
         <div className="flex items-stretch">
           <button

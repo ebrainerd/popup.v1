@@ -47,14 +47,14 @@ export function SellerShopRow({ shop }: { shop: Shop }) {
         <CopyLink path={`/shop/${shop.id}`} label="Copy shop link" iconOnly />
         <Link
           href={`/shop/${shop.id}`}
-          className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground touch-manipulation hover:bg-muted hover:text-foreground md:size-9"
           aria-label={isDraft ? "Preview draft shop" : "View public shop"}
         >
           <ExternalLink className="size-4" />
         </Link>
         <Link
           href={isDraft ? `/dashboard/shops/${shop.id}/setup` : `/dashboard/shops/${shop.id}`}
-          className="inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="inline-flex size-11 items-center justify-center rounded-md text-muted-foreground touch-manipulation hover:bg-muted hover:text-foreground md:size-9"
           aria-label={isDraft ? "Continue shop setup" : "Manage shop"}
         >
           <Settings className="size-4" />
