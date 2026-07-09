@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { MapPin, ShoppingBag, Truck } from "lucide-react";
 import { markShipped } from "@/app/orders/actions";
 import { OrderStatusBadge } from "@/components/order-status-badge";
@@ -57,6 +58,7 @@ function OrderRow({
   order: SellerOrder;
   emphasizeShipping: boolean;
 }) {
+  const router = useRouter();
   const [tracking, setTracking] = useState("");
   const [carrier, setCarrier] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +73,11 @@ function OrderRow({
     setError(null);
     startTransition(async () => {
       const res = await markShipped(order.id, tracking, carrier);
-      if (!res.ok) setError(res.error ?? "Could not mark shipped.");
+      if (!res.ok) {
+        setError(res.error ?? "Could not mark shipped.");
+        return;
+      }
+      router.refresh();
     });
   }
 

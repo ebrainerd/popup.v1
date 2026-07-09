@@ -64,6 +64,8 @@ export function WizardProductManager({
   }
 
   function duplicateProduct(clientId: string) {
+    // Don't clobber an open editor — manage-page autosave would drop unsaved edits.
+    if (editingId !== null) return;
     const index = products.findIndex((p) => p.clientId === clientId);
     if (index === -1) return;
     const clone = duplicateWizardProduct(products[index]);
@@ -92,6 +94,7 @@ export function WizardProductManager({
               <ProductRow
                 key={product.clientId}
                 product={product}
+                duplicateDisabled={editingId !== null}
                 onEdit={() => startEdit(product)}
                 onDuplicate={() => duplicateProduct(product.clientId)}
                 onDelete={() => {
@@ -226,11 +229,13 @@ export function WizardProductManager({
 
 function ProductRow({
   product,
+  duplicateDisabled = false,
   onEdit,
   onDuplicate,
   onDelete,
 }: {
   product: WizardProductDraft;
+  duplicateDisabled?: boolean;
   onEdit: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -266,6 +271,7 @@ function ProductRow({
         type="button"
         variant="ghost"
         size="icon"
+        disabled={duplicateDisabled}
         onClick={onDuplicate}
         aria-label="Duplicate product"
       >

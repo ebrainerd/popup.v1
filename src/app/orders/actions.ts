@@ -65,6 +65,8 @@ export async function markShipped(
   await releaseOrderFunds(orderId);
 
   revalidatePath(`/dashboard/shops/${order.shop_id}`);
+  revalidatePath("/dashboard/sales");
+  revalidatePath("/dashboard");
   revalidatePath("/orders");
   return { ok: true };
 }

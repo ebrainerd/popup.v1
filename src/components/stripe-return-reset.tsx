@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 /** Reset scroll/viewport after returning from external Stripe onboarding (common on iOS). */
 export function StripeReturnReset({
   redirectTo,
-  autoRedirectMs = 6000,
+  autoRedirectMs = 8000,
 }: {
   redirectTo?: string;
   /** Soft redirect after the user has had time to read the message. */

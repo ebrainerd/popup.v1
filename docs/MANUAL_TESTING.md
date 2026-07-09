@@ -193,10 +193,10 @@ enabled).
 
 | # | Step | Expected |
 | - | ---- | -------- |
-| D1 | Open `/dashboard` → **Drafts** row | Link icon appears before view/manage; `aria-label` is "Copy shop link" |
-| D2 | Click copy on a draft | Icon swaps to check (~1.5s); clipboard has `https://…/shop/{id}` (draft preview URL) |
-| D3 | **Published / scheduled** row | Same copy control; pasted URL opens the shop (or scheduled buyer page) |
-| D4 | Paste URL in a new tab while logged out | Draft shows preview banner; published shop loads normally |
+| CL1 | Open `/dashboard` → **Drafts** row | Link icon appears before view/manage; `aria-label` is "Copy shop link" |
+| CL2 | Click copy on a draft | Icon swaps to check (~1.5s); clipboard has `https://…/shop/{id}` (owner preview URL) |
+| CL3 | **Published / scheduled** row | Same copy control; pasted URL opens the shop while logged out |
+| CL4 | Paste a **draft** URL while logged out | Shop 404 / closed (drafts are owner-only); paste while logged in as owner to see draft preview |
 
 ---
 
@@ -206,11 +206,12 @@ enabled).
 
 | # | Step | Expected |
 | - | ---- | -------- |
-| D1 | Open **Products** in setup wizard or manage page with at least one saved product | Each product row shows Edit, **Duplicate** (copy icon), and Delete |
-| D2 | Click **Duplicate** on a buy-now product | New row appears **immediately below** the original with title `… (copy)`; editor opens with copied price, qty, shipping, photos, description |
-| D3 | Save without changes (manage page) | Autosave inserts a **new** DB row; original product unchanged |
-| D4 | Duplicate an **auction** product | Clone keeps sale type, starting bid, increment, duration, prebid/sudden-death toggles |
-| D5 | Edit duplicate title (e.g. color variant) and save | Both products persist as separate rows |
+| DUP1 | Open **Products** with at least one saved product | Each product row shows Edit, **Duplicate** (copy icon), and Delete |
+| DUP2 | Click **Duplicate** on a buy-now product (editor closed) | New row appears **immediately below** with title `… (copy)`; editor opens with copied price, qty, shipping, photos, description |
+| DUP3 | Save without changes (manage page) | Autosave inserts a **new** DB row; original product unchanged |
+| DUP4 | Duplicate an **auction** product | Clone keeps sale type, starting bid, increment, duration, prebid/sudden-death toggles |
+| DUP5 | While editor is open for product A, Duplicate on product B | Duplicate button disabled / no-op until save or cancel (protects unsaved edits) |
+| DUP6 | Edit duplicate title (e.g. color variant) and save | Both products persist as separate rows |
 
 ---
 
@@ -223,8 +224,8 @@ Connect onboarding. Start from a shop manage page with the payments banner.
 | - | ---- | -------- |
 | P1 | On `/dashboard/shops/[id]`, click **Set up payouts** (or **Finish setup**) | Redirected to Stripe Connect onboarding |
 | P2 | Cancel or close Stripe before finishing (or use browser back) | Land on `/dashboard/payouts?status=return&redirectTo=...` |
-| P3 | Incomplete return page | Banner: payout setup isn&apos;t finished; full-width **Back to shop** (or dashboard) CTA; page not cropped / scrolled oddly on mobile |
-| P4 | Wait ~6s or tap **Back to shop** | Return to the shop manage page (or dashboard if no `redirectTo`) |
+| P3 | Incomplete return page | Banner: payout setup isn't finished; full-width **Back to shop** (or dashboard) CTA; page not cropped / scrolled oddly on mobile |
+| P4 | Wait ~8s or tap **Back to shop** | Return to the shop manage page (or dashboard if no `redirectTo`) |
 | P5 | Complete Stripe onboarding instead | Auto-redirect to the original `redirectTo` destination |
 
 ---
