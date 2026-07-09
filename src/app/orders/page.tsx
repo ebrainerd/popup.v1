@@ -146,10 +146,10 @@ function OrderCard({ order }: { order: BuyerOrder }) {
       </div>
 
       {/* Status timeline */}
-      <OrderTimeline order={order} />
+      {!isTerminalOrder(order) && <OrderTimeline order={order} />}
 
       {/* What's next */}
-      <p className="mt-3 text-sm text-muted-foreground">{statusHint(order)}</p>
+      <OrderStatusHint order={order} />
 
       {/* Details */}
       <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 border-t border-border pt-3 text-sm sm:grid-cols-3">
@@ -201,25 +201,86 @@ function OrderCard({ order }: { order: BuyerOrder }) {
   );
 }
 
-function statusHint(order: BuyerOrder): string {
+function isTerminalOrder(order: BuyerOrder): boolean {
+  return order.status === "refunded" || order.status === "canceled";
+}
+
+function OrderStatusHint({ order }: { order: BuyerOrder }) {
+  const seller = order.shop?.seller;
+  const sellerHref = seller ? `/u/${seller.username}` : null;
+
   switch (order.status) {
     case "paid":
-      return "Payment confirmed. The seller is preparing your order — you'll see tracking here once it ships.";
+      return (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Payment confirmed. The seller is preparing your order — you&apos;ll see tracking here once
+          it ships.
+        </p>
+      );
     case "shipped":
     case "in_transit":
-      return order.tracking_number
-        ? "On its way! Use the tracking link below for the latest delivery estimate."
-        : "Your order has shipped and is on its way.";
+      return (
+        <p className="mt-3 text-sm text-muted-foreground">
+          {order.tracking_number
+            ? "On its way! Use the tracking link below for the latest delivery estimate."
+            : "Your order has shipped and is on its way."}
+        </p>
+      );
     case "delivered":
-      return "Marked delivered. Confirm receipt to let the seller know it arrived.";
+      return (
+        <p className="mt-3 text-sm text-muted-foreground">
+          Marked delivered. Confirm receipt to let the seller know it arrived.
+        </p>
+      );
     case "received":
-      return "Order complete. Thanks for shopping!";
+      return (
+        <p className="mt-3 text-sm text-muted-foreground">Order complete. Thanks for shopping!</p>
+      );
     case "refunded":
-      return "This order was refunded.";
+      return (
+        <p className="mt-3 text-sm text-muted-foreground">
+          This order was refunded. Your payment should return to your original method within a few
+          business days.{" "}
+          {sellerHref ? (
+            <>
+              Questions?{" "}
+              <Link href={sellerHref} className="font-medium text-primary hover:underline">
+                Contact the seller
+              </Link>{" "}
+              or{" "}
+            </>
+          ) : (
+            "Questions? "
+          )}
+          <Link href="/support" className="font-medium text-primary hover:underline">
+            reach PopUp support
+          </Link>
+          .
+        </p>
+      );
     case "canceled":
-      return "This order was canceled.";
+      return (
+        <p className="mt-3 text-sm text-muted-foreground">
+          This order was canceled before payment completed — you were not charged.{" "}
+          {sellerHref ? (
+            <>
+              Need help?{" "}
+              <Link href={sellerHref} className="font-medium text-primary hover:underline">
+                Contact the seller
+              </Link>{" "}
+              or{" "}
+            </>
+          ) : (
+            "Need help? "
+          )}
+          <Link href="/support" className="font-medium text-primary hover:underline">
+            PopUp support
+          </Link>
+          .
+        </p>
+      );
     default:
-      return "";
+      return null;
   }
 }
 

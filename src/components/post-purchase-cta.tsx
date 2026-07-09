@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Bell, Heart, Share2 } from "lucide-react";
+import { Bell, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { FollowButton } from "@/components/follow-button";
+import { ShareShopButton } from "@/components/share-shop-button";
 import type { BuyerOrder } from "@/lib/orders";
 
 export function PostPurchaseCta({
@@ -64,12 +65,12 @@ export function PostPurchaseCta({
                 Join their next waitlist
               </Link>
             </Button>
-            <Button asChild variant="ghost" size="sm" className="rounded-full">
-              <Link href={`/shop/${primaryShop.id}`}>
-                <Share2 className="size-4" />
-                Share
-              </Link>
-            </Button>
+            <ShareShopButton
+              shopId={primaryShop.id}
+              shopName={primaryShop.name}
+              sellerHandle={primarySeller.username}
+              className="rounded-full"
+            />
           </div>
         )}
         {sellers.size > 1 && (

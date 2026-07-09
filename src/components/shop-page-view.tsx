@@ -22,6 +22,7 @@ import { ShopRoom } from "@/components/shop-room";
 import { StreamSlot } from "@/components/stream-slot";
 import { ViewerCount } from "@/components/viewer-count";
 import { LiveStreamBadge } from "@/components/live-stream-badge";
+import { BroadcastChatPanel } from "@/components/broadcast-chat-panel";
 import { ShopChat } from "@/components/shop-chat";
 import { ProductsGridLive } from "@/components/products-grid-live";
 import { FlashControls } from "@/components/flash-controls";
@@ -187,7 +188,14 @@ export function ShopPageView({
         <p className="mt-1 text-sm text-muted-foreground">
           Follow @{seller.username} and set a reminder for their next drop.
         </p>
-        <div className="mt-4 flex justify-center gap-2">
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <RemindMeButton
+            shopId={shop.id}
+            initialSubscribed={hasReminder}
+            isAuthed={Boolean(profileId)}
+            reminderCount={reminderCount}
+            deliveryConfigured={reminderDeliveryConfigured}
+          />
           <FollowButton
             sellerId={seller.id}
             initialFollowing={isFollowing}
@@ -266,6 +274,8 @@ export function ShopPageView({
         <DraftPreviewBanner shopId={shop.id} scheduleLabel={draftPreviewScheduleLabel} />
       )}
 
+      {/* Status only (final stretch / on the list) — not a second countdown clock.
+          StreamSlot owns the timer; this banner returns null otherwise. */}
       {isScheduled && !isDraftPreview && (
         <WaitingRoomBanner startAt={shop.start_at} hasReminder={hasReminder} />
       )}
@@ -492,7 +502,7 @@ function StreamChatRow({
   chatPlacement?: "sidebar" | "below";
   streamPlacement?: "primary" | "secondary";
 }) {
-  const chatFillClass = "h-full min-h-[16rem] lg:min-h-0";
+  const chatFillClass = "h-full min-h-0";
   const showSidebarChat = chatPlacement === "sidebar" && layout !== "countdown";
 
   const chatPanel =
@@ -544,7 +554,11 @@ function StreamChatRow({
         fillHeight={Boolean(chatPanel)}
         className="h-full"
       />
-      {chatPanel && <aside className="flex min-h-0 flex-col">{chatPanel}</aside>}
+      {chatPanel && (
+        <BroadcastChatPanel isScheduled={isScheduled} layout="sidebar">
+          {chatPanel}
+        </BroadcastChatPanel>
+      )}
     </div>
   );
 }

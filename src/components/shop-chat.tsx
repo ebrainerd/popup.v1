@@ -110,7 +110,7 @@ export function ShopChat({
   return (
     <div
       className={cn(
-        "flex flex-col rounded-xl border border-border bg-card",
+        "flex flex-col rounded-xl border border-border bg-card min-h-0",
         className ?? "h-[28rem] lg:h-[32rem]",
       )}
     >
@@ -182,6 +182,7 @@ export function ShopChat({
                 placeholder="Send a message…"
                 maxLength={500}
                 aria-label="Chat message"
+                className="text-base sm:text-sm"
               />
               <Button type="submit" size="icon" disabled={pending || !text.trim()}>
                 <Send className="size-4" />

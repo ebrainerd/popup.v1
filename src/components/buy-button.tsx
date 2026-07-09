@@ -60,8 +60,8 @@ export function BuyButton({
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
-      <Button size="sm" onClick={onClick} disabled={pending}>
+    <div className="flex w-full flex-col items-stretch gap-1 max-sm:w-full sm:w-auto sm:items-end">
+      <Button size="sm" className="w-full sm:w-auto" onClick={onClick} disabled={pending}>
         <ShoppingBag className="size-4" />
         {pending ? "Starting…" : "Buy now"}
       </Button>

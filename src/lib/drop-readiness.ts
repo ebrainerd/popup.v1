@@ -2,11 +2,14 @@ import type { ShopWithDetails } from "@/lib/shops";
 import { canSellerGoLive } from "@/lib/live-stream";
 import { arePayoutsConnected } from "@/lib/payments";
 
+export type DropReadinessGroup = "setup" | "promotion";
+
 export type DropReadinessItem = {
   id: string;
   label: string;
   done: boolean;
   optional?: boolean;
+  group: DropReadinessGroup;
 };
 
 export type DropHealth = {
@@ -45,15 +48,48 @@ export function computeDropHealth(
   const scheduleSet = shop.schedule_set === true;
 
   const items: DropReadinessItem[] = [
-    { id: "details", label: "Shop details complete", done: hasDetails },
-    { id: "products", label: "At least one product added", done: hasProducts },
-    { id: "cover", label: "Cover image added", done: hasCover },
-    { id: "live", label: "Stream source configured", done: hasStreamConfigured, optional: true },
-    { id: "schedule", label: "Drop schedule set", done: scheduleSet },
-    { id: "terms", label: "Seller terms accepted", done: termsAccepted },
-    { id: "payouts", label: "Payments set up", done: payoutsConnected },
-    { id: "published", label: "Drop published", done: isPublished },
-    { id: "share", label: "Share your shop link copied", done: false, optional: true },
+    { id: "details", label: "Shop details complete", done: hasDetails, group: "setup" },
+    { id: "products", label: "At least one product added", done: hasProducts, group: "setup" },
+    { id: "cover", label: "Cover image added", done: hasCover, group: "setup" },
+    {
+      id: "live",
+      label: "Stream source configured",
+      done: hasStreamConfigured,
+      optional: true,
+      group: "setup",
+    },
+    { id: "schedule", label: "Drop schedule set", done: scheduleSet, group: "setup" },
+    { id: "terms", label: "Seller terms accepted", done: termsAccepted, group: "setup" },
+    { id: "payouts", label: "Payments set up", done: payoutsConnected, group: "setup" },
+    { id: "published", label: "Drop published", done: isPublished, group: "setup" },
+    {
+      id: "share",
+      label: "Shop link copied",
+      done: false,
+      optional: true,
+      group: "promotion",
+    },
+    {
+      id: "post-social",
+      label: "Post drop link on IG / TikTok",
+      done: false,
+      optional: true,
+      group: "promotion",
+    },
+    {
+      id: "pin-link",
+      label: "Pin link in bio or story highlight",
+      done: false,
+      optional: true,
+      group: "promotion",
+    },
+    {
+      id: "hour-before",
+      label: "1h-before reminder post",
+      done: false,
+      optional: true,
+      group: "promotion",
+    },
   ];
 
   const required = items.filter((i) => !i.optional);

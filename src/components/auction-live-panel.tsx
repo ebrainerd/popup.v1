@@ -347,6 +347,7 @@ export function AuctionLivePanel({
       className={cn(
         "mb-8 overflow-hidden rounded-2xl border-2 border-primary/50 bg-gradient-to-br from-primary/10 to-accent/5 p-5 shadow-lg",
         isLive && secondsLeft <= 10 && "animate-live-pulse",
+        isLive && allowBids && "pb-20 lg:pb-5",
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -455,12 +456,16 @@ export function AuctionLivePanel({
 
       {allowBids && (isLive || isQueued) && (
         <div className="mt-4">
-          <div className="flex flex-wrap items-end gap-2">
-            <Button onClick={quickBid} disabled={pending}>
+          <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+            <Button
+              onClick={quickBid}
+              disabled={pending}
+              className={cn("w-full sm:w-auto", isLive && "hidden lg:inline-flex")}
+            >
               Bid {formatCurrency(state.nextMinimumBid)}
             </Button>
-            <div className="flex min-w-48 flex-1 items-end gap-2">
-              <div className="flex-1 space-y-1">
+            <div className="flex w-full flex-col gap-2 sm:flex-1 sm:flex-row sm:items-end">
+              <div className="w-full flex-1 space-y-1">
                 <label className="text-xs text-muted-foreground" htmlFor="max-bid">
                   Set max bid (USD)
                 </label>
@@ -472,9 +477,15 @@ export function AuctionLivePanel({
                   placeholder={(state.nextMinimumBid / 100).toFixed(2)}
                   value={maxBid}
                   onChange={(e) => setMaxBid(e.target.value)}
+                  className="text-base sm:text-sm"
                 />
               </div>
-              <Button variant="outline" onClick={setMaxBidSubmit} disabled={pending}>
+              <Button
+                variant="outline"
+                onClick={setMaxBidSubmit}
+                disabled={pending}
+                className="w-full sm:w-auto"
+              >
                 Max bid
               </Button>
             </div>
@@ -483,6 +494,20 @@ export function AuctionLivePanel({
             Bids are binding: if you win, you pay your winning bid plus shipping. Your max bid
             stays private — we only bid the minimum needed to keep you in front.
           </p>
+        </div>
+      )}
+
+      {isLive && allowBids && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 pt-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:hidden">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+            <div className="flex items-center gap-2 text-sm font-semibold tabular-nums">
+              <Timer className="size-4 text-primary" />
+              {secondsLeft}s left
+            </div>
+            <Button onClick={quickBid} disabled={pending} size="sm">
+              Bid {formatCurrency(state.nextMinimumBid)}
+            </Button>
+          </div>
         </div>
       )}
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { MessageCircle, Monitor, Package, ShoppingBag, User } from "lucide-react";
+import { ChevronDown, MessageCircle, Monitor, Package, ShoppingBag, User } from "lucide-react";
 import {
   SHOP_LAYOUT_MODE_META,
   SHOP_THEME_PRESET_META,
@@ -78,7 +78,7 @@ export function ShopThemePreview({
           <span className="size-2 rounded-full bg-emerald-400/80" />
         </div>
         <span className="ml-1 truncate font-medium">
-          {isMobile ? "popup.app · mobile" : "popup.app/shop/preview"}
+          {isMobile ? "popupdrop.co · mobile" : "popupdrop.co/shop/preview"}
         </span>
         <span className="ml-auto flex items-center gap-1">
           <span className="rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide" style={{ background: `${visual.mutedForeground}22`, color: visual.mutedForeground }}>
@@ -226,7 +226,9 @@ function LayoutPreview({
 
   // Chat reads as the room when open/live; the Drop Clock keeps it off pre-open.
   const showChatPanel = theme.showChat && !(layout === "countdown" && isScheduled);
-  const chat = showChatPanel ? <ChatStub visual={visual} isMobile={isMobile} /> : null;
+  const chat = showChatPanel ? (
+    <ChatStub visual={visual} isMobile={isMobile} isScheduled={isScheduled} />
+  ) : null;
 
   const reminder =
     isScheduled && theme.showReminderCta ? (
@@ -246,7 +248,7 @@ function LayoutPreview({
   ) : null;
 
   // Stream + chat always travel together as a band (chat beside the stream on
-  // desktop, stacked on mobile). Keep in sync with shop-page-view.tsx.
+  // desktop, stacked + collapsible on mobile). Keep in sync with shop-page-view.tsx.
   const streamChatBand = (
     <div className={cn("grid gap-3", !isMobile && chat && "grid-cols-[1fr_120px]")}>
       {hero}
@@ -452,13 +454,56 @@ function ProductGrid({
 function ChatStub({
   visual,
   isMobile,
+  isScheduled,
 }: {
   visual: (typeof SHOP_PRESET_VISUAL)[keyof typeof SHOP_PRESET_VISUAL];
   isMobile: boolean;
+  isScheduled: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const label = isScheduled ? "Announcements" : "Shop chat";
+
+  if (isMobile) {
+    return (
+      <div>
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-lg border px-2 py-1.5 text-left text-[9px] font-semibold"
+          style={{ borderColor: visual.border, background: visual.cardBackground, borderRadius: visual.radius }}
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+        >
+          <span className="flex items-center gap-1">
+            <MessageCircle className="size-3" style={{ color: visual.mutedForeground }} />
+            {label}
+          </span>
+          <ChevronDown
+            className={cn("size-3 transition-transform", open && "rotate-180")}
+            style={{ color: visual.mutedForeground }}
+          />
+        </button>
+        {open && (
+          <div
+            className="mt-2 flex min-h-[4.5rem] max-h-[5.5rem] flex-col overflow-hidden rounded-lg border p-2"
+            style={{ borderColor: visual.border, background: visual.cardBackground, borderRadius: visual.radius }}
+          >
+            <p className="mb-1 flex items-center gap-1 text-[9px] font-medium" style={{ color: visual.mutedForeground }}>
+              <MessageCircle className="size-3" /> {label}
+            </p>
+            <div className="space-y-1">
+              <div className="h-1.5 w-3/4 rounded-full" style={{ background: `${visual.mutedForeground}33` }} />
+              <div className="h-1.5 w-1/2 rounded-full" style={{ background: `${visual.mutedForeground}22` }} />
+              <div className="h-1.5 w-2/3 rounded-full" style={{ background: `${visual.mutedForeground}22` }} />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
-      className={cn("flex flex-col rounded-lg border p-2", isMobile ? "min-h-[60px]" : "min-h-[100px]")}
+      className="flex min-h-[100px] flex-col rounded-lg border p-2"
       style={{ borderColor: visual.border, background: visual.cardBackground, borderRadius: visual.radius }}
     >
       <p className="mb-1 flex items-center gap-1 text-[9px] font-medium" style={{ color: visual.mutedForeground }}>

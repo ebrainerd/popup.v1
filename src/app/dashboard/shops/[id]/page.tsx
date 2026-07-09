@@ -8,6 +8,7 @@ import { getSellerOrders } from "@/lib/orders";
 import { getDropReminderCount } from "@/lib/drop-reminders";
 import { computeDropHealth } from "@/lib/drop-readiness";
 import { getDropReport } from "@/lib/drop-analytics";
+import { getSiteUrl } from "@/lib/env";
 import { SellerOrdersTable } from "@/components/seller-orders-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,8 @@ import { PaymentsSetupBanner } from "@/components/payments-setup-banner";
 import { SellerTermsBanner } from "@/components/seller-terms-banner";
 import { CollapsibleSection } from "@/components/collapsible-section";
 import { DropReportCard } from "@/components/drop-report";
+import { DropHealthSummary } from "@/components/drop-health-summary";
+import { ShareDropCard } from "@/components/share-drop-card";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
 import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
 import { derivePublishedShopWindow } from "@/lib/utils";
@@ -76,6 +79,8 @@ export default async function ManageShopPage({
   const nativeLiveEnabled = isNativeLiveEnabled();
 
   const liveControlsEnded = window.isEnded || (isDraft && window.schedule === "ended");
+  const showSellerKit = !isDraft && scheduleSet;
+  const shopUrl = `${getSiteUrl()}/shop/${shop.id}`;
 
   const detailsDone = checklistDone(health, "details");
   const productsDone = checklistDone(health, "products");
@@ -142,6 +147,22 @@ export default async function ManageShopPage({
         paymentsRequired={paymentsRequired}
         payoutsConnected={payoutsConnected}
       />
+
+      {showSellerKit && (
+        <>
+          <DropHealthSummary health={health} isEnded={window.isEnded} />
+          {(window.isScheduled || window.isOpen) && (
+            <ShareDropCard
+              shopId={shop.id}
+              shopName={shop.name}
+              sellerHandle={profile.username}
+              startAt={shop.start_at}
+              shopUrl={shopUrl}
+              variant="dashboard"
+            />
+          )}
+        </>
+      )}
 
       {paymentsRequired && !payoutsConnected && <PaymentsSetupBanner shopId={shop.id} />}
 

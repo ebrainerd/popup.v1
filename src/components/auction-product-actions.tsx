@@ -240,37 +240,42 @@ export function AuctionProductActions({
 
   if (viewerWon && run) {
     return (
-      <div className="flex flex-col items-end gap-2">
-        <Button size="sm" onClick={checkout} disabled={pending}>
+      <div className="flex w-full flex-col items-stretch gap-2 max-sm:items-stretch sm:items-end">
+        <Button size="sm" className="w-full max-sm:w-full sm:w-auto" onClick={checkout} disabled={pending}>
           {pending ? "Starting…" : "Checkout now"}
         </Button>
-        <span className="text-right text-[11px] text-muted-foreground">
+        <span className="text-center text-[11px] text-muted-foreground sm:text-right">
           You have 30 minutes to check out before the lot is released.
         </span>
-        {error && <span className="text-right text-[11px] text-live">{error}</span>}
+        {error && <span className="text-center text-[11px] text-live sm:text-right">{error}</span>}
       </div>
     );
   }
 
   if (allowBids && state) {
     return (
-      <div className="flex w-full max-w-xs flex-col items-end gap-2">
+      <div className="flex w-full flex-col items-stretch gap-2 max-sm:items-stretch sm:max-w-xs sm:items-end">
         {isLive ? (
-          <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-live">
+          <span className="flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-wide text-live sm:justify-end">
             <span aria-hidden className="size-2 animate-live-pulse rounded-full bg-live" />
             Auction is live
           </span>
         ) : (
-          <span className="text-xs font-medium text-muted-foreground">
+          <span className="text-center text-xs font-medium text-muted-foreground sm:text-right">
             Auction hasn&apos;t started yet
           </span>
         )}
-        <div className="flex flex-wrap items-end justify-end gap-2">
-          <Button size="sm" onClick={() => placeBid(state.nextMinimumBid)} disabled={pending}>
+        <div className="flex w-full flex-col gap-2 max-sm:items-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-end">
+          <Button
+            size="sm"
+            className="w-full max-sm:w-full sm:w-auto"
+            onClick={() => placeBid(state.nextMinimumBid)}
+            disabled={pending}
+          >
             <Gavel className="size-4" />
             Bid {formatCurrency(state.nextMinimumBid)}
           </Button>
-          <div className="flex items-end gap-1">
+          <div className="flex w-full items-end gap-2 max-sm:flex-col sm:w-auto">
             <Input
               type="number"
               min={state.nextMinimumBid / 100}
@@ -278,12 +283,13 @@ export function AuctionProductActions({
               placeholder={(state.nextMinimumBid / 100).toFixed(2)}
               value={maxBid}
               onChange={(e) => setMaxBid(e.target.value)}
-              className="h-9 w-24"
+              className="h-9 w-full text-base max-sm:w-full sm:w-24 sm:text-sm"
               aria-label="Max bid in USD"
             />
             <Button
               size="sm"
               variant="outline"
+              className="w-full max-sm:w-full sm:w-auto"
               disabled={pending}
               onClick={() => {
                 const dollars = parseFloat(maxBid);
@@ -299,22 +305,22 @@ export function AuctionProductActions({
           </div>
         </div>
         {isQueued && (
-          <span className="text-right text-[11px] font-medium text-accent">
+          <span className="text-center text-[11px] font-medium text-accent sm:text-right">
             {shopOpen
               ? "Pre-bids count the moment the seller starts the live round."
               : "Pre-bidding is open before the drop starts."}
           </span>
         )}
-        <span className="text-right text-[11px] text-muted-foreground">
+        <span className="text-center text-[11px] text-muted-foreground sm:text-right">
           Bids are binding — win it, pay it (plus shipping).
         </span>
         {state.viewerState === "winning" && isLive && (
-          <span className="text-xs font-medium text-primary">You&apos;re winning</span>
+          <span className="text-center text-xs font-medium text-primary sm:text-right">You&apos;re winning</span>
         )}
         {state.viewerState === "outbid" && isLive && (
-          <span className="text-xs text-live">You were outbid</span>
+          <span className="text-center text-xs text-live sm:text-right">You were outbid</span>
         )}
-        {error && <span className="text-right text-[11px] text-live">{error}</span>}
+        {error && <span className="text-center text-[11px] text-live sm:text-right">{error}</span>}
       </div>
     );
   }

@@ -15,6 +15,7 @@ section by section, record pass/fail, and fix bugs before launch.
 | `docs/PRODUCTION_READINESS.md` | Infrastructure launch gate + load testing |
 | `docs/DEPLOYMENT.md` | Env vars, cron URLs, Stripe/Resend setup |
 | `docs/HANDOFF.md` | Current project status |
+| `docs/MARKETING_LAUNCH_GATE.md` | **Evidence-based GO/NO-GO** — scored status per phase (update after each prod test session) |
 
 ---
 
@@ -168,7 +169,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
 | 3.11 | Try each theme preset (Neon PopUp, Gallery, Dark Room, Market Stall) | Preview updates | |
-| 3.12 | Change layout (Live Stage, Lookbook, Drop Clock, The Room), accent color, grid 2 vs 3 columns | Preview reflects changes; switching layout offers "Apply recommended settings" | |
+| 3.12 | Change layout (**The Room**, **Lookbook**), accent color, grid 2 vs 3 columns | Only two layouts in picker; preview reflects changes; switching layout offers "Apply recommended settings" | |
 | 3.13 | Toggle sections: chat, seller bio, reminder CTA | Toggles persist | |
 
 ### Step 4 — Live stream
@@ -177,7 +178,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 | - | ---- | -------- | - |
 | 3.14 | **PopUp Live** selected by default | YouTube/Twitch fields hidden | |
 | 3.15 | Switch to **YouTube or Twitch**, paste valid URL, switch back | Native mode restores | |
-| 3.16 | Choose layout (Live Stage, Lookbook, Drop Clock, The Room); toggle preview phase Scheduled/Open/Live | Selection saves; preview phase toggle updates hero/reminders | |
+| 3.16 | Choose layout (**The Room** or **Lookbook**); toggle preview phase Scheduled/Open/Live | Selection saves; preview phase toggle updates hero/reminders | |
 
 ### Step 5 — Schedule
 
@@ -416,23 +417,23 @@ After shop **Ended**:
 
 ## Phase 17 — Theme & customize (15 min)
 
-Layout slugs map to archetype labels: **Live Stage** (`broadcast`), **Lookbook**
-(`catalog`), **Drop Clock** (`countdown`), **The Room** (`classic`). See
-`docs/SHOP_LAYOUT_ARCHETYPES.md` and the four-layout smoke matrix in
-`docs/MANUAL_TESTING.md` for the detailed per-layout/phase checks.
+**Pickable layouts:** **The Room** (`classic`) and **Lookbook** (`catalog`) only.
+Legacy `broadcast` / `countdown` fold to The Room via `normalizeLayout()`. See
+`docs/SHOP_LAYOUT_ARCHETYPES.md` and the two-layout smoke matrix in
+`docs/MANUAL_TESTING.md` for detailed per-layout/phase checks.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
 | 17.1 | Change theme on open shop via customize | Buyer page updates after refresh/realtime | |
 | 17.2 | Product grid 2 vs 3 columns | Layout correct on mobile + desktop | |
 | 17.3 | Hide chat section | Chat block hidden for buyers | |
-| 17.4 | In customize, switch between all four layouts | Each card shows archetype name + "Best for…"; switching offers "Apply recommended settings" (Apply vs Keep my settings) | |
+| 17.4 | In customize, switch between **The Room** and **Lookbook** | Each card shows archetype name + "Best for…"; switching offers "Apply recommended settings" (Apply vs Keep my settings) | |
 | 17.5 | Toggle preview phase Scheduled / Open / Live for each layout | Hero updates: countdown (Scheduled), open state, LIVE badge (Live); reminder CTA only when Scheduled + reminder on | |
-| 17.6 | Set **Live Stage**, view buyer page | Stream/cover hero leads; products below; chat full width under grid | |
-| 17.7 | Set **Lookbook**, view buyer page | Product grid is first above the fold; stream band capped below grid; seller bio shown | |
-| 17.8 | Set **Drop Clock** scheduled, view buyer page | Oversized countdown hero; no duplicate waiting-room countdown; reminder CTA prominent; hero shrinks at open without full reload | |
-| 17.9 | Set **The Room** open on desktop | Chat sidebar visible beside stream without scrolling; seller bio in header | |
-| 17.10 | Confirm customize **Live preview** matches the buyer page for each layout/phase | Preview section order ≈ production | |
+| 17.6 | Set **Lookbook**, view buyer page | Product grid is first above the fold; stream band capped below grid; seller bio shown | |
+| 17.7 | Set **The Room** open on desktop | Chat sidebar visible beside stream without scrolling; seller bio in header | |
+| 17.8 | Either layout, scheduled | Stream slot owns countdown; `WaitingRoomBanner` is status-only (final stretch / on the list), not a duplicate clock | |
+| 17.9 | Confirm customize **Live preview** matches the buyer page for each layout/phase | Preview section order ≈ production | |
+| 17.10 | Either pickable layout on mobile 375px | Hero/stream visible; products and checkout usable; chat accordion collapsed by default | |
 
 ---
 
@@ -525,6 +526,8 @@ Production only (service worker registers when `NODE_ENV=production`).
 
 ## Marketing sign-off gate
 
+**Current evidence-based status:** see `docs/MARKETING_LAUNCH_GATE.md` (update after each prod test session).
+
 Do **not** start paid ads until all are true:
 
 - [ ] Every phase above marked ✅ or documented ⏭️ with reason
@@ -542,6 +545,32 @@ When ready to open discovery:
 
 - [ ] Enough scheduled seller supply for Explore
 - [ ] Switch `NEXT_PUBLIC_DISCOVERY_MODE=marketplace` and run Phase 21
+
+### Trust-critical (invite-only launch)
+
+- [ ] `/signup` copy works for buyers **and** sellers (not seller-only headline)
+- [ ] `/login` subhead is buyer/seller neutral (shops **and** orders)
+- [ ] `/orders` refunded/canceled states show clear next steps + seller/support links (no misleading progress timeline)
+- [ ] Order transactional emails include `support@popupdrop.co` footer + Terms link
+- [ ] Site footer surfaces `support@popupdrop.co` alongside `/support`
+- [ ] `/about` includes buyer-protection line (Stripe, ratings, order tracking)
+
+---
+
+## Phase 22 — Trust at the edges (~15 min)
+
+Quick pass before paid marketing — buyer-safe copy and support paths.
+
+| # | Step | Expected | ✓ |
+| - | ---- | -------- | - |
+| 22.1 | Buyer opens `/signup?redirectTo=/shop/<id>` from a shop link | Headline invites joining drops, not only selling | |
+| 22.2 | Seller opens `/signup` from marketing CTA | Secondary line mentions creating first shop after signup | |
+| 22.3 | `/login` | Subhead mentions shops and orders (not manage-shops-only) | |
+| 22.4 | `/orders` — refunded or canceled test order | No shipped/received timeline; hint links to seller profile + `/support` | |
+| 22.5 | Complete a purchase; check buyer order-confirmation email | Footer shows `support@popupdrop.co`, Support link, Terms link | |
+| 22.6 | Seller ships; check buyer shipped email | Same support footer present | |
+| 22.7 | Site footer on any public page | `support@popupdrop.co` visible next to Support | |
+| 22.8 | `/about` | One sentence on Stripe payments, order tracking, seller ratings | |
 
 ---
 
@@ -562,4 +591,4 @@ Severity: blocker | major | minor
 
 ---
 
-*Last updated: June 2026 — production at https://www.popupdrop.co, migrations through `0020_seller_terms_accepted.sql`.*
+*Last updated: July 2026 — production at https://www.popupdrop.co, migrations through `0022_auto_queue_shop_auctions.sql` (apply later migrations in order).*

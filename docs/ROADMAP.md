@@ -69,8 +69,26 @@ defaults agreed at kickoff.
 ## MVP complete 🎉
 
 All three milestones are in. Post-MVP candidates: scheduled "opening soon"
-notifications (cron), live-embed hot-swap, carrier tracking APIs, auctions,
-international shipping/tax, and native apps.
+notifications (cron), live-embed hot-swap, and polish items that do not block
+invite-only seller-led marketing.
+
+**First marketing scope:** seller-led link drops in `invite_only` mode. Several
+post-MVP ideas are explicitly **deferred** — see below and `docs/HANDOFF.md` §
+"Not for first marketing".
+
+## Deferred — not for first marketing (revisit triggers)
+
+| Item | Status | Revisit when |
+| ---- | ------ | ------------ |
+| **Marketplace Explore** (`NEXT_PUBLIC_DISCOVERY_MODE=marketplace`) | Built; off in prod | Supply gates in `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` (≥10 drops / 14d, ≥3 proven creators, etc.) |
+| **Categories / recommendations** | Not built | Marketplace live + Explore needs curation; algorithms only after manual curation ships |
+| **Carrier tracking APIs** | Manual tracking + time hold | Support/dispute pain or ≥50 shipped orders/month needing auto in-transit |
+| **Likes / clips / replays / social graph** | Not built | Retention metrics + seller demand for replay-led growth |
+| **International shipping / tax** | US only | Founding seller demand + tax/shipping vendor scoped |
+| **Native iOS / Android apps** | Not built | `docs/NATIVE_APP_DECISION.md` — PWA bar met **and** push habit / publisher pain measured |
+
+Shipped since this list was written: opening-soon notifications (cron), auctions,
+native PopUp Live (LiveKit), invite-only mode, shop layout archetypes.
 
 ## Open items / decisions (from design doc §11)
 
