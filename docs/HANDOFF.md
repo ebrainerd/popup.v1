@@ -35,6 +35,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | Native live streaming | `docs/NATIVE_LIVE_STREAMING.md` |
 | Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
 | **Shop layout archetypes (customization spec)** | **`docs/SHOP_LAYOUT_ARCHETYPES.md`** |
+| **Native app decision (when / if to build)** | **`docs/NATIVE_APP_DECISION.md`** |
 | Testing & CI | `docs/TESTING.md` |
 | Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
 | Auth & profile signup flows | `docs/AUTH_PROFILE_ROADMAP.md` |
@@ -115,6 +116,25 @@ sync if you touch any layout (comment cross-links exist in `shop-page-view.tsx`
 - [x] Migrations through `0020` applied on production
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
 
+## Not for first marketing (non-goals)
+
+First marketing is **invite-only, seller-led drops** — sellers bring buyers via
+shop link; PopUp is not a WhatNot-scale marketplace yet. The items below are
+**explicitly out of scope** for the first marketing gate. Each has a **revisit
+trigger** so we do not defer them forever.
+
+| Non-goal | Revisit when |
+| -------- | ------------ |
+| **Marketplace Explore** (`NEXT_PUBLIC_DISCOVERY_MODE=marketplace`) | ≥ **10** upcoming public drops in the next **14 days**, ≥ **3** creators with prior successful drops, and ≥ **1** drop in the next **48h** on most days — then flip mode and run `docs/PRE_MARKETING_TEST.md` Phase 21. See `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` § "When to reintroduce Explore". |
+| **Categories / recommendations** | Marketplace mode is live **and** Explore has enough listings that unfiltered "All" feels noisy; start with manual curation (`featured_at`), not algorithms. |
+| **Carrier tracking APIs** (Shippo / EasyPost / AfterShip) | Seller support volume or payout disputes show that manual tracking links are a recurring pain **or** ≥ **50** shipped orders/month need automated in-transit status. Until then: seller-entered tracking + time-based hold (`RELEASE_DELAY_HOURS`). |
+| **Likes / clips / replays / deep social graph** | A measured retention goal (e.g. buyers returning without seller link) fails **and** seller interviews cite content replay as a growth lever — not before marketplace habit exists. |
+| **International shipping / tax** | Founding sellers ask for non-US buyers **and** Stripe/tax tooling is scoped; until then US addresses only (`allowed_countries: ["US"]`). |
+| **Native iOS / Android apps** | Mobile-web/PWA bar is met (`docs/NATIVE_APP_DECISION.md`) **and** habitual return, push reliability, or seller phone publishing becomes a measured bottleneck. **Not** for invite-only founding drops. |
+
+**Mobile bar for first marketing:** mobile web + PWA on shop links — not app store
+binaries. Details: **`docs/NATIVE_APP_DECISION.md`**.
+
 ## ⚠️ Before marketing (remaining)
 
 Use **`docs/PRE_MARKETING_TEST.md`** — the full two-person checklist. Short list:
@@ -123,7 +143,10 @@ Use **`docs/PRE_MARKETING_TEST.md`** — the full two-person checklist. Short li
 - [ ] Real purchase end-to-end with emails to real inboxes (not Resend sandbox)
 - [ ] k6 smoke on a published shop URL (already passed once; re-run after major changes)
 - [ ] Optional: attorney review of `/legal/terms` and `/legal/privacy`
-- [ ] When supply is ready: set `NEXT_PUBLIC_DISCOVERY_MODE=marketplace` and test Explore/search
+- [ ] Mobile web + PWA bar on a real shop link (Phase 20 in pre-marketing test)
+
+**Not part of first marketing gate:** flipping to marketplace Explore — see non-goals
+table above.
 
 ### Standing ops
 
@@ -165,6 +188,6 @@ Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.
 ## Known future work / ideas
 
 - Scale hardening (Realtime connection limits, Explore caching) — k6 smoke in `scripts/load/`
-- Carrier tracking API for real delivery ETAs (Shippo/EasyPost/AfterShip)
+- Deferred items with revisit triggers — see **Not for first marketing** above and
+  `docs/ROADMAP.md` § "Deferred"
 - Nonce-based strict CSP; per-viewer avatar stack in the room
-- Marketplace mode launch when seller supply supports Explore
