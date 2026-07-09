@@ -146,6 +146,36 @@ layout and phase.
 | B5 | **The Room**, open on desktop | Chat sidebar visible beside the stream without scrolling; seller bio in header | |
 | B6 | Any layout on mobile 375px | Hero/stream visible; products and checkout usable; chat collapses below fold | |
 
+### Shop room mobile smoke (~375px)
+
+Quick pass after mobile layout changes — use Chrome DevTools iPhone SE / 375px width.
+
+| # | Step | Expected | ✓ |
+| - | ---- | -------- | - |
+| M1 | **The Room** (`classic`), scheduled | Stream countdown visible; chat accordion collapsed by default; no duplicate `WaitingRoomBanner` countdown | |
+| M2 | **The Room**, open | Expand chat → ~40vh max height; message input does not zoom page on focus (16px) | |
+| M3 | **Lookbook** (`catalog`), open | Product grid first; stream band below; chat collapsed until expanded | |
+| M4 | Product card with auction lot | Price stacks above full-width bid row; max-bid input usable without horizontal squeeze | |
+| M5 | Live auction panel while lot is live | Bid row stacks on narrow width; thin sticky bottom bar shows timer + Bid; panel not hidden behind bar | |
+| M6 | Customize preview, mobile viewport | Chat stub collapsed by default; expands to taller stub (matches buyer page behavior) | |
+
+---
+
+## Seller success kit
+
+**Requires:** published or scheduled shop on `/dashboard/shops/[id]`; local stack or hosted
+backend with a seller account that has accepted terms and connected payouts (if Stripe
+enabled).
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| S1 | Open manage page for a **published scheduled** drop | **Drop health** strip shows waitlist count, follower count, units left, and opening time |
+| S2 | Same page | **Share your drop** card shows shop URL, caption previews (with URL), copy link, and native share |
+| S3 | Copy a caption or shop link | Launch checklist **Promotion → Shop link copied** marks done (persists on refresh) |
+| S4 | Tap other promotion pills (IG/TikTok, pin link, 1h-before) | Each toggles to done and persists in localStorage |
+| S5 | End a drop (or open an ended shop) | **Drop report** shows waitlist signups, narrative for repeating, **Duplicate this drop** is primary CTA |
+| S6 | Buyer: complete an order → `/orders` | Post-purchase card **Share shop** copies caption + link (or opens native share) |
+
 ---
 
 Copy this block when adding the next checklist:

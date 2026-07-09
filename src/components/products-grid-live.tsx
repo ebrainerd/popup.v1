@@ -251,27 +251,29 @@ function ProductCard({
         {product.description && (
           <p className="line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
         )}
-        <div className="mt-auto flex items-end justify-between gap-3 pt-2">
+        <div className="mt-auto flex flex-col gap-3 pt-2 max-sm:items-stretch sm:flex-row sm:items-end sm:justify-between">
           <PriceBlock product={product} />
-          {isAuction ? (
-            <AuctionProductActions
-              product={product}
-              shopId={shopId}
-              shopOpen={shopOpen}
-              isAuthed={isAuthed}
-              isOwner={isOwner}
-              userId={userId}
-              initial={initialAuction}
-            />
-          ) : (
-            <BuyButton
-              shopId={shopId}
-              productId={product.id}
-              isOpen={shopOpen}
-              soldOut={soldOut}
-              isAuthed={isAuthed}
-            />
-          )}
+          <div className="w-full max-sm:shrink-0 sm:w-auto">
+            {isAuction ? (
+              <AuctionProductActions
+                product={product}
+                shopId={shopId}
+                shopOpen={shopOpen}
+                isAuthed={isAuthed}
+                isOwner={isOwner}
+                userId={userId}
+                initial={initialAuction}
+              />
+            ) : (
+              <BuyButton
+                shopId={shopId}
+                productId={product.id}
+                isOpen={shopOpen}
+                soldOut={soldOut}
+                isAuthed={isAuthed}
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -352,27 +354,29 @@ function ProductDetailDialog({
           {product.description && (
             <p className="whitespace-pre-wrap text-sm text-foreground/90">{product.description}</p>
           )}
-          <div className="flex flex-wrap items-end justify-between gap-3 border-t border-border pt-3">
+          <div className="flex flex-col gap-3 border-t border-border pt-3 max-sm:items-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
             <PriceBlock product={product} />
-            {isAuction ? (
-              <AuctionProductActions
-                product={product}
-                shopId={shopId}
-                shopOpen={shopOpen}
-                isAuthed={isAuthed}
-                isOwner={isOwner}
-                userId={userId}
-                initial={initialAuction}
-              />
-            ) : (
-              <BuyButton
-                shopId={shopId}
-                productId={product.id}
-                isOpen={shopOpen}
-                soldOut={soldOut}
-                isAuthed={isAuthed}
-              />
-            )}
+            <div className="w-full max-sm:shrink-0 sm:w-auto">
+              {isAuction ? (
+                <AuctionProductActions
+                  product={product}
+                  shopId={shopId}
+                  shopOpen={shopOpen}
+                  isAuthed={isAuthed}
+                  isOwner={isOwner}
+                  userId={userId}
+                  initial={initialAuction}
+                />
+              ) : (
+                <BuyButton
+                  shopId={shopId}
+                  productId={product.id}
+                  isOpen={shopOpen}
+                  soldOut={soldOut}
+                  isAuthed={isAuthed}
+                />
+              )}
+            </div>
           </div>
         </div>
       </div>
