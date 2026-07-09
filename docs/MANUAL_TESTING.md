@@ -185,6 +185,22 @@ enabled).
 | F2 | Blur the field after typing | Zoom level returns to normal (no sticky zoom) |
 | F3 | Open a native `<select>` (e.g. auction duration, flash product picker) | Same — no focus zoom on mobile |
 
+### Manage shop section jump nav (~390px / iPhone Chrome)
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| MN1 | Open `/dashboard/shops/[id]` on a narrow viewport | Sticky section pills under the header: Details / Products / Appearance / Live / Orders (`md:hidden`) |
+| MN2 | Tap **Products** while that section is collapsed | Section expands and scrolls into view (hash `#products`) |
+| MN3 | Tap **Orders** | Same for `#orders` |
+| MN4 | Desktop (≥768px) | Jump nav is hidden; page still scrolls normally |
+
+### Seller dashboard touch targets (~390px)
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| TT1 | `/dashboard` shop row: copy / view / manage (/ delete draft) | Each control is ≥44px tall on mobile (`size-11`); desktop stays `size-9` |
+| TT2 | Manage shop → Products: edit / duplicate / delete | Same ≥44px targets on mobile |
+
 ---
 
 ## Dashboard — copy shop link

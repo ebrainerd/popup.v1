@@ -35,7 +35,7 @@ export function CopyLink({
         type="button"
         onClick={onCopy}
         className={cn(
-          "inline-flex size-9 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+          "inline-flex size-11 items-center justify-center rounded-md text-muted-foreground touch-manipulation hover:bg-muted hover:text-foreground md:size-9",
           className,
         )}
         aria-label={copied ? "Shop link copied" : label}
