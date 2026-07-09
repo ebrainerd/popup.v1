@@ -205,7 +205,8 @@ Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.
 - Deferred items with revisit triggers — see **Not for first marketing** above and
   `docs/ROADMAP.md` § "Deferred"
 - Nonce-based strict CSP; per-viewer avatar stack in the room
-- **Painterly marketing rebrand (exploration):** direction + sample heroes in
-  `docs/rebrand-exploration/PAINTERLY_DIRECTION.md` and `public/rebrand-samples/`.
-  Local preview at `/rebrand-samples` (dev only). No product UI change until an
-  owner picks a lane (Dusk Park vs Rooftop Blue Hour recommended).
+- **Painterly marketing rebrand (exploration):** owner locked **urban night
+  market** (“Midnight Drop”). Direction + v2 hero plates in
+  `docs/rebrand-exploration/PAINTERLY_DIRECTION.md` and `public/rebrand-samples/`
+  (`night-market-v2-*.webp`). Local preview at `/rebrand-samples` (dev only).
+  Next: pick open-sky vs bookend-stalls, then thin invite-only hero prototype.

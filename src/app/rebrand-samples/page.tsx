@@ -8,28 +8,52 @@ import { notFound } from "next/navigation";
  */
 const SAMPLES = [
   {
+    src: "/rebrand-samples/night-market-v2-open-sky.webp",
+    title: "Night market v2: open sky",
+    lane: "Hero favorite",
+    note: "Stalls in the lower third; indigo-to-orange sky as the type canvas.",
+  },
+  {
+    src: "/rebrand-samples/night-market-v2-bookend-stalls.webp",
+    title: "Night market v2: bookend stalls",
+    lane: "Strong alternate",
+    note: "Left/right lantern stalls frame a clear center sky corridor.",
+  },
+  {
+    src: "/rebrand-samples/night-market-v2-sky-ribbon.webp",
+    title: "Night market v2: sky ribbon",
+    lane: "Wide pullback",
+    note: "Market as a warm light ribbon; maximum sky for UI.",
+  },
+  {
+    src: "/rebrand-samples/night-market-v2-alley.webp",
+    title: "Night market v2: alley",
+    lane: "Angle change",
+    note: "Street corridor of stalls; more intimate, less open sky.",
+  },
+  {
+    src: "/rebrand-samples/popup-hero-rooftop-blue-hour.webp",
+    title: "Rooftop blue hour (v1)",
+    lane: "Owner pick / base",
+    note: "Original plate that locked the night-market direction.",
+  },
+  {
     src: "/rebrand-samples/popup-hero-dusk-park-market.webp",
     title: "Dusk Park Market",
-    lane: "Recommended default",
-    note: "Open sky for white type; temporary stalls in the lower third.",
+    lane: "Alternate",
+    note: "Park fair under open sky; kept for contrast only.",
   },
   {
     src: "/rebrand-samples/popup-hero-sunset-coast-market.webp",
     title: "Sunset Coast Market",
-    lane: "Premium / calm",
-    note: "Indigo-to-orange sky; white tents as soft product metaphor.",
+    lane: "Alternate",
+    note: "Coastal tents; softer premium mood.",
   },
   {
     src: "/rebrand-samples/popup-hero-bright-hills-fair.webp",
     title: "Bright Hills Fair",
-    lane: "High-key / light mode",
-    note: "Cerulean sky for dark type; valley fair as community drop.",
-  },
-  {
-    src: "/rebrand-samples/popup-hero-rooftop-blue-hour.webp",
-    title: "Rooftop Blue Hour",
-    lane: "Bridge from v3 night market",
-    note: "Warm lanterns + coral/teal awnings over a city dusk.",
+    lane: "Alternate",
+    note: "High-key valley fair for a possible light-mode lane.",
   },
 ] as const;
 
@@ -56,8 +80,7 @@ export default function RebrandSamplesPage() {
         Painterly rebrand samples
       </h1>
       <p className="mt-3 max-w-2xl text-muted-foreground">
-        Full-bleed landscape concepts for a PopUp marketing hero. Direction
-        notes live in{" "}
+        Locked lane: urban night market (&quot;Midnight Drop&quot;). Direction notes in{" "}
         <code className="text-sm">docs/rebrand-exploration/PAINTERLY_DIRECTION.md</code>.
         This route is disabled in production.
       </p>
@@ -79,7 +102,6 @@ export default function RebrandSamplesPage() {
                 className="object-cover"
               />
             </div>
-            {/* Mock hero overlay to judge type placement */}
             <div className="relative mt-4 aspect-[16/9] overflow-hidden rounded-2xl ring-1 ring-border">
               <Image
                 src={sample.src}
