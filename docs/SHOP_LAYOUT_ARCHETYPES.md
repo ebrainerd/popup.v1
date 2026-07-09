@@ -1,8 +1,16 @@
 # Shop layout archetypes — product & engineering spec
 
-Living handoff doc for redesigning PopUp’s **page layout** customization around four
-seller archetypes. Pair with `src/lib/shop-theme.ts` (presets + layout modes) and
-`docs/PRODUCT_UX_REVIEW.md` for broader UX context.
+Living handoff doc for PopUp’s **page layout** customization. Pair with
+`src/lib/shop-theme.ts` (presets + layout modes) and `docs/PRODUCT_UX_REVIEW.md`
+for broader UX context.
+
+> **Current product (July 2026):** The seller **layout picker ships only two
+> layouts** — **The Room** (`classic`) and **Lookbook** (`catalog`). Legacy slugs
+> `broadcast` (Live Stage) and `countdown` (Drop Clock) are **retired from the
+> picker** and fold into `classic` via `normalizeLayout()` /
+> `SHOP_PICKABLE_LAYOUTS` in `src/lib/shop-theme.ts`. They may remain in the DB
+> enum for backward compatibility; code may still branch on them for legacy shops
+> and preview, but **do not implement them as active picker options.**
 
 **Status:** **All phases complete (June 2026).** Phase 0 (metadata + defaults),
 Phase 1 (editor archetype picker + preview phase toggle), Phase 2 (Live Stage /
@@ -10,7 +18,7 @@ Phase 1 (editor archetype picker + preview phase toggle), Phase 2 (Live Stage /
 and Phase 5 (The Room / `classic`) shipped the buyer-page parity work; **Phase 6
 (QA & docs)** is now done — see §7 below.  
 **Owner intent:** Make shop customization feel intentional (“built for my kind of
-drop”), not four interchangeable skins of the same page.
+drop”), not interchangeable skins of the same page.
 
 ---
 
@@ -18,9 +26,9 @@ drop”), not four interchangeable skins of the same page.
 
 | Goal | Success signal |
 | ---- | -------------- |
-| Sellers pick a layout that matches *how they sell*, not just aesthetics | Layout picker shows archetype stories; lower “which one do I pick?” support |
-| Buyer page hierarchy matches seller intent | Stream-first drops feel like events; curator drops feel like lookbooks |
-| Preserve backward compatibility | Existing shops keep working; `shop_theme.layout` values unchanged in DB |
+| Sellers pick a layout that matches *how they sell*, not just aesthetics | Picker shows two archetype stories (The Room + Lookbook); lower “which one do I pick?” support |
+| Buyer page hierarchy matches seller intent | Room-style drops balance stream + chat; curator drops lead with products |
+| Preserve backward compatibility | Existing shops keep working; legacy `broadcast` / `countdown` fold to `classic` |
 | Theme editor preview matches production | `ShopThemePreview` and `/shop/[id]` render the same structure per layout |
 
 **Non-goals for v1 of this work**
@@ -28,6 +36,7 @@ drop”), not four interchangeable skins of the same page.
 - New color presets (keep Neon PopUp, Gallery, Dark Room, Market Stall)
 - Per-layout custom CSS or drag-and-drop page builder
 - Different layouts per shop phase (one layout per shop is enough)
+- Re-adding Live Stage (`broadcast`) or Drop Clock (`countdown`) to the picker — retired July 2026
 
 ---
 
@@ -72,16 +81,18 @@ preset hints).
 | Product grid density | `src/components/products-grid-live.tsx` via `theme.productGridColumns` |
 | CSS hooks | `shopThemeRootClassName()` → `shop-layout-{layout}` on `ShopThemeShell` |
 
-### Current layout modes (internal IDs → UI labels)
+### Layout modes (internal IDs → UI labels)
 
-| `layout` slug | Current label | One-line behavior |
-| ------------- | ------------- | ----------------- |
-| `classic` | Classic | Banner top, details, products; chat in right column beside stream |
-| `broadcast` | Stream first | Large stream/banner hero; products below; chat full width under grid |
-| `countdown` | Waiting room | Oversized countdown on hero; reminder CTA prominent; lighter preview |
-| `catalog` | Catalog | Product grid leads; stream/chat as supporting panels below |
+| `layout` slug | Picker label | Status | One-line behavior |
+| ------------- | ------------ | ------ | ----------------- |
+| `classic` | **The Room** | **Pickable** | Stream + chat first (two columns); products below |
+| `catalog` | **Lookbook** | **Pickable** | Product grid leads; stream band below |
+| `broadcast` | Live Stage | **Retired** — folds to `classic` | Was stream-first hero; legacy DB values only |
+| `countdown` | Drop Clock | **Retired** — folds to `classic` | Was countdown-first hero; legacy DB values only |
 
-Metadata lives in `SHOP_LAYOUT_MODE_META` in `src/lib/shop-theme.ts`.
+Pickable set: `SHOP_PICKABLE_LAYOUTS` in `src/lib/shop-theme.ts`. Legacy slugs
+normalize via `normalizeLayout()`. Metadata for all four slugs lives in
+`SHOP_LAYOUT_MODE_META` (retired entries kept for display of legacy shops).
 
 ### Shop phases (all layouts must handle)
 
@@ -102,31 +113,40 @@ Layouts should define behavior per phase, especially **scheduled vs open vs live
 
 We anchor customization on **what the seller optimizes for**, not visual taste alone.
 
-| Archetype | In-product layout name | Keep slug | Evolves |
-| --------- | ---------------------- | --------- | ------- |
-| **The Showrunner** | **Live Stage** | `broadcast` | Stream-first event |
-| **The Curator** | **Lookbook** | `catalog` | Product/editorial-first |
-| **The Hype Dropper** | **Drop Clock** | `countdown` | Countdown/reminder-first |
-| **The Room Host** | **The Room** | `classic` | Balanced community room |
+### Pickable today (July 2026)
 
-**Keep existing enum slugs** (`classic`, `broadcast`, `countdown`, `catalog`) for
-backward compatibility. Rebrand labels, descriptions, defaults, and preview art in
-`SHOP_LAYOUT_MODE_META` and the theme editor.
+| Archetype | In-product layout name | Slug | Behavior |
+| --------- | ---------------------- | ---- | -------- |
+| **The Room Host** | **The Room** | `classic` | Stream + chat first; products below |
+| **The Curator** | **Lookbook** | `catalog` | Products first; stream band below |
+
+### Retired from picker (fold into The Room)
+
+| Archetype | Was | Slug | Fate |
+| --------- | --- | ---- | ---- |
+| **The Showrunner** | Live Stage | `broadcast` | Retired — `normalizeLayout()` → `classic` |
+| **The Hype Dropper** | Drop Clock | `countdown` | Retired — `normalizeLayout()` → `classic` |
+
+**Keep existing enum slugs** (`classic`, `broadcast`, `countdown`, `catalog`) in the
+DB for backward compatibility. Only `classic` and `catalog` appear in the seller
+picker (`SHOP_PICKABLE_LAYOUTS`).
 
 Recommended **default preset pairings** (suggested on pick, not forced):
 
 | Layout | Suggested preset | Why |
 | ------ | ---------------- | --- |
-| Live Stage (`broadcast`) | Neon PopUp (`default`) | High energy, live badges |
 | Lookbook (`catalog`) | Gallery (`gallery`) | Editorial, image-forward |
-| Drop Clock (`countdown`) | Dark Room (`dark_room`) | Urgency, night-drop vibe |
 | The Room (`classic`) | Market Stall (`market_stall`) | Warm, conversational |
 
 ---
 
 ## 4. Archetype profiles (full)
 
-### 4.1 The Showrunner — *“My drop is a live event.”*
+### 4.1 The Showrunner — *“My drop is a live event.”* **(retired — folded into The Room)**
+
+> **July 2026:** Live Stage (`broadcast`) is no longer pickable. Sellers who want
+> stream-first energy use **The Room** (`classic`), which keeps stream + chat
+> prominent. Do not re-implement as a separate picker option.
 
 **Who**
 
@@ -182,7 +202,12 @@ Recommended **default preset pairings** (suggested on pick, not forced):
 
 ---
 
-### 4.3 The Hype Dropper — *“The clock is the product.”*
+### 4.3 The Hype Dropper — *“The clock is the product.”* **(retired — folded into The Room)**
+
+> **July 2026:** Drop Clock (`countdown`) is no longer pickable. Countdown and
+> reminder UX live in the stream slot and `WaitingRoomBanner` (status-only: final
+> stretch / on the list) across layouts. Do not re-implement as a separate picker
+> option.
 
 **Who**
 
@@ -240,7 +265,11 @@ Each layout defines: **hero priority**, **section order**, **default toggles**, 
 **phase behavior**. Implement in `shop-page-view.tsx`, `stream-slot.tsx`, and
 `shop-theme-preview.tsx` together (preview drift is a common bug).
 
-### 5.1 Live Stage (`broadcast`)
+### 5.1 Live Stage (`broadcast`) — **RETIRED** (folds to The Room)
+
+> Historical spec. Legacy `broadcast` values in the DB render as **The Room**
+> (`classic`) via `normalizeLayout()`. Kept for reference only — do not implement
+> as an active layout.
 
 | Attribute | Spec |
 | --------- | ---- |
@@ -282,7 +311,11 @@ Each layout defines: **hero priority**, **section order**, **default toggles**, 
 
 ---
 
-### 5.3 Drop Clock (`countdown`)
+### 5.3 Drop Clock (`countdown`) — **RETIRED** (folds to The Room)
+
+> Historical spec. Legacy `countdown` values in the DB render as **The Room**
+> (`classic`) via `normalizeLayout()`. Countdown UX is owned by the stream slot;
+> `WaitingRoomBanner` is status-only (not a second clock). Kept for reference only.
 
 | Attribute | Spec |
 | --------- | ---- |
@@ -328,11 +361,11 @@ Each layout defines: **hero priority**, **section order**, **default toggles**, 
 
 ### 6.1 Layout picker redesign
 
-Replace flat list of four technical names with **archetype cards**:
+Replace flat list of technical names with **archetype cards** (two pickable today):
 
 Each card shows:
 
-- Layout name + tagline (e.g. **Live Stage** — *Built for live selling*)
+- Layout name + tagline (e.g. **The Room** — *Your regulars’ hangout*)
 - 1-sentence “Best for…” (Showrunner-style copy)
 - Mini thumbnail (static SVG or screenshot per layout × preset)
 - “Recommended theme: Gallery” chip (click applies preset)
@@ -389,9 +422,9 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 > **Note (Phase 1, June 2026):** The preview phase toggle is a *mock* — it
 > swaps the hero treatment (countdown overlay / LIVE badge), shows the reminder
 > CTA when scheduled, and tints products as "soon". Full per-phase **section
-> reordering** per §5 lands in Phases 2–5 alongside `shop-page-view.tsx`.
-> **Phase 2 (broadcast)**, **Phase 3 (catalog)**, and **Phase 5 (classic)** are
-> done; **Phase 4 (countdown)** is the remaining parity phase — see `docs/HANDOFF.md`.
+> reordering** per §5 landed in Phases 2–5 alongside `shop-page-view.tsx`.
+> **July 2026:** picker narrowed to The Room + Lookbook; legacy layouts fold to
+> `classic` — see banner at top of this doc.
 
 ---
 
@@ -446,24 +479,24 @@ Phased so an agent can land incremental PRs without a big-bang rewrite.
 ### Phase 6 — QA & docs — DONE
 
 - [x] Walk `docs/PRE_MARKETING_TEST.md` Phase 17 (theme & customize) — expanded
-      to 17.1–17.10 covering all four layouts, phase toggles, recommended-settings
+      to 17.1–17.10 covering pickable layouts, phase toggles, recommended-settings
       prompt, and preview ≈ buyer-page parity
 - [x] `docs/MANUAL_TESTING.md` — added a **Shop layout archetypes** section with a
-      four layouts × two presets editor smoke matrix (L1–L11) plus buyer-page
-      parity checks (B1–B6)
+      two-layout editor smoke matrix (L1–L11) plus buyer-page parity checks (B1–B4)
 - [x] Update `docs/PRODUCT_UX_REVIEW.md` cross-link — note added under Layout &
       visual critique pointing at this spec and the smoke matrix
 
 **QA performed (June 2026):** `npm run typecheck`, `npm run lint`, `npm run test`
 (134 passed / 9 skipped), and `npm run build` all pass. Manual GUI smoke on a
-seeded scheduled shop walked all four layouts × Scheduled/Open/Live in the
-customize **Live preview**: each layout reordered/restyled per §5, the phase
-toggle swapped the hero (countdown → open → LIVE badge), and the "Apply
+seeded scheduled shop walked both pickable layouts × Scheduled/Open/Live in the
+customize **Live preview**: each layout reordered/restyled per §5.2 and §5.4,
+the phase toggle swapped the hero (countdown → open → LIVE badge), and the "Apply
 recommended settings" prompt fired on layout change. No errors or broken/blank
-previews. Local-stack note: a stale DB volume can leave migrations partially
-applied (`profiles.follower_count` missing → shop queries fail with `column
-… does not exist`, surfacing as a 404 on owner pages); `supabase db reset`
-re-applies all migrations + `seed.sql` grants and resolves it.
+previews. **July 2026:** picker narrowed to The Room + Lookbook; legacy
+`broadcast` / `countdown` fold to `classic`. Local-stack note: a stale DB volume
+can leave migrations partially applied (`profiles.follower_count` missing → shop
+queries fail with `column … does not exist`, surfacing as a 404 on owner pages);
+`supabase db reset` re-applies all migrations + `seed.sql` grants and resolves it.
 
 ---
 
@@ -511,15 +544,16 @@ Extend `test/unit/shop-theme.test.ts`:
 - `SHOP_LAYOUT_DEFAULTS` returns expected toggles per layout
 - Renamed meta strings (snapshot or explicit asserts)
 
-### Manual (per layout)
+### Manual (per pickable layout)
 
-| Step | Live Stage | Lookbook | Drop Clock | The Room |
-| ---- | ---------- | -------- | ---------- | -------- |
-| Scheduled: hero correct | stream/cover wide | products preview | big countdown | balanced 2-col |
-| Open: products buyable | ✓ | ✓ | ✓ | ✓ |
-| Live: stream replaces banner | ✓ | capped below grid | ✓ | left column |
-| Mobile 375px | stream visible | grid readable | timer readable | chat reachable |
-| Customize preview ≈ shop page | ✓ | ✓ | ✓ | ✓ |
+| Step | Lookbook (`catalog`) | The Room (`classic`) |
+| ---- | -------------------- | -------------------- |
+| Scheduled: hero correct | products preview first | stream + chat two-col; stream countdown |
+| Open: products buyable | ✓ | ✓ |
+| Live: stream replaces banner | capped below grid | left column beside chat |
+| Mobile 375px | grid readable; chat collapsed | stream visible; chat accordion |
+| `WaitingRoomBanner` | status-only (no duplicate countdown) | status-only (stream owns timer) |
+| Customize preview ≈ shop page | ✓ | ✓ |
 
 ---
 
@@ -537,7 +571,7 @@ Extend `test/unit/shop-theme.test.ts`:
 Before starting implementation:
 
 1. Read this doc + skim `src/lib/shop-theme.ts` and `shop-page-view.tsx`
-2. Read **`docs/HANDOFF.md` → “Shop layout archetypes — next agent”** for current phase
+2. Read **`docs/HANDOFF.md` → “Shop layout archetypes”** for current picker state
 3. Run app locally (`AGENTS.md` — Supabase + `npm run dev`)
 4. Open `/dashboard/shops/[id]/customize` and `/shop/[id]` for a draft shop
 5. Pick **one phase** per PR; keep preview and production in sync
@@ -562,4 +596,4 @@ cards — see §11 open questions).
 
 ---
 
-*Last updated: June 2026 — spec authored for layout customization initiative.*
+*Last updated: July 2026 — picker ships The Room + Lookbook only; legacy layouts fold to classic.*

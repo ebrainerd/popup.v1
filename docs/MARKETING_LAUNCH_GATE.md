@@ -116,7 +116,7 @@ Maps to Phases 6–7, 8 (viewer), 15.8, 17, 20.
 | D4 | Chat send on mobile | **unknown** | Phase 7.4 — unchecked |
 | D5 | Native live video on phone within ~5s | **unknown** | Phase 8.3 — unchecked |
 | D6 | Mobile viewport layout usable (Phase 15.8) | **unknown** | Phase 15.8 — unchecked |
-| D7 | Four layout archetypes on mobile 375px | **unknown** | Phase 17.2, 17.8; `MANUAL_TESTING.md` B6 — unchecked |
+| D7 | Two pickable layouts on mobile 375px (The Room + Lookbook) | **unknown** | Phase 17.2, 17.8–17.10; `MANUAL_TESTING.md` B4, M1–M6 — unchecked |
 | D8 | PWA add-to-home-screen + shop load | **unknown** | Phase 20.1–20.2 — unchecked |
 
 ### E — Commerce & money clears
@@ -183,7 +183,7 @@ Maps to Phases 18–19 and marketing sign-off block.
 | I2 | `npm run test` | **pass** | 142 passed, 10 skipped |
 | I3 | `npm run lint` | **pass** | 0 errors, 7 warnings |
 | I4 | `npm run build` | **pass** | 2026-07-09 |
-| I5 | Layout archetypes Phase 6 QA (local preview) | **pass** | `docs/HANDOFF.md` — customize preview smoke passed |
+| I5 | Layout archetypes Phase 6 QA (local preview) | **pass** | `docs/HANDOFF.md` — two pickable layouts (The Room + Lookbook); customize preview smoke passed |
 
 ---
 

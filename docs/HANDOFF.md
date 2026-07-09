@@ -60,10 +60,13 @@ All three MVP milestones shipped and live in production, plus post-launch work:
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
 - **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — phases 0–6 landed.
-  **Pickable layouts today:** The Room (`classic`) and Lookbook (`catalog`) via
-  `SHOP_PICKABLE_LAYOUTS`. Legacy `broadcast` / `countdown` themes fold into
-  `classic` (`normalizeLayout`). Smoke: `docs/MANUAL_TESTING.md` → shop layouts +
-  mobile room; pre-marketing Phase 17.
+  **Pickable layouts today:** **The Room** (`classic`) — stream + chat first,
+  products below — and **Lookbook** (`catalog`) — products first, stream band
+  below. Defined in `SHOP_PICKABLE_LAYOUTS`. Legacy `broadcast` (Live Stage) /
+  `countdown` (Drop Clock) are retired from the picker and fold into `classic`
+  via `normalizeLayout()` (enum slugs may remain in DB for backward compatibility).
+  Smoke: `docs/MANUAL_TESTING.md` → shop layouts + mobile room; pre-marketing
+  Phase 17.
 
 ## Shop layout archetypes — COMPLETE (Phases 0–6)
 

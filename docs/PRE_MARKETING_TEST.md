@@ -169,7 +169,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
 | 3.11 | Try each theme preset (Neon PopUp, Gallery, Dark Room, Market Stall) | Preview updates | |
-| 3.12 | Change layout (Live Stage, Lookbook, Drop Clock, The Room), accent color, grid 2 vs 3 columns | Preview reflects changes; switching layout offers "Apply recommended settings" | |
+| 3.12 | Change layout (**The Room**, **Lookbook**), accent color, grid 2 vs 3 columns | Only two layouts in picker; preview reflects changes; switching layout offers "Apply recommended settings" | |
 | 3.13 | Toggle sections: chat, seller bio, reminder CTA | Toggles persist | |
 
 ### Step 4 — Live stream
@@ -178,7 +178,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 | - | ---- | -------- | - |
 | 3.14 | **PopUp Live** selected by default | YouTube/Twitch fields hidden | |
 | 3.15 | Switch to **YouTube or Twitch**, paste valid URL, switch back | Native mode restores | |
-| 3.16 | Choose layout (Live Stage, Lookbook, Drop Clock, The Room); toggle preview phase Scheduled/Open/Live | Selection saves; preview phase toggle updates hero/reminders | |
+| 3.16 | Choose layout (**The Room** or **Lookbook**); toggle preview phase Scheduled/Open/Live | Selection saves; preview phase toggle updates hero/reminders | |
 
 ### Step 5 — Schedule
 
@@ -417,23 +417,23 @@ After shop **Ended**:
 
 ## Phase 17 — Theme & customize (15 min)
 
-Layout slugs map to archetype labels: **Live Stage** (`broadcast`), **Lookbook**
-(`catalog`), **Drop Clock** (`countdown`), **The Room** (`classic`). See
-`docs/SHOP_LAYOUT_ARCHETYPES.md` and the four-layout smoke matrix in
-`docs/MANUAL_TESTING.md` for the detailed per-layout/phase checks.
+**Pickable layouts:** **The Room** (`classic`) and **Lookbook** (`catalog`) only.
+Legacy `broadcast` / `countdown` fold to The Room via `normalizeLayout()`. See
+`docs/SHOP_LAYOUT_ARCHETYPES.md` and the two-layout smoke matrix in
+`docs/MANUAL_TESTING.md` for detailed per-layout/phase checks.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
 | 17.1 | Change theme on open shop via customize | Buyer page updates after refresh/realtime | |
 | 17.2 | Product grid 2 vs 3 columns | Layout correct on mobile + desktop | |
 | 17.3 | Hide chat section | Chat block hidden for buyers | |
-| 17.4 | In customize, switch between all four layouts | Each card shows archetype name + "Best for…"; switching offers "Apply recommended settings" (Apply vs Keep my settings) | |
+| 17.4 | In customize, switch between **The Room** and **Lookbook** | Each card shows archetype name + "Best for…"; switching offers "Apply recommended settings" (Apply vs Keep my settings) | |
 | 17.5 | Toggle preview phase Scheduled / Open / Live for each layout | Hero updates: countdown (Scheduled), open state, LIVE badge (Live); reminder CTA only when Scheduled + reminder on | |
-| 17.6 | Set **Live Stage**, view buyer page | Stream/cover hero leads; products below; chat full width under grid | |
-| 17.7 | Set **Lookbook**, view buyer page | Product grid is first above the fold; stream band capped below grid; seller bio shown | |
-| 17.8 | Set **Drop Clock** scheduled, view buyer page | Oversized countdown hero; no duplicate waiting-room countdown; reminder CTA prominent; hero shrinks at open without full reload | |
-| 17.9 | Set **The Room** open on desktop | Chat sidebar visible beside stream without scrolling; seller bio in header | |
-| 17.10 | Confirm customize **Live preview** matches the buyer page for each layout/phase | Preview section order ≈ production | |
+| 17.6 | Set **Lookbook**, view buyer page | Product grid is first above the fold; stream band capped below grid; seller bio shown | |
+| 17.7 | Set **The Room** open on desktop | Chat sidebar visible beside stream without scrolling; seller bio in header | |
+| 17.8 | Either layout, scheduled | Stream slot owns countdown; `WaitingRoomBanner` is status-only (final stretch / on the list), not a duplicate clock | |
+| 17.9 | Confirm customize **Live preview** matches the buyer page for each layout/phase | Preview section order ≈ production | |
+| 17.10 | Either pickable layout on mobile 375px | Hero/stream visible; products and checkout usable; chat accordion collapsed by default | |
 
 ---
 

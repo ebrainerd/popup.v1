@@ -101,52 +101,47 @@ Record pass/fail and any notes in your PR or handoff comment.
 `src/components/shop-theme-editor.tsx`, `src/components/shop-theme-preview.tsx`,
 `src/components/shop-page-view.tsx`, `src/components/stream-slot.tsx`.
 
-The four layout slugs map to archetype labels: `broadcast` → **Live Stage**,
-`catalog` → **Lookbook**, `countdown` → **Drop Clock**, `classic` → **The Room**.
+**Pickable layouts (current):** **The Room** (`classic`) and **Lookbook**
+(`catalog`) — see `SHOP_PICKABLE_LAYOUTS` in `src/lib/shop-theme.ts`. Legacy
+`broadcast` (Live Stage) and `countdown` (Drop Clock) are retired from the
+picker and fold into The Room via `normalizeLayout()`.
+
 Each layout reorders the buyer page; the customize **Live preview** must mirror
 that order (preview drift is the most common regression here).
 
-### Editor smoke — four layouts × two presets
+### Editor smoke — two layouts × two presets
 
 Open `/dashboard/shops/[id]/customize` (or the wizard **Layout & theme** step —
 same `ShopThemeEditor`). Above the preview, use the **Scheduled / Open / Live**
 phase toggle and the **Desktop / Mobile** viewport toggle.
 
-**Pickable layouts (current):** The Room (`classic`) and Lookbook (`catalog`) —
-see `SHOP_PICKABLE_LAYOUTS` in `src/lib/shop-theme.ts`. Legacy `broadcast` /
-`countdown` fold into The Room; L1/L3 rows below are historical reference only.
-
 | # | Layout | Presets to try | Expected preview (Desktop) | ✓ |
 | - | ------ | -------------- | -------------------------- | - |
-| L1 | ~~Live Stage (`broadcast`)~~ → use **The Room** | — | Retired; folds to classic | |
+| L1 | **The Room** (`classic`) | Market Stall (rec.) + Neon PopUp | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
 | L2 | **Lookbook** (`catalog`) | Gallery (rec.) + Dark Room | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
-| L3 | ~~Drop Clock (`countdown`)~~ → use **The Room** | — | Retired; folds to classic | |
-| L4 | **The Room** (`classic`) | Market Stall (rec.) + Neon PopUp | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
-| L5 | Pick a layout that differs from current | "Apply recommended settings for …?" prompt appears (preset, chat, grid summary) | |
-| L6 | Click **Apply** | Preset/accent/toggles/grid switch to that layout's defaults; preview updates | |
-| L7 | Click **Keep my settings** instead | Only `layout` changes; existing preset/toggles preserved | |
-| L8 | Toggle each phase Scheduled / Open / Live | Hero swaps: countdown (Scheduled), open state, LIVE badge (Live); reminder CTA only when Scheduled + reminder toggle on | |
-| L9 | Switch viewport to **Mobile** | Grid drops to readable columns; chat/countdown stay reachable; no overflow | |
-| L10 | Toggle **Chat**, **Seller bio**, **Reminder button** off | Matching blocks disappear from preview | |
-| L11 | Pick an accent that fails contrast on a light preset | Inline contrast warning appears above the theme list | |
+| L3 | Pick a layout that differs from current | "Apply recommended settings for …?" prompt appears (preset, chat, grid summary) | |
+| L4 | Click **Apply** | Preset/accent/toggles/grid switch to that layout's defaults; preview updates | |
+| L5 | Click **Keep my settings** instead | Only `layout` changes; existing preset/toggles preserved | |
+| L6 | Toggle each phase Scheduled / Open / Live | Hero swaps: countdown (Scheduled), open state, LIVE badge (Live); reminder CTA only when Scheduled + reminder toggle on | |
+| L7 | Switch viewport to **Mobile** | Grid drops to readable columns; chat/countdown stay reachable; no overflow | |
+| L8 | Toggle **Chat**, **Seller bio**, **Reminder button** off | Matching blocks disappear from preview | |
+| L9 | Pick an accent that fails contrast on a light preset | Inline contrast warning appears above the theme list | |
 
 ### Buyer-page parity (preview ≈ production)
 
-For each layout, set it on a draft/scheduled shop and open the public
+For each pickable layout, set it on a draft/scheduled shop and open the public
 `/shop/[id]` page; the section order must match the editor preview for that
 layout and phase.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
-| B1 | *(skip — Live Stage retired)* | — | |
-| B2 | **Lookbook**, scheduled then open | Product grid is first paint above the fold; stream band capped (~40vh) below grid; seller bio shown | |
-| B3 | *(skip — Drop Clock retired)* | Stream countdown owns the timer; `WaitingRoomBanner` is status-only (final stretch / on the list), not a second clock | |
-| B4 | *(skip — Drop Clock retired)* | — | |
-| B5 | **The Room**, open on desktop | Chat sidebar visible beside the stream without scrolling; seller bio in header | |
-| B6 | Pickable layout on mobile 375px | Hero/stream visible; products and checkout usable; chat accordion collapsed by default | |
+| B1 | **Lookbook**, scheduled then open | Product grid is first paint above the fold; stream band capped (~40vh) below grid; seller bio shown | |
+| B2 | **The Room**, open on desktop | Chat sidebar visible beside the stream without scrolling; seller bio in header | |
+| B3 | Either layout, scheduled | Stream slot owns the countdown; `WaitingRoomBanner` is **status-only** (final stretch / on the list), not a second clock | |
+| B4 | Either pickable layout on mobile 375px | Hero/stream visible; products and checkout usable; chat accordion collapsed by default | |
 
 ### Shop room mobile smoke (~375px)
 

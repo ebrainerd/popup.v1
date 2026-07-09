@@ -85,13 +85,13 @@ However, several issues **block or confuse new users**, especially on mobile and
 
 ## Layout & visual critique
 
-> **Update (June 2026):** Shop **page layout** customization has since been
-> rebuilt around four seller archetypes — **Live Stage**, **Lookbook**,
-> **Drop Clock**, and **The Room** — each reordering the buyer page for a
-> different kind of drop. See `docs/SHOP_LAYOUT_ARCHETYPES.md` for the spec and
-> `docs/MANUAL_TESTING.md` for the four-layout smoke matrix. The single
-> "Shop page grid" treatment described below is now the **The Room** (`classic`)
-> archetype.
+> **Update (July 2026):** Shop **page layout** customization ships **two pickable
+> layouts** — **The Room** (`classic`) and **Lookbook** (`catalog`). Legacy
+> **Live Stage** (`broadcast`) and **Drop Clock** (`countdown`) are retired from
+> the picker and fold into The Room via `normalizeLayout()`. See
+> `docs/SHOP_LAYOUT_ARCHETYPES.md` for the spec and `docs/MANUAL_TESTING.md`
+> for the two-layout smoke matrix. The single "Shop page grid" treatment
+> described below is **The Room** (`classic`).
 
 ### What works well
 
