@@ -200,6 +200,35 @@ enabled).
 
 ---
 
+## Duplicate product (shop manager / setup wizard)
+
+**Requires:** seller account with a shop in setup or on `/dashboard/shops/[id]` manage page.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| D1 | Open **Products** in setup wizard or manage page with at least one saved product | Each product row shows Edit, **Duplicate** (copy icon), and Delete |
+| D2 | Click **Duplicate** on a buy-now product | New row appears **immediately below** the original with title `… (copy)`; editor opens with copied price, qty, shipping, photos, description |
+| D3 | Save without changes (manage page) | Autosave inserts a **new** DB row; original product unchanged |
+| D4 | Duplicate an **auction** product | Clone keeps sale type, starting bid, increment, duration, prebid/sudden-death toggles |
+| D5 | Edit duplicate title (e.g. color variant) and save | Both products persist as separate rows |
+
+---
+
+## Stripe Connect — cancel / incomplete return
+
+**Requires:** Stripe keys configured (`STRIPE_SECRET_KEY`); seller account without completed
+Connect onboarding. Start from a shop manage page with the payments banner.
+
+| # | Step | Expected |
+| - | ---- | -------- |
+| P1 | On `/dashboard/shops/[id]`, click **Set up payouts** (or **Finish setup**) | Redirected to Stripe Connect onboarding |
+| P2 | Cancel or close Stripe before finishing (or use browser back) | Land on `/dashboard/payouts?status=return&redirectTo=...` |
+| P3 | Incomplete return page | Banner: payout setup isn&apos;t finished; full-width **Back to shop** (or dashboard) CTA; page not cropped / scrolled oddly on mobile |
+| P4 | Wait ~6s or tap **Back to shop** | Return to the shop manage page (or dashboard if no `redirectTo`) |
+| P5 | Complete Stripe onboarding instead | Auto-redirect to the original `redirectTo` destination |
+
+---
+
 Copy this block when adding the next checklist:
 
 ```markdown

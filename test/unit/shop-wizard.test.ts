@@ -3,11 +3,13 @@ import {
   WIZARD_STEPS,
   canNavigateToStep,
   defaultWizardDraft,
+  duplicateWizardProduct,
   getStepValidation,
   inferCompletedSteps,
   markStepComplete,
   wizardDraftToSavePayload,
   wizardHasDraftContent,
+  wizardProductToPayload,
 } from "@/lib/shop-wizard";
 
 describe("shop wizard", () => {
@@ -151,5 +153,39 @@ describe("shop wizard", () => {
     expect(
       wizardHasDraftContent({ ...defaultWizardDraft(), name: "My drop" }),
     ).toBe(true);
+  });
+
+  it("duplicates a wizard product with a new clientId and no dbId", () => {
+    const source = {
+      clientId: "orig-1",
+      dbId: "db-uuid",
+      title: "Blue tee",
+      description: "Cotton, size M",
+      price: "24.00",
+      quantity: "5",
+      shippingRate: "4.50",
+      photo_urls: ["https://example.com/a.jpg", "https://example.com/b.jpg"],
+      auctionFields: {
+        saleType: "auction" as const,
+        startingBid: "10.00",
+        minIncrement: "2.00",
+        durationSeconds: 120,
+        allowPrebids: false,
+        suddenDeath: true,
+      },
+    };
+    const clone = duplicateWizardProduct(source);
+
+    expect(clone.clientId).not.toBe(source.clientId);
+    expect(clone.dbId).toBeUndefined();
+    expect(clone.title).toBe("Blue tee (copy)");
+    expect(clone.description).toBe(source.description);
+    expect(clone.price).toBe(source.price);
+    expect(clone.quantity).toBe(source.quantity);
+    expect(clone.shippingRate).toBe(source.shippingRate);
+    expect(clone.photo_urls).toEqual(source.photo_urls);
+    expect(clone.photo_urls).not.toBe(source.photo_urls);
+    expect(clone.auctionFields).toEqual(source.auctionFields);
+    expect(wizardProductToPayload(clone).id).toBeUndefined();
   });
 });

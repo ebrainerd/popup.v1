@@ -89,6 +89,23 @@ export function newWizardProduct(): WizardProductDraft {
   };
 }
 
+const DUPLICATE_TITLE_SUFFIX = " (copy)";
+
+/** Clone a wizard product draft for duplicate — new clientId, no dbId (insert on save). */
+export function duplicateWizardProduct(source: WizardProductDraft): WizardProductDraft {
+  const title = source.title.trim();
+  return {
+    clientId: crypto.randomUUID(),
+    title: title ? `${title}${DUPLICATE_TITLE_SUFFIX}` : "",
+    description: source.description,
+    price: source.price,
+    quantity: source.quantity,
+    shippingRate: source.shippingRate,
+    photo_urls: [...source.photo_urls],
+    auctionFields: { ...source.auctionFields },
+  };
+}
+
 function splitStreamUrls(liveUrl: string | null, twitchUrl: string | null): {
   youtubeUrl: string;
   twitchUrl: string;

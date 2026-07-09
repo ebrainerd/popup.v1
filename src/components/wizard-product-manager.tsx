@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Package, Pencil, Plus, Trash2 } from "lucide-react";
+import { Copy, Package, Pencil, Plus, Trash2 } from "lucide-react";
 import type { WizardProductDraft } from "@/lib/shop-wizard";
-import { newWizardProduct } from "@/lib/shop-wizard";
+import { duplicateWizardProduct, newWizardProduct } from "@/lib/shop-wizard";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -63,6 +63,18 @@ export function WizardProductManager({
     if (editingId === clientId) cancelEdit();
   }
 
+  function duplicateProduct(clientId: string) {
+    const index = products.findIndex((p) => p.clientId === clientId);
+    if (index === -1) return;
+    const clone = duplicateWizardProduct(products[index]);
+    onProductsChange([
+      ...products.slice(0, index + 1),
+      clone,
+      ...products.slice(index + 1),
+    ]);
+    startEdit(clone);
+  }
+
   function patchDraft(partial: Partial<WizardProductDraft>) {
     setDraft((prev) => ({ ...prev, ...partial }));
   }
@@ -81,6 +93,7 @@ export function WizardProductManager({
                 key={product.clientId}
                 product={product}
                 onEdit={() => startEdit(product)}
+                onDuplicate={() => duplicateProduct(product.clientId)}
                 onDelete={() => {
                   if (confirm(`Delete "${product.title}"?`)) removeProduct(product.clientId);
                 }}
@@ -214,10 +227,12 @@ export function WizardProductManager({
 function ProductRow({
   product,
   onEdit,
+  onDuplicate,
   onDelete,
 }: {
   product: WizardProductDraft;
   onEdit: () => void;
+  onDuplicate: () => void;
   onDelete: () => void;
 }) {
   const photo = product.photo_urls[0];
@@ -246,6 +261,15 @@ function ProductRow({
       </div>
       <Button type="button" variant="ghost" size="icon" onClick={onEdit} aria-label="Edit product">
         <Pencil className="size-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        onClick={onDuplicate}
+        aria-label="Duplicate product"
+      >
+        <Copy className="size-4" />
       </Button>
       <Button type="button" variant="ghost" size="icon" onClick={onDelete} aria-label="Delete product">
         <Trash2 className="size-4 text-live" />
