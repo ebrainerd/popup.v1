@@ -45,6 +45,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | k6 load scripts | `scripts/load/README.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
 | DB schema | `supabase/migrations/*.sql` (apply in order) |
+| **Figma design system (tokens, components, logo)** | **[PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw)** |
 
 ## Status (high level)
 
@@ -67,6 +68,50 @@ All three MVP milestones shipped and live in production, plus post-launch work:
   via `normalizeLayout()` (enum slugs may remain in DB for backward compatibility).
   Smoke: `docs/MANUAL_TESTING.md` → shop layouts + mobile room; pre-marketing
   Phase 17.
+- **Figma design kit baseline** — tokens + core UI components mirrored from the
+  app; logo exploration on a dedicated page (see below). Not applied to code yet.
+
+## Design system & brand (Figma)
+
+**File:** [PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw)
+(`fileKey` `AObYmWZZML1UhGVHetDoVw`). Built as a **manual** mirror of the current
+app — Figma ↔ code do **not** stay in sync automatically; update the kit when
+tokens or components change in code (or re-export after deliberate design work).
+
+### Pages
+
+| Page | Contents |
+| ---- | -------- |
+| Cover | File intro |
+| Foundations | Color (Dark + Light modes), radius, type ramp, effect/paint styles |
+| Components | Button, Badge, Card, Input, Textarea, Label, Switch, SegmentedControl, Logo placeholder, SiteHeader, Dialog, BottomSheet |
+| Logo | Wordmark / monogram / lockup exploration (W1–W4, M1–M4, L1–L5) |
+
+### Tokens (aligned with `src/app/globals.css`)
+
+- **Primitives** — brand coral / teal / yellow + neutrals
+- **Color** — semantic tokens with Dark + Light modes; WEB syntax like `var(--primary)`
+- **Radius** — `lg` / `md` / `sm` / `full`
+- **Text** — Geist ramp + Geist Mono countdown
+- **Effects / paints** — `glow-primary`, `live-glow`, `glass-card`; `brand-gradient`, `brand-base`
+
+### Logo exploration (pending owner decision)
+
+Premium E+A direction: **wordmark-first** + soft-pop burst monogram.
+
+| Status | Detail |
+| ------ | ------ |
+| In Figma | Recommended lockup **L1** = Soft-pop mark + Syne ExtraBold wordmark with coral tick under “Up”. Reusable components: `Logo / Mark Soft Pop`, `Logo / Wordmark Syne Tick`, `Logo / Lockup Primary`. |
+| In app | Still the old **P-in-square** in `src/components/logo.tsx` — not swapped. |
+| Next | Owner picks final mark → swap app logo (+ favicon / OG / PWA icons as needed) → optional Code Connect mapping → optional screen mockups on top of the kit. |
+
+### Owner / agent follow-ups (design)
+
+- [ ] Finalize logo choice (L1 vs alternatives on the Logo page)
+- [ ] Apply chosen logo in app (`src/components/logo.tsx` + metadata / icons)
+- [ ] Optional: Code Connect for kit components ↔ `src/components/ui/*`
+- [ ] Optional: marketing / shop screen mockups using the kit
+- [ ] Keep kit in step when `globals.css` or shared UI primitives change
 
 ## Shop layout archetypes — COMPLETE (Phases 0–6)
 
@@ -205,3 +250,10 @@ Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.
 - Deferred items with revisit triggers — see **Not for first marketing** above and
   `docs/ROADMAP.md` § "Deferred"
 - Nonce-based strict CSP; per-viewer avatar stack in the room
+- Design kit / logo — see **Design system & brand (Figma)** above (finalize mark,
+  wire into app, optional Code Connect)
+
+---
+
+*Last updated: 17 Jul 2026 — Figma design kit baseline + logo exploration noted;
+marketing gate still NO-GO pending human dry-run.*
