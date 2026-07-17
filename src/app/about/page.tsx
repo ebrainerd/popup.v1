@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth";
 import { createShopPath } from "@/lib/auth-routes";
 import { isInviteOnlyMode } from "@/lib/discovery";
+import { BRAND_TAGLINE, BRAND_TAGLINE_PAIRING } from "@/lib/brand-copy";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "PopUp helps creators run timed online pop-up shops and share them in one link.",
+  description: `${BRAND_TAGLINE} ${BRAND_TAGLINE_PAIRING}`,
 };
 
 export default async function AboutPage() {
@@ -21,9 +22,9 @@ export default async function AboutPage() {
 
       <div className="mt-6 space-y-5 text-pretty text-foreground/90">
         <p>
-          PopUp is for creators who want to run a timed online pop-up shop, not a permanent
+          PopUp is for creators who want shops that live for the moment — not a permanent
           storefront. You set a schedule, share one link, go live, and sell before the countdown
-          runs out.
+          runs out. {BRAND_TAGLINE_PAIRING}
         </p>
         <p>
           Every drop is an event: a waiting room before open, flash surprises while you&apos;re
