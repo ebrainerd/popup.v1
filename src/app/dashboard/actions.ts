@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { deriveShopStatus, toCents, computeEndShopTimes } from "@/lib/utils";
+import { endedShopEditError } from "@/lib/shop-edit-guard";
 import { resolveShopVisibility } from "@/lib/discovery";
 import {
   DEFAULT_AUCTION_DURATION,
@@ -209,6 +210,9 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
     .maybeSingle();
   if (!current) return { error: "Shop not found." };
 
+  const endedError = endedShopEditError(current);
+  if (endedError) return { error: endedError };
+
   const hasScheduleInput = Boolean(d.start_at && d.end_at);
   let startIso = current.start_at;
   let endIso = current.end_at;
@@ -254,11 +258,14 @@ export async function extendShop(shopId: string, minutes: number): Promise<Actio
   const { supabase, user } = await requireUser();
   const { data: shop } = await supabase
     .from("shops")
-    .select("end_at, start_at")
+    .select("status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
 
   const newEnd = new Date(new Date(shop.end_at).getTime() + minutes * 60_000).toISOString();
   const { error } = await supabase
@@ -284,6 +291,9 @@ export async function publishShop(shopId: string): Promise<ActionState> {
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
 
   const termsError = await requireSellerTermsAccepted(supabase, user.id);
   if (termsError) return termsError;
@@ -319,6 +329,18 @@ export async function publishShop(shopId: string): Promise<ActionState> {
 /** Move a published shop back to draft (hides it again). */
 export async function unpublishShop(shopId: string): Promise<ActionState> {
   const { supabase, user } = await requireUser();
+
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("status, start_at, end_at")
+    .eq("id", shopId)
+    .eq("seller_id", user.id)
+    .maybeSingle();
+  if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
+
   const { error } = await supabase
     .from("shops")
     .update({ status: "draft" })
@@ -338,11 +360,16 @@ export async function toggleLive(shopId: string, isLive: boolean): Promise<Actio
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("stream_provider, live_url, twitch_url")
+    .select("stream_provider, live_url, twitch_url, status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  if (isLive) {
+    const endedError = endedShopEditError(shop);
+    if (endedError) return { error: endedError };
+  }
 
   const provider = shop.stream_provider ?? "native";
   if (provider === "native" && isNativeLiveEnabled()) {
@@ -466,11 +493,15 @@ export async function updateStreamSource(
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("is_live")
+    .select("is_live, status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
+
   if (shop.is_live) return { error: "End your live stream before changing the stream source." };
 
   const d = parsed.data;
@@ -1141,11 +1172,14 @@ export async function saveShopProducts(
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id")
+    .select("id, status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
 
   const items = parsed.data;
 
@@ -1229,11 +1263,14 @@ export async function updateShopTheme(
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id")
+    .select("id, status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
 
   const { error } = await supabase
     .from("shops")
@@ -1263,11 +1300,14 @@ export async function createProduct(_prev: ActionState, formData: FormData): Pro
   // Ownership is also enforced by RLS; this is a friendly early check.
   const { data: shop } = await supabase
     .from("shops")
-    .select("id")
+    .select("id, status, start_at, end_at")
     .eq("id", d.shop_id)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { error: endedError };
 
   const { error } = await supabase.from("products").insert(productInsertFromParsed(d, photoUrls));
   if (error) return { error: error.message };
@@ -1342,11 +1382,14 @@ export async function updateProduct(input: {
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id")
+    .select("id, status, start_at, end_at")
     .eq("id", d.shop_id)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { ok: false, error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { ok: false, error: endedError };
 
   const { data: liveRun } = await supabase
     .from("auction_runs")
@@ -1391,11 +1434,13 @@ export async function deleteProduct(productId: string, shopId: string): Promise<
   const { supabase, user } = await requireUser();
   const { data: shop } = await supabase
     .from("shops")
-    .select("id")
+    .select("id, status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return;
+
+  if (endedShopEditError(shop)) return;
 
   const { data: blocked } = await supabase
     .from("auction_runs")

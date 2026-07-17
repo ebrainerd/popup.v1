@@ -74,7 +74,7 @@ function SubmitButton({
   );
 }
 
-export function ShopForm({ shop }: { shop: Shop }) {
+export function ShopForm({ shop, readOnly = false }: { shop: Shop; readOnly?: boolean }) {
   const [state, formAction] = useActionState(updateShop, initialState);
   const inviteOnly = isInviteOnlyMode();
   const scheduleUnset = shop.status === "draft" && !isShopScheduleSet(shop);
@@ -99,7 +99,8 @@ export function ShopForm({ shop }: { shop: Shop }) {
   const includeSchedule = !scheduleUnset || Boolean(startLocal && endLocal && !timeError);
 
   return (
-    <form action={formAction} className="space-y-6">
+    <fieldset disabled={readOnly} className={readOnly ? "opacity-70" : undefined}>
+      <form action={formAction} className="space-y-6">
       <input type="hidden" name="shop_id" value={shop.id} />
       {includeSchedule && (
         <>
@@ -141,8 +142,9 @@ export function ShopForm({ shop }: { shop: Shop }) {
         <p className="rounded-md bg-live/10 px-3 py-2 text-sm text-live">{state.error}</p>
       )}
 
-      <SubmitButton label="Save changes" />
-    </form>
+      <SubmitButton label="Save changes" disabled={readOnly} />
+      </form>
+    </fieldset>
   );
 }
 

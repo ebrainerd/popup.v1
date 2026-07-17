@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { endedShopEditError } from "@/lib/shop-edit-guard";
 import type { AuctionRun } from "@/lib/database.types";
 
 export type AuctionActionResult =
@@ -17,9 +18,36 @@ async function requireUser() {
   return { supabase, user };
 }
 
+async function requireOwnedEditableShop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  shopId: string,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("seller_id, status, start_at, end_at")
+    .eq("id", shopId)
+    .eq("seller_id", userId)
+    .maybeSingle();
+  if (!shop) return { ok: false, error: "Shop not found." };
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { ok: false, error: endedError };
+  return { ok: true };
+}
+
 export async function queueAuction(productId: string): Promise<AuctionActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Log in to manage auctions." };
+
+  const { data: product } = await supabase
+    .from("products")
+    .select("shop_id")
+    .eq("id", productId)
+    .maybeSingle();
+  if (!product) return { ok: false, error: "Product not found." };
+
+  const shopCheck = await requireOwnedEditableShop(supabase, product.shop_id, user.id);
+  if (!shopCheck.ok) return shopCheck;
 
   const { data, error } = await supabase.rpc("queue_auction_run", {
     p_product_id: productId,
@@ -34,6 +62,9 @@ export async function startAuction(auctionId: string, shopId: string): Promise<A
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Log in to manage auctions." };
 
+  const shopCheck = await requireOwnedEditableShop(supabase, shopId, user.id);
+  if (!shopCheck.ok) return shopCheck;
+
   const { error } = await supabase.rpc("start_auction_run", { p_auction_id: auctionId });
   if (error) return { ok: false, error: error.message };
 
@@ -45,6 +76,9 @@ export async function startAuction(auctionId: string, shopId: string): Promise<A
 export async function cancelAuction(auctionId: string, shopId: string): Promise<AuctionActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Log in to manage auctions." };
+
+  const shopCheck = await requireOwnedEditableShop(supabase, shopId, user.id);
+  if (!shopCheck.ok) return shopCheck;
 
   const { error } = await supabase.rpc("cancel_auction_run", { p_auction_id: auctionId });
   if (error) return { ok: false, error: error.message };
