@@ -1,19 +1,19 @@
 /** PopUp brand tokens, mirrored from src/app/globals.css in the main app. */
 
 export const colors = {
-  bg: "#0f0f14",
-  bgDeep: "#0a0a0e",
-  card: "#1a1a22",
-  cardBorder: "#2a2a36",
-  pink: "#ff3b8b",
-  pinkDeep: "#e6007a",
-  teal: "#00e6c8",
-  gold: "#ffd60a",
-  cream: "#f5f5f7",
-  creamWarm: "#f7ede8",
-  ink: "#0f0f14",
+  bg: "#12110f",
+  bgDeep: "#0d0c0a",
+  card: "#1a1815",
+  cardBorder: "#2f2b25",
+  pink: "#ff5c1a",
+  pinkDeep: "#e04e10",
+  teal: "#2db8a8",
+  gold: "#f5c518",
+  cream: "#f7f3ec",
+  creamWarm: "#faf8f4",
+  ink: "#12110f",
   white: "#ffffff",
-  mutedDark: "#a1a1aa",
+  mutedDark: "#a39e94",
   mutedLight: "#5c5c66",
 } as const;
 

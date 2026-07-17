@@ -117,7 +117,7 @@ function titleFilter(title, subtitle, duration, accent = false) {
   const t1 = esc(title);
   const t2 = esc(subtitle);
   const size = accent ? 96 : 72;
-  const color = accent ? "0xff3b8b" : "white";
+  const color = accent ? "0xff5c1a" : "white";
   return [
     `drawtext=fontfile=${FONT}:text='${t1}':fontsize=${size}:fontcolor=${color}:x=(w-text_w)/2:y=(h-text_h)/2-30:shadowcolor=black@0.5:shadowx=3:shadowy=3`,
     `drawtext=fontfile=${FONT_REG}:text='${t2}':fontsize=36:fontcolor=0xcccccc:x=(w-text_w)/2:y=(h-text_h)/2+50`,

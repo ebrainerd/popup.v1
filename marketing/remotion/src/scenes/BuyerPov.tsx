@@ -5,7 +5,7 @@ import { Card, DarkStage, Grain, LiveBadge, POP, SNAP, Sfx, useSpring, useCountU
 
 const CHAT = [
   { user: "jordan.k", text: "that glaze 😍😍", color: "#8ab4ff" },
-  { user: "sam.creates", text: "how many planters left?", color: "#ffd60a" },
+  { user: "sam.creates", text: "how many planters left?", color: colors.gold },
   { user: "maya.clay", text: "3 planters left — go go go!", color: colors.pink, seller: true },
   { user: "kai.collects", text: "GOT ONE 🔥", color: colors.teal },
 ];
@@ -46,7 +46,7 @@ const ChatBubble: React.FC<{ msg: (typeof CHAT)[number]; delay: number }> = ({ m
           fontFamily: fonts.sans,
           fontWeight: 800,
           fontSize: 20,
-          color: "#0f0f14",
+          color: colors.ink,
         }}
       >
         {msg.user[0].toUpperCase()}
@@ -296,7 +296,7 @@ export const BuyerPov: React.FC = () => {
                   <path
                     d="M4 1 L4 19 L9 15 L12 23 L15.5 21.5 L12.5 14 L19 13.5 Z"
                     fill="#fff"
-                    stroke="#0f0f14"
+                    stroke={colors.ink}
                     strokeWidth="1.4"
                   />
                 </svg>
