@@ -280,7 +280,7 @@ body {
   --primary: var(--shop-accent, #ff5c1a);
   --primary-foreground: #ffffff;
   --ring: var(--shop-accent, #ff5c1a);
-  --live: var(--shop-accent, #ff5c1a);
+  /* Keep global LIVE red — do not remap to seller accent. */
   --accent: var(--shop-accent, #2db8a8);
   --accent-foreground: var(--shop-fg, var(--foreground));
   --success: var(--shop-accent, #2db8a8);
