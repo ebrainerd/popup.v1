@@ -70,7 +70,7 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 
 **Optional follow-ups**
 
-- [ ] Sync Figma Color variables + kit components from coral → Ember
+- [x] Sync Figma Color / Primitives variables to Ember (kit component paints may still need a pass)
 - [ ] Revisit tagline when ready (candidates parked; no urgency)
 
 ## Status (high level)
