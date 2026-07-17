@@ -87,7 +87,7 @@ export function LandingSteps() {
               className="sticky"
               style={{ top: `calc(4.5rem + ${i * 16}px)` }}
             >
-              <article className="relative grid min-h-[70vh] overflow-hidden rounded-3xl bg-[#14070d] text-white ring-1 ring-white/10 shadow-2xl shadow-black/40 lg:min-h-[72vh] lg:grid-cols-2">
+              <article className="relative grid min-h-[70vh] overflow-hidden rounded-3xl bg-[#14100C] text-white ring-1 ring-white/10 shadow-2xl shadow-black/40 lg:min-h-[72vh] lg:grid-cols-2">
                 <div className="relative flex flex-col justify-center p-8 sm:p-12 lg:p-16">
                   <motion.p
                     aria-hidden
@@ -130,7 +130,7 @@ export function LandingSteps() {
                   {/* Blend the render into the card surface */}
                   <div
                     aria-hidden
-                    className="absolute inset-0 bg-gradient-to-t from-[#14070d] via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#14070d] lg:via-transparent lg:to-transparent"
+                    className="absolute inset-0 bg-gradient-to-t from-[#14100C] via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#14100C] lg:via-transparent lg:to-transparent"
                   />
                 </div>
               </article>

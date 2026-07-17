@@ -37,7 +37,7 @@ export function marketingDemoDraft(): ShopWizardDraft {
       ...defaultShopTheme(),
       preset: "market_stall",
       layout: "classic",
-      accent: "#ff3b8b",
+      accent: "#ff5c1a",
       background: "gradient",
       productGridColumns: 3,
       showChat: true,

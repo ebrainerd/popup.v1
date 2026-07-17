@@ -45,6 +45,30 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | k6 load scripts | `scripts/load/README.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
 | DB schema | `supabase/migrations/*.sql` (apply in order) |
+| **Figma design system / brand** | **[PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw)** |
+
+## Brand identity (Ember Market) — in progress
+
+**Direction locked** (Figma Color Proposal + Logo pages):
+
+| Decision | Choice |
+| -------- | ------ |
+| Palette | **Ember Market** (dark + Ember light) |
+| Type | **Syne ExtraBold** logo only · **Geist** UI/heroes · **Geist Mono** timers |
+| Logo lockup | **L2** — arcs mark + Syne tick (ember `#FF5C1A`), not L1 soft-pop |
+| Light mode | Ember light (warm paper `#FAF8F4`) |
+| Motion / surfaces | Ember charcoal base + var-driven glows (retuned from coral neon) |
+| Seller shop accents | **Warm family only** (ember / amber / terracotta / gilt) — no cobalt/teal swatches |
+| Tagline | **TBD** — retiring aggressive “Pop up. Sell out.” (see open options below) |
+
+**Still to do**
+
+- [ ] Pick final tagline; update `layout.tsx` metadata + landing hero
+- [ ] Wire L2 SVG into `src/components/logo.tsx` + favicon / OG / PWA icons
+- [ ] Sync Figma Color variables + kit components from coral → Ember
+- [x] Apply Ember tokens in `globals.css` + warm shop presets / accent swatches
+
+**Tagline candidates** (owner pick): soft invite energy, time-boxed without “sell out” — e.g. “Your shop. One link.” / “Open for a moment.” / “Here for the drop.” / “Short run. Real goods.” / “When it’s open, it’s on.”
 
 ## Status (high level)
 
