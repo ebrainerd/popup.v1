@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { isInviteOnlyMode } from "@/lib/discovery";
+import { BRAND_TAGLINE } from "@/lib/brand-copy";
 import { SUPPORT_EMAIL, SUPPORT_MAILTO } from "@/lib/support-copy";
 
 export function SiteFooter() {
@@ -9,10 +10,7 @@ export function SiteFooter() {
     <footer className="relative border-t border-border/60 bg-background/40 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-2 px-4 py-6 text-sm text-muted-foreground sm:flex-row">
         <p>
-          © {new Date().getFullYear()} PopUp.{" "}
-          {inviteOnly
-            ? "Online pop-up shops in one link."
-            : "Shops that open and close on the clock."}
+          © {new Date().getFullYear()} PopUp. {BRAND_TAGLINE}
         </p>
         <nav className="flex flex-wrap items-center justify-center gap-4">
           {!inviteOnly && (

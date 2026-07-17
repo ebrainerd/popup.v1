@@ -10,7 +10,10 @@ import { test, expect } from "@playwright/test";
 test("home renders invite-only seller positioning", async ({ page }) => {
   const res = await page.goto("/");
   expect(res?.status()).toBe(200);
-  await expect(page.getByRole("heading", { name: /pop up\. sell out\./i })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /shops that live for the moment\./i }),
+  ).toBeVisible();
+  await expect(page.getByText(/live streaming, auctions & real-time chat/i)).toBeVisible();
   await expect(page.getByRole("link", { name: /create shop/i }).first()).toBeVisible();
   await expect(page.getByText(/got a creator's popup link/i)).toBeVisible();
   await expect(page.getByRole("heading", { name: /how it works/i })).toBeVisible();

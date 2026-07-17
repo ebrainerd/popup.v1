@@ -1,7 +1,7 @@
 {
-  "name": "PopUp — Time-boxed pop-up shops",
+  "name": "PopUp — Shops that live for the moment",
   "short_name": "PopUp",
-  "description": "Open a shop for minutes, not forever. Live drops, social discovery, and instant checkout.",
+  "description": "Shops that live for the moment. Live streaming, auctions & real-time chat.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

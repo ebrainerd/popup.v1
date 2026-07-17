@@ -11,15 +11,19 @@ import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { DeployRefreshGuard } from "@/components/deploy-refresh-guard";
 import { ThemeProvider } from "@/components/theme-provider";
 import { getSiteUrl } from "@/lib/env";
+import {
+  BRAND_TAGLINE,
+  BRAND_TAGLINE_PAIRING,
+  BRAND_TITLE_DEFAULT,
+} from "@/lib/brand-copy";
 
 export const metadata: Metadata = {
   metadataBase: new URL(getSiteUrl()),
   title: {
-    default: "PopUp: Pop up. Sell out.",
+    default: BRAND_TITLE_DEFAULT,
     template: "%s · PopUp",
   },
-  description:
-    "Everything you need to run a timed pop-up shop, in one link.",
+  description: `${BRAND_TAGLINE} ${BRAND_TAGLINE_PAIRING}`,
   applicationName: "PopUp",
   icons: {
     icon: [{ url: "/icons/icon.svg", type: "image/svg+xml" }],
@@ -32,19 +36,25 @@ export const metadata: Metadata = {
     title: "PopUp",
   },
   openGraph: {
-    title: "PopUp: Pop up. Sell out.",
-    description:
-      "Everything you need to run a timed pop-up shop, in one link.",
+    title: BRAND_TITLE_DEFAULT,
+    description: `${BRAND_TAGLINE} ${BRAND_TAGLINE_PAIRING}`,
     type: "website",
     // ?v= busts scraper caches (FB/X/iMessage cache by exact URL) when the
     // artwork changes. Bump it whenever og.jpg is replaced.
-    images: [{ url: "/og.jpg?v=3", width: 1200, height: 630, alt: "PopUp — your shop, one link." }],
+    images: [
+      {
+        url: "/og.jpg?v=4",
+        width: 1200,
+        height: 630,
+        alt: `PopUp — ${BRAND_TAGLINE}`,
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PopUp: Pop up. Sell out.",
-    description: "Everything you need to run a timed pop-up shop, in one link.",
-    images: ["/og.jpg?v=3"],
+    title: BRAND_TITLE_DEFAULT,
+    description: `${BRAND_TAGLINE} ${BRAND_TAGLINE_PAIRING}`,
+    images: ["/og.jpg?v=4"],
   },
 };
 

@@ -5,12 +5,12 @@ import { ArrowRight, Clock, Share2, Radio, Wallet } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { createShopPath } from "@/lib/auth-routes";
 import { Button } from "@/components/ui/button";
+import { BRAND_TAGLINE, BRAND_TAGLINE_PAIRING } from "@/lib/brand-copy";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "How it works",
-  description:
-    "From idea to sold-out drop in five steps. See how creators run timed pop-up shops with live auctions on PopUp.",
+  description: `${BRAND_TAGLINE} ${BRAND_TAGLINE_PAIRING} See how creators run a drop in five steps.`,
 };
 
 type Step = {

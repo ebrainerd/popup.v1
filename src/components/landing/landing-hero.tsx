@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Button } from "@/components/ui/button";
+import { BRAND_TAGLINE_PAIRING } from "@/lib/brand-copy";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
@@ -25,18 +26,17 @@ export function LandingHero({ createShopHref }: { createShopHref: string }) {
       <div className="relative z-10 text-center lg:text-left">
         <motion.h1
           {...fadeUp(0)}
-          className="text-balance text-6xl font-extrabold leading-[0.95] tracking-tight sm:text-7xl lg:text-8xl"
+          className="text-balance text-5xl font-extrabold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl"
         >
-          Pop up.{" "}
-          <span className="text-gradient-brand inline-block pb-2">Sell out.</span>
+          Shops that live{" "}
+          <span className="text-gradient-brand inline-block pb-2">for the moment.</span>
         </motion.h1>
 
         <motion.p
           {...fadeUp(0.12)}
           className="mx-auto mt-6 max-w-md text-pretty text-lg text-muted-foreground sm:text-xl lg:mx-0"
         >
-          Your own timed pop-up shop: products, countdown, live stream, and
-          checkout. All in one link.
+          {BRAND_TAGLINE_PAIRING}
         </motion.p>
 
         <motion.div

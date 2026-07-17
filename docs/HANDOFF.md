@@ -59,19 +59,20 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | Light mode | Ember light (warm paper `#FAF8F4`) |
 | Motion / surfaces | Ember charcoal base `#14100C` + var-driven glows |
 | Seller shop accents | **Warm family only** (ember / amber / terracotta / gilt) |
-| Tagline | **Tabled** — keep “Pop up. Sell out.” for now |
+| Tagline | **Shops that live for the moment.** |
+| Tagline pairing | **Live streaming, auctions & real-time chat.** (`src/lib/brand-copy.ts`) |
 
 **Done in app**
 
 - [x] Ember tokens + brand gradient / ambient orbs
 - [x] Warm shop presets + accent swatches
-- [x] L2 logo component + favicon / maskable / `icon.svg` + `og.jpg?v=3`
+- [x] L2 logo component + favicon / maskable / `icon.svg` + `og.jpg`
 - [x] Marketing Remotion / seed demo accents aligned
+- [x] Tagline + pairing in hero, metadata, footer, manifest
 
 **Optional follow-ups**
 
 - [x] Sync Figma Color / Primitives variables to Ember (kit component paints may still need a pass)
-- [ ] Revisit tagline when ready (candidates parked; no urgency)
 
 ## Status (high level)
 
