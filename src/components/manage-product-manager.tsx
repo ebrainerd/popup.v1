@@ -11,6 +11,7 @@ import {
 } from "@/lib/shop-wizard";
 import type { Product } from "@/lib/database.types";
 import { cn } from "@/lib/utils";
+import { SHOP_ENDED_EDIT_MESSAGE } from "@/lib/shop-edit-guard";
 
 /**
  * Products editor for the manage page. Reuses the exact same editor as the
@@ -21,9 +22,11 @@ import { cn } from "@/lib/utils";
 export function ManageProductManager({
   shopId,
   products: initialProducts,
+  readOnly = false,
 }: {
   shopId: string;
   products: Product[];
+  readOnly?: boolean;
 }) {
   const [drafts, setDrafts] = useState<WizardProductDraft[]>(() =>
     initialProducts.map(productToWizardDraft),
@@ -42,6 +45,7 @@ export function ManageProductManager({
 
   const persist = useCallback(
     (next: WizardProductDraft[]) => {
+      if (readOnly) return;
       setDrafts(next);
       setStatus("saving");
       setMessage(null);
@@ -65,12 +69,18 @@ export function ManageProductManager({
         savedTimer.current = setTimeout(() => setStatus("idle"), 2500);
       });
     },
-    [shopId],
+    [shopId, readOnly],
   );
 
   return (
     <div className="space-y-3">
-      <div className="flex min-h-5 items-center justify-end text-xs">
+      {readOnly && (
+        <p className="rounded-md bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          {SHOP_ENDED_EDIT_MESSAGE}
+        </p>
+      )}
+      {!readOnly && (
+        <div className="flex min-h-5 items-center justify-end text-xs">
         {status === "saving" && (
           <span className="inline-flex items-center gap-1.5 text-muted-foreground">
             <CloudUpload className="size-3.5 animate-pulse" /> Saving…
@@ -87,8 +97,11 @@ export function ManageProductManager({
           </span>
         )}
         {status === "error" && <span className="text-live">{message ?? "Could not save."}</span>}
-      </div>
-      <WizardProductManager products={drafts} onProductsChange={persist} />
+        </div>
+      )}
+      <fieldset disabled={readOnly} className={readOnly ? "pointer-events-none opacity-70" : undefined}>
+        <WizardProductManager products={drafts} onProductsChange={persist} />
+      </fieldset>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { toCents } from "@/lib/utils";
+import { endedShopEditError } from "@/lib/shop-edit-guard";
 import {
   DEFAULT_AUCTION_DURATION,
   MIN_INCREMENT_CENTS,
@@ -16,6 +17,24 @@ async function ownerClient() {
     data: { user },
   } = await supabase.auth.getUser();
   return { supabase, user };
+}
+
+async function requireOwnedEditableShop(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  shopId: string,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: shop } = await supabase
+    .from("shops")
+    .select("seller_id, status, start_at, end_at")
+    .eq("id", shopId)
+    .maybeSingle();
+  if (!shop || shop.seller_id !== userId) {
+    return { ok: false, error: "Shop not found." };
+  }
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { ok: false, error: endedError };
+  return { ok: true };
 }
 
 export type FlashDiscountResult =
@@ -54,6 +73,9 @@ export async function setFlashDiscount(
   if (loadError || !product) {
     return { ok: false, error: loadError?.message ?? "Product not found." };
   }
+
+  const shopCheck = await requireOwnedEditableShop(supabase, product.shop_id, user.id);
+  if (!shopCheck.ok) return shopCheck;
 
   const listPrice = product.price;
   if (discountPrice >= listPrice) {
@@ -124,6 +146,9 @@ export async function clearFlashDiscount(productId: string): Promise<FlashClearR
   if (loadError || !product) {
     return { ok: false, error: loadError?.message ?? "Product not found." };
   }
+
+  const shopCheck = await requireOwnedEditableShop(supabase, product.shop_id, user.id);
+  if (!shopCheck.ok) return shopCheck;
 
   const updates =
     product.sale_type === "auction"
@@ -240,11 +265,14 @@ export async function createFlashItem(
 
   const { data: shop } = await supabase
     .from("shops")
-    .select("id, end_at")
+    .select("seller_id, status, start_at, end_at")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
   if (!shop) return { ok: false, error: "Shop not found." };
+
+  const endedError = endedShopEditError(shop);
+  if (endedError) return { ok: false, error: endedError };
 
   const isAuction = parsed.data.sale_type === "auction";
   const startingCents = isAuction

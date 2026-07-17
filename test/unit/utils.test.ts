@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, toCents, deriveShopStatus, derivePublishedShopWindow, formatDurationMs } from "@/lib/utils";
+import { formatCurrency, toCents, deriveShopStatus, derivePublishedShopWindow, isPublishedShopEnded, formatDurationMs } from "@/lib/utils";
 
 describe("formatCurrency", () => {
   it("formats integer cents as USD", () => {
@@ -74,6 +74,31 @@ describe("derivePublishedShopWindow", () => {
     );
     expect(w.isOpen).toBe(true);
     expect(w.isDraft).toBe(false);
+  });
+});
+
+describe("isPublishedShopEnded", () => {
+  const start = "2026-06-20T12:00:00Z";
+  const end = "2026-06-20T14:00:00Z";
+  const after = new Date("2026-06-20T15:00:00Z");
+  const during = new Date("2026-06-20T13:00:00Z");
+
+  it("is false for drafts even when the schedule has ended", () => {
+    expect(
+      isPublishedShopEnded({ status: "draft", start_at: start, end_at: end }, after),
+    ).toBe(false);
+  });
+
+  it("is true for published shops after the window", () => {
+    expect(
+      isPublishedShopEnded({ status: "open", start_at: start, end_at: end }, after),
+    ).toBe(true);
+  });
+
+  it("is false while the shop is open", () => {
+    expect(
+      isPublishedShopEnded({ status: "open", start_at: start, end_at: end }, during),
+    ).toBe(false);
   });
 });
 

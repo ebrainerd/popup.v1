@@ -28,6 +28,7 @@ import { ShareDropCard } from "@/components/share-drop-card";
 import { DraftShopTracker } from "@/components/draft-shop-tracker";
 import { CreatedShopCleanup } from "@/components/created-shop-cleanup";
 import { derivePublishedShopWindow } from "@/lib/utils";
+import { SHOP_ENDED_EDIT_MESSAGE } from "@/lib/shop-edit-guard";
 import { isShopScheduleSet } from "@/lib/shop-schedule";
 import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
 import { arePayoutsConnected, isStripePaymentsRequired } from "@/lib/payments";
@@ -204,6 +205,12 @@ export default async function ManageShopPage({
         scheduleSet={scheduleSet}
       />
 
+      {window.isEnded && (
+        <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          {SHOP_ENDED_EDIT_MESSAGE}
+        </div>
+      )}
+
       <div className="space-y-4">
         <CollapsibleSection
           id="shop-details"
@@ -212,7 +219,7 @@ export default async function ManageShopPage({
           defaultOpen={!detailsDone}
           complete={detailsDone}
         >
-          <ShopForm shop={shop} />
+          <ShopForm shop={shop} readOnly={window.isEnded} />
         </CollapsibleSection>
 
         <CollapsibleSection
@@ -222,7 +229,11 @@ export default async function ManageShopPage({
           defaultOpen={!productsDone}
           complete={productsDone}
         >
-          <ManageProductManager shopId={shop.id} products={shop.products} />
+          <ManageProductManager
+            shopId={shop.id}
+            products={shop.products}
+            readOnly={window.isEnded}
+          />
         </CollapsibleSection>
 
         <CollapsibleSection
@@ -231,12 +242,18 @@ export default async function ManageShopPage({
           description="Theme, layout, and what buyers see on your drop page."
           defaultOpen={false}
           action={
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/dashboard/shops/${shop.id}/customize`}>
-                <Palette className="size-4" />
-                Customize
-              </Link>
-            </Button>
+            window.isEnded ? (
+              <span className="text-xs text-muted-foreground">
+                Appearance locked after the drop ends
+              </span>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`/dashboard/shops/${shop.id}/customize`}>
+                  <Palette className="size-4" />
+                  Customize
+                </Link>
+              </Button>
+            )
           }
         >
           <p className="text-sm text-muted-foreground">

@@ -79,6 +79,14 @@ export function derivePublishedShopWindow(
   };
 }
 
+/** True when a published shop's schedule window has ended (drafts with past dates are false). */
+export function isPublishedShopEnded(
+  shop: { status: string; start_at: string; end_at: string },
+  now?: Date,
+): boolean {
+  return derivePublishedShopWindow(shop, now).isEnded;
+}
+
 /**
  * Compute schedule timestamps when a seller ends a shop early.
  * Preserves orders/history; only closes the purchase window.
