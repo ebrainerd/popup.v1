@@ -45,6 +45,33 @@ Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
 | k6 load scripts | `scripts/load/README.md` |
 | Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
 | DB schema | `supabase/migrations/*.sql` (apply in order) |
+| **Figma design system / brand** | **[PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw)** |
+
+## Brand identity (Ember Market)
+
+**Direction locked** (Figma Color Proposal + Logo pages):
+
+| Decision | Choice |
+| -------- | ------ |
+| Palette | **Ember Market** (dark + Ember light) — live in `globals.css` |
+| Type | **Syne ExtraBold** logo only · **Geist** UI · **Geist Mono** timers |
+| Logo lockup | **L2** — arcs mark + Syne tick (`src/components/logo.tsx`, icons, OG) |
+| Light mode | Ember light (warm paper `#FAF8F4`) |
+| Motion / surfaces | Ember charcoal base `#14100C` + var-driven glows |
+| Seller shop accents | **Warm family only** (ember / amber / terracotta / gilt) |
+| Tagline | **Tabled** — keep “Pop up. Sell out.” for now |
+
+**Done in app**
+
+- [x] Ember tokens + brand gradient / ambient orbs
+- [x] Warm shop presets + accent swatches
+- [x] L2 logo component + favicon / maskable / `icon.svg` + `og.jpg?v=3`
+- [x] Marketing Remotion / seed demo accents aligned
+
+**Optional follow-ups**
+
+- [x] Sync Figma Color / Primitives variables to Ember (kit component paints may still need a pass)
+- [ ] Revisit tagline when ready (candidates parked; no urgency)
 
 ## Status (high level)
 

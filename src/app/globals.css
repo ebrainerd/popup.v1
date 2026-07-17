@@ -2,36 +2,36 @@
 
 /* ---------------------------------------------------------------------------
    PopUp design system v3 — "Fun • Excitement • In-the-Moment"
-   Dark-mode default. A vibrant temporary night market: deep charcoal with
-   electric coral, vibrant teal, and sunshine yellow accents.
+   Dark-mode default. Ember Market: warm charcoal with ember orange,
+   trusted teal, and amber highlight accents.
 --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: dark;
 
-  --background: #0f0f14;
-  --foreground: #f5f5f7;
+  --background: #12110F;
+  --foreground: #F7F3EC;
 
-  --muted: #1f1f29;
-  --muted-foreground: #a1a1aa;
+  --muted: #1C1A17;
+  --muted-foreground: #A39E94;
 
-  --card: #1a1a22;
-  --card-foreground: #f5f5f7;
+  --card: #1A1815;
+  --card-foreground: #F7F3EC;
 
-  --border: #2a2a36;
-  --input: #2a2a36;
-  --ring: #ff3b8b;
+  --border: #2F2B25;
+  --input: #2F2B25;
+  --ring: #FF5C1A;
 
   /* Brand */
-  --primary: #ff3b8b;           /* Electric coral — urgency / live / flash */
+  --primary: #FF5C1A;           /* Ember orange — urgency / live / flash */
   --primary-foreground: #ffffff;
-  --accent: #00e6c8;            /* Vibrant teal — success / new activity */
+  --accent: #2DB8A8;            /* Trusted teal — success / new activity */
   --accent-foreground: #06231f;
-  --highlight: #ffd60a;         /* Sunshine yellow — countdowns / attention */
+  --highlight: #F5C518;         /* Amber — countdowns / attention */
   --highlight-foreground: #2a2206;
 
-  --live: #ff3b8b;
-  --success: #00e6c8;
+  --live: #FF3B2E;
+  --success: #2DB8A8;
 
   /* Rounded, friendly (16–24px) */
   --radius: 1.25rem;
@@ -41,28 +41,28 @@
 .light {
   color-scheme: light;
 
-  --background: #ffffff;
-  --foreground: #0f0f14;
+  --background: #FAF8F4;
+  --foreground: #16140F;
 
-  --muted: #f3f3f6;
-  --muted-foreground: #5c5c66;
+  --muted: #F0EBE3;
+  --muted-foreground: #6B655C;
 
-  --card: #ffffff;
-  --card-foreground: #0f0f14;
+  --card: #FFFFFF;
+  --card-foreground: #16140F;
 
-  --border: #e6e6ea;
-  --input: #e6e6ea;
-  --ring: #e6007a;
+  --border: #E4DFD6;
+  --input: #E4DFD6;
+  --ring: #E04E10;
 
-  --primary: #e6007a;          /* deeper coral for contrast on white */
+  --primary: #E04E10;
   --primary-foreground: #ffffff;
-  --accent: #00bfa6;
+  --accent: #1A9A8C;
   --accent-foreground: #ffffff;
-  --highlight: #b8860b;        /* readable as text on white */
+  --highlight: #B8860B;
   --highlight-foreground: #ffffff;
 
-  --live: #e6007a;
-  --success: #0a8f7e;          /* darker teal stays legible on white */
+  --live: #D92B22;
+  --success: #1A9A8C;
 }
 
 @theme inline {
@@ -219,13 +219,13 @@ body {
 
 /* ---------------------------------------------------------------------------
    Unified brand surface — the single "hero moment" panel.
-   Deep coral-black night-market base lit by all three brand accents
-   (coral / teal / yellow). Identical in light and dark mode so the hero
+   Warm ember charcoal base lit by all three brand accents
+   (orange / teal / amber). Identical in light and dark mode so the hero
    reads as one consistent brand block on every page. White copy stays
    well above WCAG AA on the near-black base. No off-brand purple/violet.
 --------------------------------------------------------------------------- */
 .bg-brand-gradient {
-  background-color: #14070d;
+  background-color: #14100C;
   background-image:
     radial-gradient(95% 130% at 6% -10%, color-mix(in srgb, var(--primary) 92%, transparent) 0%, transparent 55%),
     radial-gradient(85% 110% at 102% 108%, color-mix(in srgb, var(--accent) 55%, transparent) 0%, transparent 52%),
@@ -277,13 +277,13 @@ body {
 
 .shop-theme-root {
   color: var(--shop-fg, var(--foreground));
-  --primary: var(--shop-accent, #ff3b8b);
+  --primary: var(--shop-accent, #ff5c1a);
   --primary-foreground: #ffffff;
-  --ring: var(--shop-accent, #ff3b8b);
-  --live: var(--shop-accent, #ff3b8b);
-  --accent: var(--shop-accent, #00e6c8);
+  --ring: var(--shop-accent, #ff5c1a);
+  /* Keep global LIVE red — do not remap to seller accent. */
+  --accent: var(--shop-accent, #2db8a8);
   --accent-foreground: var(--shop-fg, var(--foreground));
-  --success: var(--shop-accent, #00e6c8);
+  --success: var(--shop-accent, #2db8a8);
   --radius: var(--shop-radius, 1.25rem);
   --background: var(--shop-page-bg, var(--background));
   --foreground: var(--shop-fg, var(--foreground));

@@ -1,6 +1,6 @@
 import confetti from "canvas-confetti";
 
-const BRAND_COLORS = ["#ff3b8b", "#00e6c8", "#ffd60a", "#ffffff"];
+const BRAND_COLORS = ["#ff5c1a", "#f5c518", "#ff3b2e", "#ffffff"];
 
 function prefersReducedMotion(): boolean {
   return (

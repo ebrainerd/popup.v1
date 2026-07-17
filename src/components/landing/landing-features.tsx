@@ -63,7 +63,7 @@ export function LandingFeatures() {
           {/* Feature cell with a real image */}
           <motion.div
             {...reveal(0)}
-            className="relative overflow-hidden rounded-3xl bg-[#14070d] text-white ring-1 ring-white/10 sm:col-span-2 lg:col-span-4"
+            className="relative overflow-hidden rounded-3xl bg-[#14100C] text-white ring-1 ring-white/10 sm:col-span-2 lg:col-span-4"
           >
             <div className="relative z-10 max-w-sm p-8 sm:p-10">
               <h3 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
@@ -84,7 +84,7 @@ export function LandingFeatures() {
               />
               <div
                 aria-hidden
-                className="absolute inset-0 bg-gradient-to-t from-[#14070d] via-transparent to-transparent sm:bg-gradient-to-r sm:from-[#14070d] sm:via-transparent sm:to-transparent"
+                className="absolute inset-0 bg-gradient-to-t from-[#14100C] via-transparent to-transparent sm:bg-gradient-to-r sm:from-[#14100C] sm:via-transparent sm:to-transparent"
               />
             </div>
           </motion.div>

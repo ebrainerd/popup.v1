@@ -25,7 +25,7 @@ const LAYOUT_ICON: Record<string, typeof Tv> = {
 };
 
 /** Quick accent swatches: brand colors plus each preset's signature accent. */
-const ACCENT_SWATCHES = ["#ff3b8b", "#00e6c8", "#ffd60a", "#2d4ff2", "#e4572e", "#16a34a"];
+const ACCENT_SWATCHES = ["#ff5c1a", "#e04e10", "#e8910c", "#f5c518", "#e4572e", "#c4921a"];
 
 /** Whether the layout's recommended look differs from the current theme. */
 function layoutLookDiffers(theme: ShopTheme, layout: ShopLayoutMode): boolean {
@@ -196,7 +196,7 @@ export function StudioStylePanel({
               className="absolute inset-0"
               style={{
                 background:
-                  "conic-gradient(#ff3b8b, #ffd60a, #00e6c8, #2d4ff2, #ff3b8b)",
+                  "conic-gradient(#ff5c1a, #f5c518, #e8910c, #e4572e, #ff5c1a)",
               }}
             />
             <input

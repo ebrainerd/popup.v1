@@ -1,13 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="PopUp">
-  <rect width="512" height="512" rx="128" fill="#ff3b8b"/>
-  <text
-    x="256"
-    y="272"
-    text-anchor="middle"
-    dominant-baseline="middle"
-    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
-    font-size="304"
-    font-weight="800"
-    fill="#ffffff"
-  >P</text>
+  <rect width="512" height="512" rx="128" fill="#12110F"/>
+  <g fill="none" stroke="#FF5C1A" stroke-width="26" stroke-linecap="round" transform="translate(256 256)">
+    <path d="M-8 -172 a172 172 0 1 0 0 344"/>
+    <path d="M-8 -120 a120 120 0 1 0 0 240"/>
+  </g>
+  <circle cx="256" cy="256" r="68" fill="#FF5C1A"/>
 </svg>
