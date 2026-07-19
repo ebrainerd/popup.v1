@@ -1,12 +1,8 @@
 import type { Product, Shop } from "@/lib/database.types";
 import type { AuctionFieldState } from "@/components/auction-product-fields";
 import { defaultAuctionFields } from "@/components/auction-product-fields";
-import {
-  detectBrowserTimeZone,
-  isoToZonedInput,
-  plusHoursInTimeZone,
-  zonedInputToIso,
-} from "@/lib/datetime";
+import { isoToZonedInput, plusHoursInTimeZone, zonedInputToIso } from "@/lib/datetime";
+import { DEFAULT_SCHEDULE_TIMEZONE, resolveScheduleTimeZone } from "@/lib/timezones";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { defaultShopTheme, parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
 import {
@@ -73,7 +69,7 @@ export function wizardStorageKey(shopId?: string): string {
  * wall clocks in the draft timezone. Call only in the browser after mount.
  */
 export function hydrateWizardScheduleLocal(draft: ShopWizardDraft): ShopWizardDraft {
-  const timeZone = draft.scheduleTimezone || detectBrowserTimeZone();
+  const timeZone = resolveScheduleTimeZone(draft.scheduleTimezone);
   if (draft.scheduleSet && draft.scheduleStartIso && draft.scheduleEndIso) {
     return {
       ...draft,
@@ -351,7 +347,7 @@ function buildWizardPersistPayload(
   draft: ShopWizardDraft,
   options?: { draftMode?: boolean },
 ) {
-  const timeZone = draft.scheduleTimezone || "UTC";
+  const timeZone = draft.scheduleTimezone.trim() || DEFAULT_SCHEDULE_TIMEZONE;
   const scheduleValid =
     draft.scheduleSet &&
     Boolean(draft.startLocal && draft.endLocal) &&

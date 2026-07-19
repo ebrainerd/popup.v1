@@ -12,14 +12,17 @@ import { Button } from "@/components/ui/button";
 import { ImageUpload } from "@/components/image-upload";
 import { VisibilityPicker } from "@/components/visibility-picker";
 import {
-  detectBrowserTimeZone,
   isoToZonedInput,
   nowInTimeZone,
   plusHoursInTimeZone,
   zonedInputToIso,
 } from "@/lib/datetime";
 import type { Shop } from "@/lib/database.types";
-import { scheduleTimeZoneOptions } from "@/lib/timezones";
+import {
+  DEFAULT_SCHEDULE_TIMEZONE,
+  resolveScheduleTimeZone,
+  scheduleTimeZoneOptions,
+} from "@/lib/timezones";
 import { isShopScheduleSet } from "@/lib/shop-schedule";
 
 const initialState: ActionState = { error: null };
@@ -36,7 +39,7 @@ type NewShopDraft = {
 };
 
 function defaultNewShopDraft(): NewShopDraft {
-  const tz = detectBrowserTimeZone();
+  const tz = resolveScheduleTimeZone(null);
   return {
     name: "",
     description: "",
@@ -53,7 +56,11 @@ function loadNewShopDraft(): NewShopDraft {
   try {
     const raw = sessionStorage.getItem(NEW_SHOP_DRAFT_KEY);
     if (!raw) return defaultNewShopDraft();
-    return { ...defaultNewShopDraft(), ...JSON.parse(raw) };
+    const merged = { ...defaultNewShopDraft(), ...JSON.parse(raw) } as NewShopDraft;
+    return {
+      ...merged,
+      scheduleTimezone: resolveScheduleTimeZone(merged.scheduleTimezone),
+    };
   } catch {
     return defaultNewShopDraft();
   }
@@ -85,14 +92,17 @@ export function ShopForm({ shop, readOnly = false }: { shop: Shop; readOnly?: bo
   const [description, setDescription] = useState(shop.description ?? "");
   const [startLocal, setStartLocal] = useState("");
   const [endLocal, setEndLocal] = useState("");
-  const [scheduleTimezone, setScheduleTimezone] = useState("");
+  // Never start as "" — an unmatched <select value> shows the first option (was Hawaii).
+  const [scheduleTimezone, setScheduleTimezone] = useState(
+    () => shop.schedule_timezone?.trim() || DEFAULT_SCHEDULE_TIMEZONE,
+  );
   const [visibility, setVisibility] = useState<"public" | "private">(
     inviteOnly ? "private" : shop.visibility,
   );
 
   useEffect(() => {
     queueMicrotask(() => {
-      const tz = shop.schedule_timezone || detectBrowserTimeZone();
+      const tz = resolveScheduleTimeZone(shop.schedule_timezone);
       setScheduleTimezone(tz);
       if (scheduleUnset) {
         setStartLocal("");
@@ -110,6 +120,7 @@ export function ShopForm({ shop, readOnly = false }: { shop: Shop; readOnly?: bo
       : null;
 
   const includeSchedule = !scheduleUnset || Boolean(startLocal && endLocal && !timeError);
+  const effectiveTz = scheduleTimezone.trim() || DEFAULT_SCHEDULE_TIMEZONE;
 
   return (
     <fieldset disabled={readOnly} className={readOnly ? "opacity-70" : undefined}>
@@ -120,10 +131,10 @@ export function ShopForm({ shop, readOnly = false }: { shop: Shop; readOnly?: bo
           <input
             type="hidden"
             name="start_at"
-            value={zonedInputToIso(startLocal, scheduleTimezone)}
+            value={zonedInputToIso(startLocal, effectiveTz)}
           />
-          <input type="hidden" name="end_at" value={zonedInputToIso(endLocal, scheduleTimezone)} />
-          <input type="hidden" name="schedule_timezone" value={scheduleTimezone} />
+          <input type="hidden" name="end_at" value={zonedInputToIso(endLocal, effectiveTz)} />
+          <input type="hidden" name="schedule_timezone" value={effectiveTz} />
         </>
       )}
       <input type="hidden" name="visibility" value={visibility} />
@@ -149,7 +160,7 @@ export function ShopForm({ shop, readOnly = false }: { shop: Shop; readOnly?: bo
         setStartLocal={setStartLocal}
         endLocal={endLocal}
         setEndLocal={setEndLocal}
-        scheduleTimezone={scheduleTimezone}
+        scheduleTimezone={effectiveTz}
         setScheduleTimezone={setScheduleTimezone}
         timeError={timeError}
         showVisibility={!inviteOnly}
@@ -187,6 +198,7 @@ export function CreateShopForm() {
     sessionStorage.setItem(NEW_SHOP_DRAFT_KEY, JSON.stringify(draft));
   }, [draft, hydrated]);
 
+  const tz = draft.scheduleTimezone.trim() || DEFAULT_SCHEDULE_TIMEZONE;
   const timeError =
     draft.startLocal && draft.endLocal && draft.endLocal <= draft.startLocal
       ? "Closing time must be after the opening time."
@@ -204,17 +216,9 @@ export function CreateShopForm() {
 
   return (
     <form action={formAction} className="space-y-6">
-      <input
-        type="hidden"
-        name="start_at"
-        value={zonedInputToIso(draft.startLocal, draft.scheduleTimezone)}
-      />
-      <input
-        type="hidden"
-        name="end_at"
-        value={zonedInputToIso(draft.endLocal, draft.scheduleTimezone)}
-      />
-      <input type="hidden" name="schedule_timezone" value={draft.scheduleTimezone} />
+      <input type="hidden" name="start_at" value={zonedInputToIso(draft.startLocal, tz)} />
+      <input type="hidden" name="end_at" value={zonedInputToIso(draft.endLocal, tz)} />
+      <input type="hidden" name="schedule_timezone" value={tz} />
       <input type="hidden" name="visibility" value={inviteOnly ? "private" : draft.visibility} />
 
       <p className="text-sm text-muted-foreground">
@@ -238,7 +242,7 @@ export function CreateShopForm() {
         setStartLocal={(startLocal) => patch({ startLocal })}
         endLocal={draft.endLocal}
         setEndLocal={(endLocal) => patch({ endLocal })}
-        scheduleTimezone={draft.scheduleTimezone}
+        scheduleTimezone={tz}
         setScheduleTimezone={(scheduleTimezone) => patch({ scheduleTimezone })}
         liveUrl={draft.liveUrl}
         setLiveUrl={(liveUrl) => patch({ liveUrl })}

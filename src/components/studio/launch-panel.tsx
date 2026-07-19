@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { PanelSection } from "@/components/studio/panel-ui";
 import { getStepValidation, type ShopWizardDraft } from "@/lib/shop-wizard";
 import { nowInTimeZone, plusHoursInTimeZone } from "@/lib/datetime";
-import { scheduleTimeZoneOptions } from "@/lib/timezones";
+import { DEFAULT_SCHEDULE_TIMEZONE, scheduleTimeZoneOptions } from "@/lib/timezones";
 import { cn } from "@/lib/utils";
 
 type ReadinessRow = { id: string; label: string; done: boolean; optional?: boolean };
@@ -25,7 +25,7 @@ export function StudioLaunchPanel({
   onPatch: (partial: Partial<ShopWizardDraft>) => void;
 }) {
   const scheduleValidation = getStepValidation("schedule", draft);
-  const timeZone = draft.scheduleTimezone || "UTC";
+  const timeZone = draft.scheduleTimezone.trim() || DEFAULT_SCHEDULE_TIMEZONE;
   const timeError =
     draft.startLocal && draft.endLocal && draft.endLocal <= draft.startLocal
       ? "Closing time must be after the opening time."
