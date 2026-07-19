@@ -65,12 +65,12 @@ export async function startAuction(auctionId: string, shopId: string): Promise<A
   const shopCheck = await requireOwnedEditableShop(supabase, shopId, user.id);
   if (!shopCheck.ok) return shopCheck;
 
-  const { error } = await supabase.rpc("start_auction_run", { p_auction_id: auctionId });
+  const { data: endsAt, error } = await supabase.rpc("start_auction_run", { p_auction_id: auctionId });
   if (error) return { ok: false, error: error.message };
 
   revalidatePath(`/dashboard/shops/${shopId}`);
   revalidatePath(`/shop/${shopId}`);
-  return { ok: true };
+  return { ok: true, data: { ends_at: endsAt as string } };
 }
 
 export async function cancelAuction(auctionId: string, shopId: string): Promise<AuctionActionResult> {

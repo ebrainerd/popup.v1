@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Gavel } from "lucide-react";
 import { useShopRoom, useShopEvent } from "@/components/shop-room";
@@ -18,6 +18,7 @@ import {
   type AuctionStartedBroadcast,
 } from "@/lib/realtime";
 import { formatCurrency } from "@/lib/utils";
+import { shouldAcceptAuctionQueuedUpdate } from "@/lib/auction-bidding";
 
 type AuctionState = {
   run: AuctionRunWithProduct;
@@ -53,6 +54,34 @@ export function AuctionProductActions({
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!initial?.run || initial.run.product_id !== product.id) return;
+    setState((local) => {
+      if (local === null) return initial;
+      if (local.run.id !== initial.run.id) return initial;
+      if (local.run.bid_count > initial.run.bid_count) return local;
+      if (
+        local.run.bid_count === initial.run.bid_count &&
+        local.run.current_bid >= initial.run.current_bid
+      ) {
+        return local;
+      }
+      return {
+        ...initial,
+        viewerState: local.viewerState,
+        yourMaxBid: local.yourMaxBid,
+      };
+    });
+  }, [
+    initial?.run.id,
+    initial?.run.bid_count,
+    initial?.run.current_bid,
+    initial?.run.status,
+    initial?.run.ends_at,
+    initial,
+    product.id,
+  ]);
+
   const applyBid = useCallback((payload: AuctionBidBroadcast) => {
     setState((prev) => {
       if (!prev || prev.run.id !== payload.auctionId) return prev;
@@ -75,32 +104,37 @@ export function AuctionProductActions({
     const p = payload as AuctionQueuedBroadcast;
     if (p.productId !== product.id) return;
     setEnded(null);
-    setState({
-      run: {
-        id: p.auctionId,
-        shop_id: shopId,
-        product_id: p.productId,
-        seller_id: "",
-        status: "queued",
-        starting_bid: p.startingBid,
-        min_increment: p.minIncrement,
-        current_bid: p.startingBid,
-        current_winner_id: null,
-        winning_bid_id: null,
-        bid_count: 0,
-        starts_at: null,
-        ends_at: null,
-        soft_close_seconds: 10,
-        sudden_death: p.suddenDeath,
-        checkout_expires_at: null,
-        stripe_session_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        product,
-      },
-      nextMinimumBid: p.startingBid,
-      viewerState: "none",
-      yourMaxBid: null,
+    setState((prev) => {
+      if (!shouldAcceptAuctionQueuedUpdate(prev?.run, p, { allowWhenEmpty: true })) {
+        return prev;
+      }
+      return {
+        run: {
+          id: p.auctionId,
+          shop_id: shopId,
+          product_id: p.productId,
+          seller_id: "",
+          status: "queued",
+          starting_bid: p.startingBid,
+          min_increment: p.minIncrement,
+          current_bid: p.startingBid,
+          current_winner_id: null,
+          winning_bid_id: null,
+          bid_count: 0,
+          starts_at: null,
+          ends_at: null,
+          soft_close_seconds: 10,
+          sudden_death: p.suddenDeath,
+          checkout_expires_at: null,
+          stripe_session_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          product,
+        },
+        nextMinimumBid: p.startingBid,
+        viewerState: "none",
+        yourMaxBid: null,
+      };
     });
   });
 

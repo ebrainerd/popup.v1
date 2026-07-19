@@ -13,21 +13,40 @@ export type AuctionProductState = {
 
 const ACTIVE_AUCTION_STATUSES = ["queued", "live", "awaiting_payment"] as const;
 
-function pickPrimaryAuctionRun(
+const AUCTION_RUN_STATUS_PRIORITY: Record<string, number> = {
+  live: 0,
+  awaiting_payment: 1,
+  queued: 2,
+};
+
+/** Pick the canonical active run when duplicates exist for one product. */
+export function pickBestAuctionRunForProduct(
   runs: AuctionRunWithProduct[],
 ): AuctionRunWithProduct | null {
   if (runs.length === 0) return null;
-  const priority: Record<string, number> = {
-    live: 0,
-    awaiting_payment: 1,
-    queued: 2,
-  };
   return [...runs].sort((a, b) => {
-    const pa = priority[a.status] ?? 3;
-    const pb = priority[b.status] ?? 3;
+    const pa = AUCTION_RUN_STATUS_PRIORITY[a.status] ?? 3;
+    const pb = AUCTION_RUN_STATUS_PRIORITY[b.status] ?? 3;
     if (pa !== pb) return pa - pb;
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    if (a.bid_count !== b.bid_count) return b.bid_count - a.bid_count;
+    if (a.current_bid !== b.current_bid) return b.current_bid - a.current_bid;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
   })[0];
+}
+
+function pickPrimaryAuctionRun(
+  runs: AuctionRunWithProduct[],
+): AuctionRunWithProduct | null {
+  const byProduct = new Map<string, AuctionRunWithProduct[]>();
+  for (const run of runs) {
+    const list = byProduct.get(run.product_id) ?? [];
+    list.push(run);
+    byProduct.set(run.product_id, list);
+  }
+  const bestPerProduct = [...byProduct.values()]
+    .map((productRuns) => pickBestAuctionRunForProduct(productRuns))
+    .filter((run): run is AuctionRunWithProduct => run !== null);
+  return pickBestAuctionRunForProduct(bestPerProduct);
 }
 
 /** Queue all pre-bid-eligible auction lots for a published shop (idempotent). */
@@ -108,8 +127,19 @@ export async function getAuctionProductStates(
   }
   if (!runs?.length) return {};
 
+  const typedRuns = runs as unknown as AuctionRunWithProduct[];
+  const byProduct = new Map<string, AuctionRunWithProduct[]>();
+  for (const run of typedRuns) {
+    const list = byProduct.get(run.product_id) ?? [];
+    list.push(run);
+    byProduct.set(run.product_id, list);
+  }
+
   const result: Record<string, AuctionProductState> = {};
-  for (const run of runs as unknown as AuctionRunWithProduct[]) {
+  for (const [productId, productRuns] of byProduct) {
+    const run = pickBestAuctionRunForProduct(productRuns);
+    if (!run) continue;
+
     const { data: nextMin } = await supabase.rpc("auction_next_minimum_bid", {
       p_starting_bid: run.starting_bid,
       p_min_increment: run.min_increment,
@@ -125,7 +155,7 @@ export async function getAuctionProductStates(
       else if (yourMaxBid) viewerState = "outbid";
     }
 
-    result[run.product_id] = {
+    result[productId] = {
       run,
       nextMinimumBid: Number(nextMin ?? run.starting_bid),
       viewerState,
