@@ -112,6 +112,11 @@ function normalizeLocaleSpaces(value: string): string {
  * Format a UTC instant for display in an explicit IANA zone.
  * SSR-safe when `timeZone` is provided (server and client produce the same string
  * after space normalization). Never omit `timeZone` for user-facing shop schedule copy.
+ *
+ * Prefer component fields (`month`, `hour`, …) over `dateStyle`/`timeStyle` when also
+ * passing `timeZoneName`. Chrome throws `TypeError: Invalid option : option` if style
+ * presets are mixed with component options; Node's ICU is more lenient, so unit tests
+ * alone will not catch that bug.
  */
 export function formatInstantInTimeZone(
   iso: string,
@@ -121,11 +126,16 @@ export function formatInstantInTimeZone(
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
   try {
-    return normalizeLocaleSpaces(d.toLocaleString("en-US", { timeZone, ...options }));
+    return normalizeLocaleSpaces(d.toLocaleString("en-US", { ...options, timeZone }));
   } catch {
-    return normalizeLocaleSpaces(
-      d.toLocaleString("en-US", { timeZone: "UTC", ...options }),
-    );
+    try {
+      return normalizeLocaleSpaces(
+        d.toLocaleString("en-US", { ...options, timeZone: "UTC" }),
+      );
+    } catch {
+      // Bad option bags (not just bad zones) still throw after the UTC retry.
+      return normalizeLocaleSpaces(d.toLocaleString("en-US", { timeZone: "UTC" }));
+    }
   }
 }
 
@@ -147,6 +157,21 @@ export function formatShopScheduleWhen(iso: string, timeZone: string): string {
     weekday: "short",
     month: "short",
     day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
+/**
+ * Medium date + short time with zone abbrev (close-shop dialog, etc.).
+ * Uses component fields only — see note on {@link formatInstantInTimeZone}.
+ */
+export function formatShopScheduleMoment(iso: string, timeZone: string): string {
+  return formatInstantInTimeZone(iso, timeZone, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
     hour: "numeric",
     minute: "2-digit",
     timeZoneName: "short",

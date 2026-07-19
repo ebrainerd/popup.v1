@@ -11,16 +11,8 @@ import {
 import { useNow } from "@/components/countdown";
 import { Button } from "@/components/ui/button";
 import { deriveShopStatus, formatDurationMs } from "@/lib/utils";
-import { formatInstantInTimeZone } from "@/lib/datetime";
+import { formatShopScheduleMoment } from "@/lib/datetime";
 import { DEFAULT_SCHEDULE_TIMEZONE } from "@/lib/timezones";
-
-function formatScheduleMoment(iso: string, timeZone: string): string {
-  return formatInstantInTimeZone(iso, timeZone, {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZoneName: "short",
-  });
-}
 
 export function CloseShopDialog({
   shopId,
@@ -78,7 +70,7 @@ export function CloseShopDialog({
     : new Date(startAt).getTime() - currentMs;
   const remainingLabel = formatDurationMs(remainingMs);
   const tz = scheduleTimezone?.trim() || DEFAULT_SCHEDULE_TIMEZONE;
-  const scheduleLabel = formatScheduleMoment(isOpen ? endAt : startAt, tz);
+  const scheduleLabel = formatShopScheduleMoment(isOpen ? endAt : startAt, tz);
 
   function confirm() {
     setError(null);

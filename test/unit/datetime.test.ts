@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatInstantInTimeZone,
   formatShopOpenAt,
+  formatShopScheduleMoment,
   formatShopScheduleWhen,
   isoToLocalInput,
   isoToZonedInput,
@@ -70,6 +72,29 @@ describe("datetime conversion", () => {
     // Same input + zone must be deterministic (no runtime-local dependence).
     expect(formatShopOpenAt(iso, "America/Los_Angeles")).toBe(label);
     expect(formatShopScheduleWhen(iso, "America/New_York")).toMatch(/1:00 PM/);
+  });
+
+  it("formats close-shop schedule moments with zone (Chrome-safe option bag)", () => {
+    const iso = "2026-07-19T17:00:00.000Z"; // 10:00am PDT
+    const label = formatShopScheduleMoment(iso, "America/Los_Angeles");
+    expect(label).toMatch(/Jul/);
+    expect(label).toMatch(/19/);
+    expect(label).toMatch(/2026/);
+    expect(label).toMatch(/10:00 AM/);
+    expect(label).toMatch(/PDT|GMT-7|UTC-7/);
+    expect(label).not.toMatch(/[\u00a0\u202f\u2009]/);
+  });
+
+  it("degrades instead of throwing on an invalid option bag", () => {
+    // Chrome also rejects dateStyle/timeStyle + timeZoneName ("Invalid option :
+    // option"); Node is lenient for that mix, so we use an out-of-range value
+    // that both engines reject to cover the catch path (Sentry POPUP-A).
+    const iso = "2026-07-19T17:00:00.000Z";
+    const label = formatInstantInTimeZone(iso, "America/Los_Angeles", {
+      weekday: "option" as Intl.DateTimeFormatOptions["weekday"],
+    });
+    expect(label).toBeTruthy();
+    expect(label).not.toMatch(/[\u00a0\u202f\u2009]/);
   });
 });
 
