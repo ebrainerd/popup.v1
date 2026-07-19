@@ -237,6 +237,7 @@ export function ShopPageView({
     <AuctionLivePanel
       key={auctionPanel?.run.id ?? "auction-panel-empty"}
       shopId={shop.id}
+      shopEndAt={shop.end_at}
       initial={auctionPanel}
       isAuthed={Boolean(profileId)}
       isOwner={isOwner}

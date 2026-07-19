@@ -118,9 +118,15 @@ export async function finalizeAuction(
   });
   if (error) return { ok: false, error: error.message };
 
+  const result = data as Record<string, unknown>;
+  if (result?.status === "awaiting_payment") {
+    const { notifyAuctionWon } = await import("@/lib/notifications");
+    void notifyAuctionWon(auctionId);
+  }
+
   revalidatePath(`/shop/${shopId}`);
   revalidatePath(`/dashboard/shops/${shopId}`);
-  return { ok: true, data: data as Record<string, unknown> };
+  return { ok: true, data: result };
 }
 
 /**

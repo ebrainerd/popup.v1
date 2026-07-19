@@ -9,7 +9,7 @@
  */
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Shop } from "@/lib/database.types";
 import type { StreamProvider } from "@/lib/database.types";
 import type { LiveEmbed as LiveEmbedInfo } from "@/lib/embeds";
@@ -25,6 +25,8 @@ import {
 import { NotifyWhenLiveButton } from "@/components/notify-when-live-button";
 import { useShopEvent } from "@/components/shop-room";
 import { useShopPhase } from "@/hooks/use-shop-open";
+import { endNativeLive } from "@/app/dashboard/actions";
+import { useBroadcastLiveState } from "@/hooks/use-broadcast-live-state";
 import { ROOM_EVENTS, type LiveBroadcast } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 
@@ -78,6 +80,8 @@ export function StreamSlot({
     initialIsLive ? "connecting" : "idle",
   );
   const [prevPublisherInitial, setPrevPublisherInitial] = useState(initialIsLive);
+  const broadcastLive = useBroadcastLiveState(shop.id);
+  const endedLiveCleanupRef = useRef(false);
 
   if (prevInitialIsLive !== initialIsLive) {
     setPrevInitialIsLive(initialIsLive);
@@ -98,12 +102,32 @@ export function StreamSlot({
   const phase = useShopPhase(shop.start_at, shop.end_at, { isOpen, isScheduled });
   const effectiveScheduled = isDraftPreview || phase.isScheduled;
   const effectiveOpen = !isDraftPreview && phase.isOpen;
+  const effectiveEnded = !isDraftPreview && phase.status === "ended";
 
+  // When the shop window ends, never keep a live player/publisher mounted —
+  // that left a blank slot after the stream died. Fall back to the cover.
   const showNative = nativeEnabled && streamProvider === "native";
   const ownerNativeSlot = isOwner && showNative && effectiveOpen && !isDraftPreview;
-  const showExternalLive = isLive && embed?.embeddable && streamProvider !== "native";
-  const showNativeLive = isLive && showNative && !ownerNativeSlot;
+  const showExternalLive =
+    isLive && embed?.embeddable && streamProvider !== "native" && effectiveOpen;
+  const showNativeLive = isLive && showNative && !ownerNativeSlot && effectiveOpen;
   const showCover = !showNativeLive && !showExternalLive && !ownerNativeSlot;
+
+  // Shop window ended: drop local live UI so the cover shows. Owner also
+  // clears DB is_live + broadcasts so other viewers update.
+  useEffect(() => {
+    if (!effectiveEnded || !isLive) return;
+    queueMicrotask(() => {
+      setIsLive(false);
+      setPublisherState("idle");
+    });
+    if (!isOwner || endedLiveCleanupRef.current) return;
+    endedLiveCleanupRef.current = true;
+    void (async () => {
+      await endNativeLive(shop.id);
+      broadcastLive(false, "native");
+    })();
+  }, [effectiveEnded, isLive, isOwner, shop.id, broadcastLive]);
 
   const countdownFocus = isCountdown && effectiveScheduled;
   /** Live Stage uses a compact hero countdown — not the Drop Clock takeover. */
@@ -154,7 +178,7 @@ export function StreamSlot({
             nativeLiveStartedAt={nativeLiveStartedAt}
             needsTosAcceptance={needsTosAcceptance ?? false}
             canGoLive={effectiveOpen}
-            isEnded={false}
+            isEnded={effectiveEnded}
             slotMode
             onStateChange={setPublisherState}
           />

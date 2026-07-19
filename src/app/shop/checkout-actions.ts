@@ -248,9 +248,8 @@ export async function createAuctionCheckoutSession(auctionId: string): Promise<C
     .eq("id", product.shop_id)
     .maybeSingle();
   if (!shop) return { ok: false, error: "Shop not found." };
-  if (deriveShopStatus(shop.start_at, shop.end_at) !== "open") {
-    return { ok: false, error: "This shop is closed." };
-  }
+  // Auction winners may check out after the shop window ends (30-minute
+  // payment window). Buy-now still requires an open shop.
 
   const { data: seller } = await supabase
     .from("profiles")

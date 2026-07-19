@@ -16,6 +16,7 @@ import { shopThemeToJson } from "@/lib/shop-theme";
 import { isNativeLiveEnabled, shopLiveKitRoomName } from "@/lib/live-stream";
 import { isStripePaymentsRequired } from "@/lib/payments";
 import { PLACEHOLDER_SCHEDULE } from "@/lib/shop-schedule";
+import { finalizeDueShopAuctions } from "@/lib/auctions";
 import type { StreamProvider } from "@/lib/database.types";
 
 export type ActionState = { error: string | null; fieldErrors?: Record<string, string> };
@@ -566,6 +567,8 @@ export async function endShop(shopId: string): Promise<ActionState> {
     .eq("id", shopId)
     .eq("seller_id", user.id);
   if (error) return { error: error.message };
+
+  await finalizeDueShopAuctions(shopId);
 
   revalidatePath("/", "layout");
   revalidatePath("/dashboard");

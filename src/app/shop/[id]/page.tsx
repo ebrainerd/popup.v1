@@ -23,6 +23,7 @@ import {
   getLiveAuctionPanelState,
   autoQueueShopAuctions,
   expireDueAuctionPayments,
+  finalizeDueShopAuctions,
   getAuctionProductStates,
 } from "@/lib/auctions";
 import type { ChatSender } from "@/lib/realtime";
@@ -139,6 +140,7 @@ export default async function ShopPage({
     await autoQueueShopAuctions(shop.id);
   }
   await expireDueAuctionPayments(shop.id);
+  await finalizeDueShopAuctions(shop.id);
 
   const [initialMessages, announcements, reminderCount, liveReminderCount, auctionRuns, auctionPanel, auctionProductStates] =
     await Promise.all([

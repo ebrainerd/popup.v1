@@ -67,7 +67,7 @@ async function sendResendEmail(
   to: string,
   subject: string,
   html: string,
-  options?: { replyTo?: string },
+  options?: { replyTo?: string; idempotencyKey?: string },
 ): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey || !to) return false;
@@ -85,7 +85,13 @@ async function sendResendEmail(
   }
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      ...(options?.idempotencyKey
+        ? { "Idempotency-Key": options.idempotencyKey.slice(0, 256) }
+        : {}),
+    },
     body: JSON.stringify({
       from,
       to,
@@ -526,6 +532,76 @@ export async function notifyOrderShipped(orderId: string): Promise<void> {
   } catch (err) {
     console.error("notifyOrderShipped failed", err);
     Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
+  }
+}
+
+/** Email winner + seller when an auction ends as awaiting payment. Best-effort. */
+export async function notifyAuctionWon(auctionId: string): Promise<void> {
+  try {
+    if (!process.env.RESEND_API_KEY) return;
+    const supabase = createServiceRoleClient();
+    const { data: run } = await supabase
+      .from("auction_runs")
+      .select(
+        `id, current_bid, current_winner_id, checkout_expires_at, seller_id, shop_id,
+         product:products!auction_runs_product_id_fkey(title),
+         shop:shops!auction_runs_shop_id_fkey(name)`,
+      )
+      .eq("id", auctionId)
+      .eq("status", "awaiting_payment")
+      .maybeSingle();
+    if (!run?.current_winner_id) return;
+
+    const r = run as unknown as {
+      id: string;
+      current_bid: number;
+      current_winner_id: string;
+      checkout_expires_at: string | null;
+      seller_id: string;
+      shop_id: string;
+      product: { title: string } | null;
+      shop: { name: string } | null;
+    };
+
+    const itemTitle = escapeHtml(r.product?.title ?? "your lot");
+    const shopName = escapeHtml(r.shop?.name ?? "a PopUp shop");
+    const site = getSiteUrl();
+    const amount = formatMoney(r.current_bid);
+    const checkoutUrl = `${site}/shop/${r.shop_id}`;
+
+    const [winnerEmail, sellerEmail] = await Promise.all([
+      emailForUser(r.current_winner_id),
+      emailForUser(r.seller_id),
+    ]);
+
+    await Promise.allSettled([
+      winnerEmail
+        ? sendResendEmail(
+            winnerEmail,
+            `You won ${itemTitle} — checkout now`,
+            `<h2>You won the auction!</h2>
+             <p><strong>${itemTitle}</strong> from <strong>${shopName}</strong> is yours for ${amount}.</p>
+             <p>Complete checkout within 30 minutes or the lot may be released.</p>
+             <p><a href="${checkoutUrl}">Open the shop and check out →</a></p>
+             ${emailFooter(site)}`,
+            { idempotencyKey: `auction-won-buyer/${r.id}` },
+          )
+        : Promise.resolve(),
+      sellerEmail
+        ? sendResendEmail(
+            sellerEmail,
+            `Auction sold — ${itemTitle}`,
+            `<h2>Your auction sold!</h2>
+             <p><strong>${itemTitle}</strong> ended at ${amount}. The winner has 30 minutes to check out.</p>
+             <p><a href="${site}/dashboard/shops/${r.shop_id}">Open your shop dashboard →</a></p>
+             ${emailFooter(site)}`,
+            { idempotencyKey: `auction-won-seller/${r.id}` },
+          )
+        : Promise.resolve(),
+    ]);
+  } catch (err) {
+    console.error("notifyAuctionWon failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { auctionId } });
   }
 }
 
