@@ -23,7 +23,7 @@ function mediaAccessErrorMessage(err: unknown): string {
   if (err instanceof DOMException) {
     switch (err.name) {
       case "NotAllowedError":
-        return "Camera or microphone access was blocked. Click the lock icon in your browser’s address bar and allow camera + microphone for this site, then try again.";
+        return "Camera or microphone access was blocked. Click the lock icon in your browser's address bar and allow camera + microphone for this site, then try again.";
       case "NotFoundError":
         return "No camera or microphone was found. Connect a device and try again.";
       case "NotReadableError":
@@ -43,9 +43,16 @@ function mediaAccessErrorMessage(err: unknown): string {
   return "Could not access camera or microphone. Check browser permissions and try again.";
 }
 
+function startedAtMs(nativeLiveStartedAt: string | null | undefined): number | null {
+  if (!nativeLiveStartedAt) return null;
+  const ms = new Date(nativeLiveStartedAt).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
+
 export function NativeLivePublisher({
   shopId,
   initialIsLive,
+  nativeLiveStartedAt,
   needsTosAcceptance,
   canGoLive,
   isEnded,
@@ -54,7 +61,10 @@ export function NativeLivePublisher({
   onStateChange,
 }: {
   shopId: string;
+  /** DB `shops.is_live` — cosmetic live badge; may differ from actual publishing. */
   initialIsLive: boolean;
+  /** Server timestamp for accurate timer after refresh. */
+  nativeLiveStartedAt?: string | null;
   needsTosAcceptance: boolean;
   /** False when shop is not published/open yet. Preview still allowed. */
   canGoLive: boolean;
@@ -71,17 +81,30 @@ export function NativeLivePublisher({
   const videoRef = useRef<HTMLVideoElement>(null);
   const previewStreamRef = useRef<MediaStream | null>(null);
 
-  const [state, setState] = useState<PublisherState>(initialIsLive ? "live" : "idle");
+  const shouldAutoResume =
+    initialIsLive && canGoLive && !needsTosAcceptance && !isEnded;
+
+  const [state, setState] = useState<PublisherState>(() => {
+    if (shouldAutoResume) return "connecting";
+    return "idle";
+  });
   const [error, setError] = useState<string | null>(null);
   const [showTos, setShowTos] = useState(false);
-  const [liveSeconds, setLiveSeconds] = useState(0);
+  const [liveSeconds, setLiveSeconds] = useState(() => {
+    const fromServer = startedAtMs(nativeLiveStartedAt);
+    return fromServer !== null ? Math.floor((Date.now() - fromServer) / 1000) : 0;
+  });
   const [pending, setPending] = useState(false);
   const [muted, setMuted] = useState(false);
   const [cameras, setCameras] = useState<MediaDevice[]>([]);
   const [cameraId, setCameraId] = useState("");
   const [previewStream, setPreviewStream] = useState<MediaStream | null>(null);
-  const liveStartedRef = useRef<number | null>(null);
+  const liveStartedRef = useRef<number | null>(startedAtMs(nativeLiveStartedAt));
   const endingLiveRef = useRef(false);
+  const unmountingRef = useRef(false);
+  const reconnectAttemptedRef = useRef(false);
+  const resumeAttemptedRef = useRef(false);
+  const intendsLiveRef = useRef(initialIsLive);
   const stateRef = useRef(state);
 
   useEffect(() => {
@@ -89,10 +112,7 @@ export function NativeLivePublisher({
   }, [state]);
 
   useEffect(() => {
-    if (initialIsLive && liveStartedRef.current === null) {
-      liveStartedRef.current = Date.now();
-      setState("live");
-    }
+    intendsLiveRef.current = initialIsLive;
   }, [initialIsLive]);
 
   useEffect(() => {
@@ -115,6 +135,134 @@ export function NativeLivePublisher({
     }
   }, []);
 
+  const connectAndPublishTracks = useCallback(
+    async (room: Room) => {
+      const videoTrack = await createLocalVideoTrack(
+        cameraId ? { deviceId: cameraId } : undefined,
+      );
+      const audioTrack = await createLocalAudioTrack();
+      await room.localParticipant.publishTrack(videoTrack);
+      await room.localParticipant.publishTrack(audioTrack);
+
+      if (videoRef.current) {
+        videoTrack.attach(videoRef.current);
+      }
+    },
+    [cameraId],
+  );
+
+  const connectToRoomRef = useRef<
+    (options: { markLiveInDb: boolean }) => Promise<void>
+  >(async () => {});
+
+  const connectToRoom = useCallback(
+    async ({ markLiveInDb }: { markLiveInDb: boolean }) => {
+      setError(null);
+      stopPreview();
+      setState("connecting");
+
+      const tokenRes = await fetch("/api/live/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shopId, role: "publisher" }),
+      });
+      const tokenData = await tokenRes.json();
+      if (!tokenRes.ok) throw new Error(tokenData.error ?? "Could not get stream token.");
+
+      if (markLiveInDb) {
+        const liveRes = await startNativeLive(shopId);
+        if (liveRes.error) throw new Error(liveRes.error);
+        liveStartedRef.current = Date.now();
+        setLiveSeconds(0);
+      } else {
+        const fromServer = startedAtMs(nativeLiveStartedAt);
+        if (fromServer !== null) {
+          liveStartedRef.current = fromServer;
+          setLiveSeconds(Math.floor((Date.now() - fromServer) / 1000));
+        } else if (liveStartedRef.current === null) {
+          liveStartedRef.current = Date.now();
+          setLiveSeconds(0);
+        }
+      }
+
+      await disconnectLive();
+
+      const room = new Room();
+      roomRef.current = room;
+      room.on(RoomEvent.Disconnected, () => {
+        if (endingLiveRef.current || unmountingRef.current) return;
+        void (async () => {
+          if (stateRef.current !== "live" && stateRef.current !== "connecting") return;
+
+          await disconnectLive();
+
+          if (
+            !reconnectAttemptedRef.current &&
+            intendsLiveRef.current &&
+            !unmountingRef.current
+          ) {
+            reconnectAttemptedRef.current = true;
+            setState("connecting");
+            setError(null);
+            try {
+              await connectToRoomRef.current({ markLiveInDb: false });
+              return;
+            } catch (err) {
+              console.error("NativeLivePublisher reconnect failed", err);
+            }
+          }
+
+          setState("error");
+          setError("Stream disconnected. Reconnect your camera or end live.");
+        })();
+      });
+
+      await room.connect(tokenData.livekitUrl, tokenData.token);
+      await connectAndPublishTracks(room);
+
+      intendsLiveRef.current = true;
+      reconnectAttemptedRef.current = false;
+      setState("live");
+      void broadcastLive(true, "native");
+      if (markLiveInDb) {
+        router.refresh();
+      }
+    },
+    [
+      shopId,
+      nativeLiveStartedAt,
+      stopPreview,
+      disconnectLive,
+      connectAndPublishTracks,
+      broadcastLive,
+      router,
+    ],
+  );
+
+  useEffect(() => {
+    connectToRoomRef.current = connectToRoom;
+  }, [connectToRoom]);
+
+  useEffect(() => {
+    if (!shouldAutoResume || resumeAttemptedRef.current) return;
+    resumeAttemptedRef.current = true;
+    setPending(true);
+    void (async () => {
+      try {
+        await connectToRoom({ markLiveInDb: false });
+      } catch (err) {
+        console.error("NativeLivePublisher resume failed", err);
+        await disconnectLive();
+        setState("error");
+        setError(
+          err instanceof Error ? err.message : "Could not resume your live stream.",
+        );
+      } finally {
+        setPending(false);
+      }
+    })();
+  }, [shouldAutoResume, connectToRoom, disconnectLive]);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -133,15 +281,18 @@ export function NativeLivePublisher({
   }, [state, previewStream]);
 
   useEffect(() => {
-    if (state !== "live" || !liveStartedRef.current) return;
+    const showTimer =
+      state === "live" || (initialIsLive && state === "connecting" && liveStartedRef.current);
+    if (!showTimer || !liveStartedRef.current) return;
     const id = window.setInterval(() => {
       setLiveSeconds(Math.floor((Date.now() - liveStartedRef.current!) / 1000));
     }, 1000);
     return () => window.clearInterval(id);
-  }, [state]);
+  }, [state, initialIsLive]);
 
   useEffect(() => {
     return () => {
+      unmountingRef.current = true;
       previewStreamRef.current?.getTracks().forEach((t) => t.stop());
       void disconnectLive();
     };
@@ -209,60 +360,30 @@ export function NativeLivePublisher({
   }
 
   async function connectAndPublish() {
-    setError(null);
-    stopPreview();
-    setState("connecting");
     setPending(true);
     try {
-      const tokenRes = await fetch("/api/live/token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ shopId, role: "publisher" }),
-      });
-      const tokenData = await tokenRes.json();
-      if (!tokenRes.ok) throw new Error(tokenData.error ?? "Could not get stream token.");
-
-      const liveRes = await startNativeLive(shopId);
-      if (liveRes.error) throw new Error(liveRes.error);
-
-      const room = new Room();
-      roomRef.current = room;
-
-      room.on(RoomEvent.Disconnected, () => {
-        if (endingLiveRef.current) return;
-        void (async () => {
-          if (stateRef.current !== "live") return;
-          await disconnectLive();
-          await endNativeLive(shopId);
-          liveStartedRef.current = null;
-          setState("idle");
-          setLiveSeconds(0);
-          broadcastLive(false, "native");
-        })();
-      });
-
-      await room.connect(tokenData.livekitUrl, tokenData.token);
-      const videoTrack = await createLocalVideoTrack(
-        cameraId ? { deviceId: cameraId } : undefined,
-      );
-      const audioTrack = await createLocalAudioTrack();
-      await room.localParticipant.publishTrack(videoTrack);
-      await room.localParticipant.publishTrack(audioTrack);
-
-      if (videoRef.current) {
-        videoTrack.attach(videoRef.current);
-      }
-
-      liveStartedRef.current = Date.now();
-      setLiveSeconds(0);
-      setState("live");
-      void broadcastLive(true, "native");
-      router.refresh();
+      await connectToRoom({ markLiveInDb: true });
     } catch (err) {
       await disconnectLive();
       await endNativeLive(shopId);
       setState("error");
       setError(err instanceof Error ? err.message : "Failed to go live.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleReconnect() {
+    setPending(true);
+    reconnectAttemptedRef.current = false;
+    try {
+      await connectToRoom({ markLiveInDb: false });
+    } catch (err) {
+      await disconnectLive();
+      setState("error");
+      setError(
+        err instanceof Error ? err.message : "Could not reconnect your live stream.",
+      );
     } finally {
       setPending(false);
     }
@@ -290,6 +411,7 @@ export function NativeLivePublisher({
     setPending(true);
     setError(null);
     endingLiveRef.current = true;
+    intendsLiveRef.current = false;
     try {
       await disconnectLive();
       if (videoRef.current) videoRef.current.srcObject = null;
@@ -309,14 +431,19 @@ export function NativeLivePublisher({
   }
 
   const timer = formatLiveTimer(liveSeconds);
-  const showVideo =
-    state === "preview" || state === "connecting" || state === "live";
+  const isPublishing = state === "live";
+  const isResuming = state === "connecting" && initialIsLive;
+  const showDbLiveBadge = isPublishing || isResuming;
+  const showVideo = state === "preview" || state === "connecting" || state === "live";
+  const phantomLive = initialIsLive && !isPublishing && !isResuming;
   const compact = embedded || slotMode;
-  const embeddedIdle = compact && state === "idle" && !slotMode;
+  const embeddedIdle = compact && state === "idle" && !initialIsLive && !slotMode;
+
+  const connectingLabel = isResuming ? "Resuming live…" : "Starting live…";
 
   const controlButtons = (
     <div className={cn("flex flex-wrap gap-2", slotMode && "justify-end")}>
-      {state === "live" ? (
+      {state === "live" || isResuming ? (
         <Button
           type="button"
           variant="destructive"
@@ -326,6 +453,27 @@ export function NativeLivePublisher({
         >
           End live
         </Button>
+      ) : phantomLive ? (
+        <>
+          <Button
+            type="button"
+            size="sm"
+            onClick={() => void handleReconnect()}
+            disabled={pending || isEnded}
+          >
+            {pending ? <Loader2 className="size-4 animate-spin" /> : <Radio className="size-4" />}
+            Reconnect stream
+          </Button>
+          <Button
+            type="button"
+            variant="destructive"
+            size="sm"
+            onClick={handleEndLive}
+            disabled={pending}
+          >
+            End live
+          </Button>
+        </>
       ) : state === "preview" ? (
         <>
           <Button type="button" variant="outline" size="sm" onClick={stopPreview}>
@@ -413,16 +561,23 @@ export function NativeLivePublisher({
               Preview — only you can see this
             </div>
           )}
-          {state === "live" && (
+          {showDbLiveBadge && (
             <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-sm font-medium text-white">
               <Radio className="size-3 text-live animate-live-pulse" />
               LIVE · {timer}
             </div>
           )}
+          {phantomLive && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 px-4 text-center text-white">
+              <Radio className="size-6 text-live" />
+              <p className="text-sm font-medium">You&apos;re live — reconnect your camera</p>
+              <p className="text-xs text-white/80">Buyers can&apos;t see video until you reconnect.</p>
+            </div>
+          )}
           {state === "connecting" && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
               <Loader2 className="size-6 animate-spin" />
-              <span className="ml-2 text-sm">Starting live…</span>
+              <span className="ml-2 text-sm">{connectingLabel}</span>
             </div>
           )}
         </div>
@@ -457,13 +612,20 @@ export function NativeLivePublisher({
           autoPlay
           className={cn("h-full w-full object-cover", !showVideo && "hidden")}
         />
-        {state === "idle" && (
+        {state === "idle" && !phantomLive && (
           <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-2 px-4 text-center text-sm text-muted-foreground">
             <Video className="size-8 opacity-40" />
             <span>Test your camera or go live — buyers only see video when you&apos;re live.</span>
           </div>
         )}
-        {state === "error" && (
+        {phantomLive && (
+          <div className="flex h-full min-h-[180px] flex-col items-center justify-center gap-2 px-4 text-center text-sm text-muted-foreground">
+            <Radio className="size-8 text-live opacity-80" />
+            <span className="font-medium text-foreground">You&apos;re live — reconnect your camera</span>
+            <span>Buyers can&apos;t see video until you reconnect the stream.</span>
+          </div>
+        )}
+        {state === "error" && !phantomLive && (
           <div className="flex h-full min-h-[180px] items-center justify-center px-4 text-center text-sm text-muted-foreground">
             Camera preview unavailable
           </div>
@@ -473,7 +635,7 @@ export function NativeLivePublisher({
             Preview — only you can see this
           </div>
         )}
-        {state === "live" && (
+        {showDbLiveBadge && (
           <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-black/70 px-3 py-1 text-sm font-medium text-white">
             <Radio className="size-3 text-live animate-live-pulse" />
             LIVE · {timer}
@@ -482,7 +644,7 @@ export function NativeLivePublisher({
         {state === "connecting" && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white">
             <Loader2 className="size-6 animate-spin" />
-            <span className="ml-2 text-sm">Starting live…</span>
+            <span className="ml-2 text-sm">{connectingLabel}</span>
           </div>
         )}
       </div>
@@ -499,12 +661,14 @@ export function NativeLivePublisher({
       {controlButtons}
 
       <p className="text-xs text-muted-foreground">
-        {state === "live"
+        {isPublishing
           ? "Ending live stops video only. Your shop stays open for chat and sales."
-          : "Preview is private. Buyers see your cover photo until you go live."}
+          : phantomLive
+            ? "Your shop is marked live but video isn't streaming. Reconnect or end live."
+            : "Preview is private. Buyers see your cover photo until you go live."}
       </p>
 
-      {!canGoLive && state !== "live" && (
+      {!canGoLive && state !== "live" && !phantomLive && (
         <p className="text-xs text-muted-foreground">
           Go live unlocks after you publish and your shop window is open.
         </p>

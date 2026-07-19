@@ -9,6 +9,7 @@ import { StreamSourceSettings } from "@/components/stream-source-settings";
 export function LiveControlsCard({
   shopId,
   isLive,
+  nativeLiveStartedAt,
   isOpen,
   isEnded,
   streamProvider,
@@ -19,6 +20,7 @@ export function LiveControlsCard({
 }: {
   shopId: string;
   isLive: boolean;
+  nativeLiveStartedAt?: string | null;
   isOpen: boolean;
   isEnded: boolean;
   streamProvider: StreamProvider;
@@ -59,6 +61,7 @@ export function LiveControlsCard({
         <NativeLivePublisher
           shopId={shopId}
           initialIsLive={isLive}
+          nativeLiveStartedAt={nativeLiveStartedAt}
           needsTosAcceptance={needsTosAcceptance}
           canGoLive={isOpen}
           isEnded={isEnded}

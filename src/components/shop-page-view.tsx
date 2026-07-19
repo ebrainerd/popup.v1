@@ -159,6 +159,7 @@ export function ShopPageView({
       <OwnerShopLiveBar
         shopId={shop.id}
         isLive={shop.is_live}
+        nativeLiveStartedAt={shop.native_live_started_at}
         isOpen={isOpen}
         isEnded={false}
         streamProvider={streamProvider}
@@ -545,6 +546,7 @@ function StreamChatRow({
         isOwner={isOwner}
         isDraftPreview={isDraftPreview}
         initialIsLive={shop.is_live}
+        nativeLiveStartedAt={shop.native_live_started_at}
         streamProvider={streamProvider}
         nativeEnabled={nativeEnabled}
         needsTosAcceptance={needsTosAcceptance}

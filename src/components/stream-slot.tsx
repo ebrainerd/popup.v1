@@ -36,6 +36,7 @@ export function StreamSlot({
   isOwner,
   isDraftPreview,
   initialIsLive,
+  nativeLiveStartedAt,
   streamProvider,
   nativeEnabled,
   needsTosAcceptance,
@@ -54,6 +55,7 @@ export function StreamSlot({
   isOwner: boolean;
   isDraftPreview?: boolean;
   initialIsLive: boolean;
+  nativeLiveStartedAt?: string | null;
   streamProvider: StreamProvider;
   nativeEnabled: boolean;
   needsTosAcceptance?: boolean;
@@ -73,7 +75,7 @@ export function StreamSlot({
   const [isLive, setIsLive] = useState(initialIsLive);
   const [prevInitialIsLive, setPrevInitialIsLive] = useState(initialIsLive);
   const [publisherState, setPublisherState] = useState<PublisherState>(
-    initialIsLive ? "live" : "idle",
+    initialIsLive ? "connecting" : "idle",
   );
   const [prevPublisherInitial, setPrevPublisherInitial] = useState(initialIsLive);
 
@@ -115,7 +117,8 @@ export function StreamSlot({
   const secondaryBandClass = catalogSecondary ? "max-h-[40vh] overflow-hidden rounded-xl" : undefined;
 
   if (ownerNativeSlot) {
-    const showCoverBehind = publisherState === "idle" && !isLive;
+    const showCoverBehind =
+      publisherState === "idle" && !initialIsLive;
 
     return (
       <div className={cn("min-w-0", className, secondaryBandClass)}>
@@ -148,6 +151,7 @@ export function StreamSlot({
           <NativeLivePublisher
             shopId={shop.id}
             initialIsLive={initialIsLive}
+            nativeLiveStartedAt={nativeLiveStartedAt}
             needsTosAcceptance={needsTosAcceptance ?? false}
             canGoLive={effectiveOpen}
             isEnded={false}

@@ -274,6 +274,7 @@ export default async function ManageShopPage({
           <LiveControlsCard
             shopId={shop.id}
             isLive={shop.is_live}
+            nativeLiveStartedAt={shop.native_live_started_at}
             isOpen={window.isOpen}
             isEnded={liveControlsEnded}
             streamProvider={streamProvider}

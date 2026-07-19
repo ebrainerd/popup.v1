@@ -23,6 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn, formatAuctionCountdownMs, formatCurrency } from "@/lib/utils";
+import {
+  closeStripeCheckoutTab,
+  navigateStripeCheckout,
+  openCheckoutTab,
+} from "@/lib/open-stripe-checkout";
 
 type LiveAuctionState = {
   run: AuctionRunWithProduct;
@@ -340,10 +345,16 @@ export function AuctionLivePanel({
   }
 
   function checkout() {
+    setError(null);
+    const tab = openCheckoutTab();
     startTransition(async () => {
       const res = await createAuctionCheckoutSession(run.id);
-      if (res.ok) window.location.href = res.url;
-      else setError(res.error);
+      if (res.ok) {
+        navigateStripeCheckout(tab, res.url);
+      } else {
+        closeStripeCheckoutTab(tab);
+        setError(res.error);
+      }
     });
   }
 
