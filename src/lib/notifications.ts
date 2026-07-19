@@ -7,6 +7,8 @@ import { carrierTrackingUrl } from "@/lib/utils";
 import { transactionalEmailFooter } from "@/lib/support-copy";
 import { formatShopScheduleWhen } from "@/lib/datetime";
 import { DEFAULT_SCHEDULE_TIMEZONE } from "@/lib/timezones";
+import { orderHelpReasonLabel } from "@/lib/order-conversation";
+import type { OrderHelpReason, OrderHelpRequest } from "@/lib/database.types";
 
 let vapidConfigured: boolean | null = null;
 
@@ -310,6 +312,180 @@ export async function notifySupportTicket(ticket: {
   } catch (err) {
     console.error("notifySupportTicket failed", err);
     Sentry.captureException(err, { tags: { area: "support_ticket_email" } });
+  }
+}
+
+type OrderConversationContext = {
+  id: string;
+  buyerId: string;
+  sellerId: string;
+  shopId: string;
+  shopName: string;
+  itemTitle: string;
+};
+
+/** Shared lookup for order-conversation emails (order + parties + item). */
+async function getOrderConversationContext(
+  orderId: string,
+): Promise<OrderConversationContext | null> {
+  const supabase = createServiceRoleClient();
+  const { data: order } = await supabase
+    .from("orders")
+    .select(
+      `id, buyer_id,
+       product:products!orders_product_id_fkey(title),
+       shop:shops!orders_shop_id_fkey(id, name, seller_id)`,
+    )
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return null;
+  const o = order as unknown as {
+    id: string;
+    buyer_id: string;
+    product: { title: string } | null;
+    shop: { id: string; name: string; seller_id: string } | null;
+  };
+  if (!o.shop) return null;
+  return {
+    id: o.id,
+    buyerId: o.buyer_id,
+    sellerId: o.shop.seller_id,
+    shopId: o.shop.id,
+    shopName: o.shop.name,
+    itemTitle: o.product?.title ?? "your item",
+  };
+}
+
+/** Where each party manages this order's conversation. */
+function orderThreadUrl(site: string, recipientIsBuyer: boolean): string {
+  return recipientIsBuyer ? `${site}/orders` : `${site}/dashboard/sales?view=all`;
+}
+
+/** Email the other party that a new order message arrived. Best-effort. */
+export async function notifyOrderMessage(orderId: string, senderId: string): Promise<void> {
+  try {
+    if (!process.env.RESEND_API_KEY) return;
+    const ctx = await getOrderConversationContext(orderId);
+    if (!ctx) return;
+
+    const recipientIsBuyer = senderId !== ctx.buyerId;
+    const recipientId = recipientIsBuyer ? ctx.buyerId : ctx.sellerId;
+    const recipientEmail = await emailForUser(recipientId);
+    if (!recipientEmail) return;
+
+    const site = getSiteUrl();
+    const itemTitle = escapeHtml(ctx.itemTitle);
+    await sendResendEmail(
+      recipientEmail,
+      `New message about your order — ${itemTitle}`,
+      `<h2>You have a new order message 💬</h2>
+       <p>The ${recipientIsBuyer ? "seller" : "buyer"} sent you a message about
+       <strong>${itemTitle}</strong> (order <strong>#${ctx.id.slice(0, 8)}</strong>)
+       from <strong>${escapeHtml(ctx.shopName)}</strong>.</p>
+       <p><a href="${orderThreadUrl(site, recipientIsBuyer)}">Open the order to read and reply →</a></p>
+       ${emailFooter(site)}`,
+    );
+  } catch (err) {
+    console.error("notifyOrderMessage failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
+  }
+}
+
+/**
+ * Email the other party that a help request was opened on an order. PopUp
+ * support is intentionally NOT copied — escalation is a separate second step.
+ */
+export async function notifyOrderHelpOpened(
+  orderId: string,
+  openedById: string,
+  reason: OrderHelpReason,
+  message: string,
+): Promise<void> {
+  try {
+    if (!process.env.RESEND_API_KEY) return;
+    const ctx = await getOrderConversationContext(orderId);
+    if (!ctx) return;
+
+    const recipientIsBuyer = openedById !== ctx.buyerId;
+    const recipientId = recipientIsBuyer ? ctx.buyerId : ctx.sellerId;
+    const recipientEmail = await emailForUser(recipientId);
+    if (!recipientEmail) return;
+
+    const site = getSiteUrl();
+    const itemTitle = escapeHtml(ctx.itemTitle);
+    await sendResendEmail(
+      recipientEmail,
+      `Help needed on an order — ${itemTitle}`,
+      `<h2>Your ${recipientIsBuyer ? "seller" : "buyer"} needs help with an order</h2>
+       <p>A help request was opened on <strong>${itemTitle}</strong>
+       (order <strong>#${ctx.id.slice(0, 8)}</strong>) from <strong>${escapeHtml(ctx.shopName)}</strong>.</p>
+       <p><strong>Reason:</strong> ${escapeHtml(orderHelpReasonLabel(reason))}</p>
+       <p style="white-space:pre-wrap">${escapeHtml(message)}</p>
+       <p><a href="${orderThreadUrl(site, recipientIsBuyer)}">Open the order to reply →</a></p>
+       ${emailFooter(site)}`,
+    );
+  } catch (err) {
+    console.error("notifyOrderHelpOpened failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
+  }
+}
+
+/**
+ * A party escalated an open help request to PopUp support: email the support
+ * inbox with full context and let the other party know support is now looped in.
+ */
+export async function notifyOrderHelpEscalated(
+  orderId: string,
+  escalatedById: string,
+  help: Pick<OrderHelpRequest, "reason" | "message" | "opened_by">,
+): Promise<void> {
+  try {
+    if (!process.env.RESEND_API_KEY) return;
+    const ctx = await getOrderConversationContext(orderId);
+    if (!ctx) return;
+
+    const escalatorIsBuyer = escalatedById === ctx.buyerId;
+    const otherPartyId = escalatorIsBuyer ? ctx.sellerId : ctx.buyerId;
+    const [escalatorEmail, otherEmail] = await Promise.all([
+      emailForUser(escalatedById),
+      emailForUser(otherPartyId),
+    ]);
+
+    const site = getSiteUrl();
+    const itemTitle = escapeHtml(ctx.itemTitle);
+    const shortId = ctx.id.slice(0, 8);
+
+    await Promise.allSettled([
+      sendResendEmail(
+        SUPPORT_INBOX,
+        `Order help escalated (${help.reason}) — #${shortId}`,
+        `<h2>Order help request escalated to support</h2>
+         <p><strong>Order:</strong> #${shortId} · ${itemTitle} · ${escapeHtml(ctx.shopName)}</p>
+         <p><strong>Escalated by:</strong> the ${escalatorIsBuyer ? "buyer" : "seller"}${
+           escalatorEmail ? ` (${escapeHtml(escalatorEmail)})` : ""
+         }</p>
+         <p><strong>Other party:</strong> ${otherEmail ? escapeHtml(otherEmail) : "unknown"}</p>
+         <p><strong>Reason:</strong> ${escapeHtml(orderHelpReasonLabel(help.reason))}</p>
+         <p style="white-space:pre-wrap">${escapeHtml(help.message)}</p>
+         <p>The full thread is on the order. Reply to this email to reach the person who escalated.</p>`,
+        escalatorEmail ? { replyTo: escalatorEmail } : undefined,
+      ),
+      otherEmail
+        ? sendResendEmail(
+            otherEmail,
+            `PopUp support is now on your order — ${itemTitle}`,
+            `<h2>PopUp support was looped in</h2>
+             <p>The ${escalatorIsBuyer ? "buyer" : "seller"} escalated the help request on
+             <strong>${itemTitle}</strong> (order <strong>#${shortId}</strong>) to PopUp support.
+             The conversation stays open — support will follow up by email.</p>
+             <p><a href="${orderThreadUrl(site, !escalatorIsBuyer)}">Open the order thread →</a></p>
+             ${emailFooter(site)}`,
+          )
+        : Promise.resolve(),
+    ]);
+  } catch (err) {
+    console.error("notifyOrderHelpEscalated failed", err);
+    Sentry.captureException(err, { tags: { area: "notifications" }, extra: { orderId } });
   }
 }
 

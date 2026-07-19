@@ -336,6 +336,117 @@ describe.skipIf(!enabled)("Row Level Security", () => {
     expect(error).not.toBeNull();
   });
 
+  it("scopes order messaging to the order's buyer and seller", async () => {
+    const stranger = await makeUser();
+
+    const { data: shop } = await sellerClient
+      .from("shops")
+      .insert({
+        seller_id: sellerId,
+        name: "Messaging shop",
+        start_at: pastIso(1),
+        end_at: futureIso(2),
+        visibility: "public",
+        status: "draft",
+      })
+      .select("id")
+      .single();
+    const { data: product } = await sellerClient
+      .from("products")
+      .insert({ shop_id: shop!.id, title: "Chatty item", price: 500 })
+      .select("id")
+      .single();
+    await sellerClient.from("shops").update({ status: "open" }).eq("id", shop!.id);
+    const { data: order } = await admin
+      .from("orders")
+      .insert({
+        buyer_id: buyerId,
+        shop_id: shop!.id,
+        product_id: product!.id,
+        amount_paid: 500,
+        status: "paid",
+      })
+      .select("id")
+      .single();
+    const orderId = order!.id;
+
+    // Both parties can message; strangers and spoofed senders cannot.
+    const buyerMsg = await buyerClient
+      .from("order_messages")
+      .insert({ order_id: orderId, sender_id: buyerId, body: "Where is my package?" });
+    expect(buyerMsg.error).toBeNull();
+    const sellerMsg = await sellerClient
+      .from("order_messages")
+      .insert({ order_id: orderId, sender_id: sellerId, body: "Shipping tomorrow!" });
+    expect(sellerMsg.error).toBeNull();
+    const strangerMsg = await stranger.client
+      .from("order_messages")
+      .insert({ order_id: orderId, sender_id: stranger.id, body: "let me in" });
+    expect(strangerMsg.error).not.toBeNull();
+    const spoofed = await buyerClient
+      .from("order_messages")
+      .insert({ order_id: orderId, sender_id: sellerId, body: "spoofed" });
+    expect(spoofed.error).not.toBeNull();
+
+    const strangerRead = await stranger.client
+      .from("order_messages")
+      .select("id")
+      .eq("order_id", orderId);
+    expect(strangerRead.data ?? []).toHaveLength(0);
+
+    // One open help request per order; either party may escalate it.
+    const help = await buyerClient.from("order_help_requests").insert({
+      order_id: orderId,
+      opened_by: buyerId,
+      reason: "not_received",
+      message: "It never arrived.",
+    });
+    expect(help.error).toBeNull();
+    const secondOpen = await sellerClient.from("order_help_requests").insert({
+      order_id: orderId,
+      opened_by: sellerId,
+      reason: "other",
+      message: "duplicate open request",
+    });
+    expect(secondOpen.error?.code).toBe("23505");
+    const escalate = await sellerClient
+      .from("order_help_requests")
+      .update({ escalated_at: new Date().toISOString() })
+      .eq("order_id", orderId)
+      .eq("status", "open")
+      .is("escalated_at", null)
+      .select("id");
+    expect(escalate.error).toBeNull();
+    expect(escalate.data).toHaveLength(1);
+
+    // Archive: both parties resolve; either can clear only their own row.
+    const buyerResolve = await buyerClient
+      .from("order_conversation_resolutions")
+      .upsert({ order_id: orderId, user_id: buyerId });
+    expect(buyerResolve.error).toBeNull();
+    const strangerResolve = await stranger.client
+      .from("order_conversation_resolutions")
+      .insert({ order_id: orderId, user_id: stranger.id });
+    expect(strangerResolve.error).not.toBeNull();
+    const sellerResolve = await sellerClient
+      .from("order_conversation_resolutions")
+      .upsert({ order_id: orderId, user_id: sellerId });
+    expect(sellerResolve.error).toBeNull();
+
+    const crossDelete = await buyerClient
+      .from("order_conversation_resolutions")
+      .delete({ count: "exact" })
+      .eq("order_id", orderId)
+      .eq("user_id", sellerId);
+    expect(crossDelete.count).toBe(0);
+    const ownDelete = await sellerClient
+      .from("order_conversation_resolutions")
+      .delete({ count: "exact" })
+      .eq("order_id", orderId)
+      .eq("user_id", sellerId);
+    expect(ownDelete.count).toBe(1);
+  });
+
   it("blocks buyers from tampering with order amounts", async () => {
     const { data: shop } = await sellerClient
       .from("shops")
