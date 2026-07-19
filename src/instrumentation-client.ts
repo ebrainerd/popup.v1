@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { shouldDropClientSentryEvent } from "@/lib/sentry-client-filters";
 
 // Browser-side error monitoring. No DSN => no-op.
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
@@ -19,7 +20,17 @@ Sentry.init({
     "The Internet connection appears to be offline.",
     "cancelled",
     "AbortError",
+    // LiveKit/WebRTC on flaky mobile / in-app browsers (Snapchat, etc.) rejects
+    // reconnect promises with a raw DOM Event — Sentry titles these "<unknown>".
+    /captured as promise rejection/i,
+    /Non-Error promise rejection captured/i,
   ],
+  beforeSend(event, hint) {
+    if (shouldDropClientSentryEvent(event, hint.originalException)) {
+      return null;
+    }
+    return event;
+  },
 });
 
 // Instruments client-side navigations for tracing.

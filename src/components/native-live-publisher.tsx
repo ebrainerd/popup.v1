@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useBroadcastLiveState } from "@/hooks/use-broadcast-live-state";
 import { AudioLevelMeter } from "@/components/audio-level-meter";
+import { safeDisconnectLiveKitRoom } from "@/lib/livekit-room";
 
 export type PublisherState = "idle" | "preview" | "connecting" | "live" | "error";
 
@@ -128,11 +129,8 @@ export function NativeLivePublisher({
 
   const disconnectLive = useCallback(async () => {
     const room = roomRef.current;
-    if (room) {
-      room.removeAllListeners();
-      await room.disconnect();
-      roomRef.current = null;
-    }
+    roomRef.current = null;
+    await safeDisconnectLiveKitRoom(room);
   }, []);
 
   const connectAndPublishTracks = useCallback(
