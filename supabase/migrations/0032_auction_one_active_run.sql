@@ -148,8 +148,11 @@ begin
 end;
 $$;
 
--- Start a queued auction (return authoritative ends_at) -----------------------
-create or replace function public.start_auction_run(p_auction_id uuid)
+-- Start a queued auction (return authoritative ends_at).
+-- Must DROP first: Postgres cannot change void -> timestamptz via CREATE OR REPLACE.
+drop function if exists public.start_auction_run(uuid);
+
+create function public.start_auction_run(p_auction_id uuid)
 returns timestamptz
 language plpgsql
 security definer
@@ -205,3 +208,5 @@ begin
   return v_ends_at;
 end;
 $$;
+
+grant execute on function public.start_auction_run(uuid) to authenticated;
