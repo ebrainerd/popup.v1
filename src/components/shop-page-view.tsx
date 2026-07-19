@@ -261,9 +261,7 @@ export function ShopPageView({
     isCatalog && isScheduled && !isOwner && theme.showReminderCta && seller ? (
       <CatalogReminderFooter
         shop={shop}
-        seller={seller}
         profileId={profileId}
-        isFollowing={isFollowing}
         hasReminder={hasReminder}
         reminderCount={reminderCount}
         reminderDeliveryConfigured={reminderDeliveryConfigured}
@@ -388,31 +386,40 @@ function ShopHeader({
           </h1>
         )}
         {theme.showSellerBio && seller && (
-          <Link
-            href={`/u/${seller.username}`}
-            className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-          >
-            {seller.avatar_url ? (
-              <Image
-                src={seller.avatar_url}
-                alt={seller.username}
-                width={24}
-                height={24}
-                className="h-6 w-6 rounded-full object-cover"
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/u/${seller.username}`}
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+            >
+              {seller.avatar_url ? (
+                <Image
+                  src={seller.avatar_url}
+                  alt={seller.username}
+                  width={24}
+                  height={24}
+                  className="h-6 w-6 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">
+                  {seller.username.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span>@{seller.username}</span>
+              {seller.rating_count > 0 && (
+                <span className="flex items-center gap-1">
+                  <Star className="size-3.5 fill-current text-primary" />
+                  {Number(seller.rating_avg ?? 0).toFixed(1)} ({seller.rating_count})
+                </span>
+              )}
+            </Link>
+            {!isOwner && (
+              <FollowButton
+                sellerId={seller.id}
+                initialFollowing={isFollowing}
+                isAuthed={Boolean(profileId)}
               />
-            ) : (
-              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-bold">
-                {seller.username.charAt(0).toUpperCase()}
-              </span>
             )}
-            <span>@{seller.username}</span>
-            {seller.rating_count > 0 && (
-              <span className="flex items-center gap-1">
-                <Star className="size-3.5 fill-current text-primary" />
-                {Number(seller.rating_avg ?? 0).toFixed(1)} ({seller.rating_count})
-              </span>
-            )}
-          </Link>
+          </div>
         )}
         {theme.showSellerBio && shop.description && (
           <p className="max-w-2xl text-pretty text-muted-foreground">{shop.description}</p>
@@ -430,28 +437,12 @@ function ShopHeader({
           )}
         </div>
         {remindersInHeader && isScheduled && !isOwner && theme.showReminderCta && (
-          <div className="flex flex-wrap items-center gap-2">
-            <RemindMeButton
-              shopId={shop.id}
-              initialSubscribed={hasReminder}
-              isAuthed={Boolean(profileId)}
-              reminderCount={reminderCount}
-              deliveryConfigured={reminderDeliveryConfigured}
-            />
-            {seller && (
-              <FollowButton
-                sellerId={seller.id}
-                initialFollowing={isFollowing}
-                isAuthed={Boolean(profileId)}
-              />
-            )}
-          </div>
-        )}
-        {isOpen && seller && !isOwner && (
-          <FollowButton
-            sellerId={seller.id}
-            initialFollowing={isFollowing}
+          <RemindMeButton
+            shopId={shop.id}
+            initialSubscribed={hasReminder}
             isAuthed={Boolean(profileId)}
+            reminderCount={reminderCount}
+            deliveryConfigured={reminderDeliveryConfigured}
           />
         )}
         {isOwner && (
@@ -625,17 +616,13 @@ function MainContent({
 /** Lookbook scheduled reminders — below slim countdown footer. See shop-theme-preview catalog branch. */
 function CatalogReminderFooter({
   shop,
-  seller,
   profileId,
-  isFollowing,
   hasReminder,
   reminderCount,
   reminderDeliveryConfigured,
 }: {
   shop: ShopWithDetails;
-  seller: NonNullable<ShopWithDetails["seller"]>;
   profileId?: string;
-  isFollowing: boolean;
   hasReminder: boolean;
   reminderCount: number;
   reminderDeliveryConfigured: boolean;
@@ -648,11 +635,6 @@ function CatalogReminderFooter({
         isAuthed={Boolean(profileId)}
         reminderCount={reminderCount}
         deliveryConfigured={reminderDeliveryConfigured}
-      />
-      <FollowButton
-        sellerId={seller.id}
-        initialFollowing={isFollowing}
-        isAuthed={Boolean(profileId)}
       />
     </div>
   );
