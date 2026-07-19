@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   IMAGE_UPLOAD_ACCEPT,
   isAcceptableImageFile,
+  isHeicFile,
   prepareImageForUpload,
 } from "@/lib/image-upload-client";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ export function MultiImageUpload({
 }) {
   const [urls, setUrlsState] = useState<string[]>(defaultValue ?? []);
   const [uploading, setUploading] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +66,13 @@ export function MultiImageUpload({
           setError("Please choose image files (JPEG, PNG, WebP, or HEIC).");
           continue;
         }
-        const prepared = await prepareImageForUpload(file);
+        if (isHeicFile(file)) setConverting(true);
+        let prepared: File;
+        try {
+          prepared = await prepareImageForUpload(file);
+        } finally {
+          setConverting(false);
+        }
         if (prepared.size > 5 * 1024 * 1024) {
           setError("Each image must be under 5MB.");
           continue;
@@ -139,7 +147,7 @@ export function MultiImageUpload({
             )}
           >
             {uploading ? <Loader2 className="size-5 animate-spin" /> : <ImagePlus className="size-5" />}
-            {uploading ? "Uploading" : "Add photo"}
+            {uploading ? (converting ? "Converting…" : "Uploading") : "Add photo"}
           </button>
         )}
       </div>
