@@ -27,7 +27,7 @@ Vercel.
 | **Discovery mode** | `invite_only` (default). Shops use links only. Explore is a holding page. |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations (repo tip)** | Through **`0033_auction_shop_end_integrity.sql`**. Apply files in order. Hosted production may lag the repo tip. |
+| **Migrations (repo tip)** | Through **`0034_settle_auction_payment_after_expiry.sql`**. Apply files in order. Hosted production may lag the repo tip. |
 
 ## Where to look
 
@@ -215,10 +215,13 @@ non-goals table above.
 ### Standing ops
 
 - [ ] Apply new DB migrations as they land (`supabase/migrations/`, in order,
-      through repo tip `0033` and later). **`0033_auction_shop_end_integrity`**
+      through repo tip `0034` and later). **`0033_auction_shop_end_integrity`**
       clamps auctions to shop close, finalizes live lots when the shop ends,
       and repairs mis-marked unsold lots that still have bids (resets a
       30-minute checkout window + win emails on next shop page load).
+      **`0034_settle_auction_payment_after_expiry`** lets the Stripe webhook
+      mark a run `paid` even if the 30-minute window flipped it to
+      `payment_expired` while the winner's checkout session was completing.
 - [ ] Stripe webhook events: `checkout.session.completed`, `account.updated`,
       `checkout.session.expired`
 - [ ] `RELEASE_DELAY_HOURS=72` in production (`0` is for staging/local only)

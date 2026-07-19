@@ -1,4 +1,5 @@
 import "server-only";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { AuctionRun, Product } from "@/lib/database.types";
 
@@ -111,10 +112,13 @@ export async function finalizeDueShopAuctions(shopId: string): Promise<number> {
     .eq("status", "awaiting_payment")
     .gte("updated_at", since);
   if (wins?.length) {
-    const { notifyAuctionWon } = await import("@/lib/notifications");
-    for (const win of wins) {
-      void notifyAuctionWon(win.id);
-    }
+    const winIds = wins.map((w) => w.id);
+    // after() keeps the serverless function alive until the emails send;
+    // bare floating promises can be killed when the response completes.
+    after(async () => {
+      const { notifyAuctionWon } = await import("@/lib/notifications");
+      await Promise.allSettled(winIds.map((id) => notifyAuctionWon(id)));
+    });
   }
   return count;
 }

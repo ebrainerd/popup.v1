@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { endedShopEditError } from "@/lib/shop-edit-guard";
 import type { AuctionRun } from "@/lib/database.types";
@@ -120,8 +121,12 @@ export async function finalizeAuction(
 
   const result = data as Record<string, unknown>;
   if (result?.status === "awaiting_payment") {
-    const { notifyAuctionWon } = await import("@/lib/notifications");
-    void notifyAuctionWon(auctionId);
+    // after() keeps the serverless function alive until the email sends;
+    // a bare floating promise can be killed when the response completes.
+    after(async () => {
+      const { notifyAuctionWon } = await import("@/lib/notifications");
+      await notifyAuctionWon(auctionId);
+    });
   }
 
   revalidatePath(`/shop/${shopId}`);
