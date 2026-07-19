@@ -27,7 +27,7 @@ Vercel.
 | **Discovery mode** | `invite_only` (default). Shops use links only. Explore is a holding page. |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations (repo tip)** | Through **`0031_shop_schedule_timezone.sql`**. Apply files in order. Hosted production may lag the repo tip. |
+| **Migrations (repo tip)** | Through **`0032_auction_one_active_run.sql`**. Apply files in order. Hosted production may lag the repo tip. |
 
 ## Where to look
 
@@ -167,7 +167,7 @@ Cross-links exist in `shop-page-view.tsx` and `shop-theme-preview.tsx`.
 - [x] Drop reminders via **cron-job.org** every 15 min (Hobby-safe)
 - [x] Sentry + uptime monitor on `/api/health`
 - [x] Hosted migrations applied through at least `0022` (apply any later repo
-      migrations through `0029` in order)
+      migrations through `0032` in order)
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
 
 ## Marketing gate (GO / NO-GO)

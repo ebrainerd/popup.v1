@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Gavel } from "lucide-react";
 import { useShopRoom, useShopEvent } from "@/components/shop-room";
@@ -46,6 +46,8 @@ export function AuctionProductActions({
 }) {
   const router = useRouter();
   const { emit, currentUser } = useShopRoom();
+  // Parent keys this by initial.run.id so a refresh that switches to the
+  // canonical run remounts with correct SSR state (avoids duplicate-run drift).
   const [state, setState] = useState<AuctionState | null>(
     initial?.run.product_id === product.id ? initial : null,
   );
@@ -53,34 +55,6 @@ export function AuctionProductActions({
   const [maxBid, setMaxBid] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!initial?.run || initial.run.product_id !== product.id) return;
-    setState((local) => {
-      if (local === null) return initial;
-      if (local.run.id !== initial.run.id) return initial;
-      if (local.run.bid_count > initial.run.bid_count) return local;
-      if (
-        local.run.bid_count === initial.run.bid_count &&
-        local.run.current_bid >= initial.run.current_bid
-      ) {
-        return local;
-      }
-      return {
-        ...initial,
-        viewerState: local.viewerState,
-        yourMaxBid: local.yourMaxBid,
-      };
-    });
-  }, [
-    initial?.run.id,
-    initial?.run.bid_count,
-    initial?.run.current_bid,
-    initial?.run.status,
-    initial?.run.ends_at,
-    initial,
-    product.id,
-  ]);
 
   const applyBid = useCallback((payload: AuctionBidBroadcast) => {
     setState((prev) => {

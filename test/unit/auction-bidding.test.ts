@@ -9,6 +9,7 @@ import {
   parseAuctionDurationSelectValue,
   resolveAuctionLeader,
   resolveAuctionDurationForDb,
+  shouldAcceptAuctionQueuedUpdate,
   shouldExtendAuction,
   validateAuctionDurationConfig,
 } from "@/lib/auction-bidding";
@@ -132,3 +133,40 @@ describe("auction duration presets", () => {
     });
   });
 });
+
+describe("shouldAcceptAuctionQueuedUpdate", () => {
+  const payload = { auctionId: "new-run", productId: "product-1" };
+
+  it("allows first queue into an empty panel", () => {
+    expect(shouldAcceptAuctionQueuedUpdate(null, payload, { allowWhenEmpty: true })).toBe(true);
+    expect(shouldAcceptAuctionQueuedUpdate(null, payload)).toBe(false);
+  });
+
+  it("never replaces a live run (including other products)", () => {
+    expect(
+      shouldAcceptAuctionQueuedUpdate(
+        { id: "live-run", product_id: "product-1", status: "live", bid_count: 4 },
+        payload,
+        { allowWhenEmpty: true },
+      ),
+    ).toBe(false);
+    expect(
+      shouldAcceptAuctionQueuedUpdate(
+        { id: "live-run", product_id: "product-2", status: "live", bid_count: 4 },
+        payload,
+        { allowWhenEmpty: true },
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps a queued run that already has bids when a different run id arrives", () => {
+    expect(
+      shouldAcceptAuctionQueuedUpdate(
+        { id: "old-run", product_id: "product-1", status: "queued", bid_count: 2 },
+        payload,
+        { allowWhenEmpty: true },
+      ),
+    ).toBe(false);
+  });
+});
+

@@ -234,6 +234,7 @@ export function ShopPageView({
 
   const auctionPanelSection = (
     <AuctionLivePanel
+      key={auctionPanel?.run.id ?? "auction-panel-empty"}
       shopId={shop.id}
       initial={auctionPanel}
       isAuthed={Boolean(profileId)}

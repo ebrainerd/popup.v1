@@ -47,6 +47,8 @@ export function AuctionLivePanel({
 }) {
   const router = useRouter();
   const { emit, currentUser } = useShopRoom();
+  // Parent keys this by initial.run.id so soft-refresh remounts onto the
+  // canonical active run instead of keeping a stale duplicate in memory.
   const [state, setState] = useState<LiveAuctionState | null>(initial);
   const [maxBid, setMaxBid] = useState("");
   const [pending, startTransition] = useTransition();
@@ -54,34 +56,6 @@ export function AuctionLivePanel({
   const [extendedPulse, setExtendedPulse] = useState(false);
   const [ended, setEnded] = useState<AuctionEndedBroadcast | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    if (!initial?.run) return;
-    setState((local) => {
-      if (local === null) return initial;
-      if (local.run.id !== initial.run.id) return initial;
-      if (local.run.bid_count > initial.run.bid_count) return local;
-      if (
-        local.run.bid_count === initial.run.bid_count &&
-        local.run.current_bid >= initial.run.current_bid
-      ) {
-        return local;
-      }
-      return {
-        ...initial,
-        viewerState: local.viewerState,
-        yourMaxBid: local.yourMaxBid,
-        winnerName: local.winnerName ?? initial.winnerName,
-      };
-    });
-  }, [
-    initial?.run.id,
-    initial?.run.bid_count,
-    initial?.run.current_bid,
-    initial?.run.status,
-    initial?.run.ends_at,
-    initial,
-  ]);
 
   // Tick while a lot is live (auction countdown) or awaiting payment
   // (winner checkout countdown).
@@ -120,9 +94,12 @@ export function AuctionLivePanel({
 
   useShopEvent(ROOM_EVENTS.auctionQueued, (payload) => {
     const p = payload as AuctionQueuedBroadcast;
-    setEnded(null);
+    // Allow first queue into an empty panel; never clobber a live lot or a
+    // different product's run (that was wiping $4 bids when any lot queued).
     setState((prev) => {
-      if (!shouldAcceptAuctionQueuedUpdate(prev?.run, p)) return prev;
+      if (!shouldAcceptAuctionQueuedUpdate(prev?.run, p, { allowWhenEmpty: true })) {
+        return prev;
+      }
       return {
         run: {
           id: p.auctionId,
