@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isInviteOnlyMode } from "@/lib/discovery";
 import { getBuyerOrders, type BuyerOrder } from "@/lib/orders";
 import { OrderStatusBadge } from "@/components/order-status-badge";
+import { OrderMessagePanel } from "@/components/order-message-panel";
 import { ConfirmReceiptButton } from "@/components/confirm-receipt-button";
 import { RatingForm } from "@/components/rating-form";
 import { CheckoutCelebration } from "@/components/checkout-celebration";
@@ -197,6 +198,9 @@ function OrderCard({ order }: { order: BuyerOrder }) {
           <CheckCircle2 className="size-3.5" /> Thanks for rating this seller!
         </p>
       )}
+
+      {/* Order messages + "Need help with this order" */}
+      <OrderMessagePanel orderId={order.id} counterpartName={sellerName} />
     </div>
   );
 }
@@ -206,9 +210,6 @@ function isTerminalOrder(order: BuyerOrder): boolean {
 }
 
 function OrderStatusHint({ order }: { order: BuyerOrder }) {
-  const seller = order.shop?.seller;
-  const sellerHref = seller ? `/u/${seller.username}` : null;
-
   switch (order.status) {
     case "paid":
       return (
@@ -240,43 +241,22 @@ function OrderStatusHint({ order }: { order: BuyerOrder }) {
       return (
         <p className="mt-3 text-sm text-muted-foreground">
           This order was refunded. Your payment should return to your original method within a few
-          business days.{" "}
-          {sellerHref ? (
-            <>
-              Questions?{" "}
-              <Link href={sellerHref} className="font-medium text-primary hover:underline">
-                Contact the seller
-              </Link>{" "}
-              or{" "}
-            </>
-          ) : (
-            "Questions? "
-          )}
+          business days. Questions? Message the seller from this order, or{" "}
           <Link href="/support" className="font-medium text-primary hover:underline">
             reach PopUp support
-          </Link>
-          .
+          </Link>{" "}
+          for anything else.
         </p>
       );
     case "canceled":
       return (
         <p className="mt-3 text-sm text-muted-foreground">
-          This order was canceled before payment completed — you were not charged.{" "}
-          {sellerHref ? (
-            <>
-              Need help?{" "}
-              <Link href={sellerHref} className="font-medium text-primary hover:underline">
-                Contact the seller
-              </Link>{" "}
-              or{" "}
-            </>
-          ) : (
-            "Need help? "
-          )}
+          This order was canceled before payment completed — you were not charged. Need help?
+          Message the seller from this order, or{" "}
           <Link href="/support" className="font-medium text-primary hover:underline">
-            PopUp support
-          </Link>
-          .
+            reach PopUp support
+          </Link>{" "}
+          for anything else.
         </p>
       );
     default:
