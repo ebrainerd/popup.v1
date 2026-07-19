@@ -128,3 +128,20 @@ export function formatDurationMs(ms: number): string {
   if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
   return parts.join(" ");
 }
+
+/**
+ * Live auction countdown. Seconds-only under a minute (urgency / soft-close);
+ * `m:ss` under an hour; `h:mm:ss` for longer lots.
+ */
+export function formatAuctionCountdownMs(ms: number): string {
+  const total = Math.max(0, Math.ceil(ms / 1000));
+  if (total < 60) return `${total}s`;
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  const ss = String(seconds).padStart(2, "0");
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${ss}`;
+  }
+  return `${minutes}:${ss}`;
+}

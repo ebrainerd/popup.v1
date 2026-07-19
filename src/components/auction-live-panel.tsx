@@ -21,7 +21,7 @@ import type { AuctionRunWithProduct } from "@/lib/auctions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatAuctionCountdownMs, formatCurrency } from "@/lib/utils";
 
 type LiveAuctionState = {
   run: AuctionRunWithProduct;
@@ -340,6 +340,7 @@ export function AuctionLivePanel({
 
   const remaining = run.ends_at ? Math.max(0, new Date(run.ends_at).getTime() - nowMs) : 0;
   const secondsLeft = Math.ceil(remaining / 1000);
+  const timeLeftLabel = formatAuctionCountdownMs(remaining);
 
   return (
     <div
@@ -375,9 +376,9 @@ export function AuctionLivePanel({
           </div>
         </div>
         {isLive && (
-          <Badge variant="live" className="gap-1">
+          <Badge variant="live" className="gap-1 tabular-nums">
             <Timer className="size-3.5" />
-            {secondsLeft}s
+            {timeLeftLabel}
           </Badge>
         )}
         {isQueued && <Badge variant="accent">Auction</Badge>}
@@ -502,7 +503,7 @@ export function AuctionLivePanel({
           <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-sm font-semibold tabular-nums">
               <Timer className="size-4 text-primary" />
-              {secondsLeft}s left
+              {timeLeftLabel} left
             </div>
             <Button onClick={quickBid} disabled={pending} size="sm">
               Bid {formatCurrency(state.nextMinimumBid)}
