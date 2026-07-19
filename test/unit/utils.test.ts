@@ -1,5 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { formatCurrency, toCents, deriveShopStatus, derivePublishedShopWindow, isPublishedShopEnded, formatDurationMs } from "@/lib/utils";
+import {
+  formatCurrency,
+  toCents,
+  deriveShopStatus,
+  derivePublishedShopWindow,
+  isPublishedShopEnded,
+  formatDurationMs,
+  formatAuctionCountdownMs,
+} from "@/lib/utils";
 
 describe("formatCurrency", () => {
   it("formats integer cents as USD", () => {
@@ -113,5 +121,24 @@ describe("formatDurationMs", () => {
 
   it("never returns negative durations", () => {
     expect(formatDurationMs(-1000)).toBe("0m");
+  });
+});
+
+describe("formatAuctionCountdownMs", () => {
+  it("keeps seconds-only under a minute", () => {
+    expect(formatAuctionCountdownMs(45_000)).toBe("45s");
+    expect(formatAuctionCountdownMs(999)).toBe("1s");
+    expect(formatAuctionCountdownMs(0)).toBe("0s");
+  });
+
+  it("uses m:ss under an hour", () => {
+    expect(formatAuctionCountdownMs(90_000)).toBe("1:30");
+    expect(formatAuctionCountdownMs(10 * 60_000)).toBe("10:00");
+    expect(formatAuctionCountdownMs(59 * 60_000 + 59_000)).toBe("59:59");
+  });
+
+  it("uses h:mm:ss for longer lots", () => {
+    expect(formatAuctionCountdownMs(60 * 60_000)).toBe("1:00:00");
+    expect(formatAuctionCountdownMs(4 * 60 * 60_000 + 5 * 60_000 + 7_000)).toBe("4:05:07");
   });
 });
