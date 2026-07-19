@@ -22,6 +22,8 @@ import { shouldAcceptAuctionQueuedUpdate } from "@/lib/auction-bidding";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FieldHelp } from "@/components/field-help";
+import { MAX_BID_HELP } from "@/lib/auction-copy";
 import { cn, formatAuctionCountdownMs, formatCurrency } from "@/lib/utils";
 import {
   closeStripeCheckoutTab,
@@ -80,6 +82,12 @@ export function AuctionLivePanel({
   const applyBid = useCallback((payload: AuctionBidBroadcast) => {
     setState((prev) => {
       if (!prev || prev.run.id !== payload.auctionId) return prev;
+      const winnerName = payload.currentWinnerName
+        ? payload.currentWinnerName
+        : payload.currentWinnerId &&
+            payload.currentWinnerId === prev.run.current_winner_id
+          ? prev.winnerName
+          : payload.currentWinnerName;
       return {
         ...prev,
         run: {
@@ -91,7 +99,7 @@ export function AuctionLivePanel({
           ends_at: payload.endsAt,
         },
         nextMinimumBid: payload.nextMinimumBid,
-        winnerName: payload.currentWinnerName,
+        winnerName,
       };
     });
     if (payload.extended) {
@@ -509,9 +517,12 @@ export function AuctionLivePanel({
             </Button>
             <div className="flex w-full flex-col gap-2 sm:flex-1 sm:flex-row sm:items-end">
               <div className="w-full flex-1 space-y-1">
-                <label className="text-xs text-muted-foreground" htmlFor="max-bid">
-                  Set max bid (USD)
-                </label>
+                <div className="flex items-center gap-1">
+                  <label className="text-xs text-muted-foreground" htmlFor="max-bid">
+                    Set max bid (USD)
+                  </label>
+                  <FieldHelp label="max bid">{MAX_BID_HELP}</FieldHelp>
+                </div>
                 <Input
                   id="max-bid"
                   type="number"
@@ -534,8 +545,7 @@ export function AuctionLivePanel({
             </div>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Bids are binding: if you win, you pay your winning bid plus shipping. Your max bid
-            stays private — we only bid the minimum needed to keep you in front.
+            Bids are binding: if you win, you pay your winning bid plus shipping.
           </p>
         </div>
       )}
