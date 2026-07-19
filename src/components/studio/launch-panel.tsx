@@ -2,18 +2,12 @@
 
 import { Check, Circle, Clock, Rocket, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PanelSection } from "@/components/studio/panel-ui";
 import { getStepValidation, type ShopWizardDraft } from "@/lib/shop-wizard";
-import { isoToLocalInput } from "@/lib/datetime";
+import { nowInTimeZone, plusHoursInTimeZone } from "@/lib/datetime";
+import { scheduleTimeZoneOptions } from "@/lib/timezones";
 import { cn } from "@/lib/utils";
-
-function nowLocal(): string {
-  return isoToLocalInput(new Date().toISOString());
-}
-
-function plusHoursLocal(h: number): string {
-  return isoToLocalInput(new Date(Date.now() + h * 3_600_000).toISOString());
-}
 
 type ReadinessRow = { id: string; label: string; done: boolean; optional?: boolean };
 
@@ -31,8 +25,9 @@ export function StudioLaunchPanel({
   onPatch: (partial: Partial<ShopWizardDraft>) => void;
 }) {
   const scheduleValidation = getStepValidation("schedule", draft);
+  const timeZone = draft.scheduleTimezone || "UTC";
   const timeError =
-    draft.startLocal && draft.endLocal && new Date(draft.endLocal) <= new Date(draft.startLocal)
+    draft.startLocal && draft.endLocal && draft.endLocal <= draft.startLocal
       ? "Closing time must be after the opening time."
       : null;
 
@@ -51,15 +46,19 @@ export function StudioLaunchPanel({
     },
   ];
 
-  function setScheduleField(partial: { startLocal?: string; endLocal?: string }) {
+  function setScheduleField(
+    partial: Partial<Pick<ShopWizardDraft, "startLocal" | "endLocal" | "scheduleTimezone">>,
+  ) {
     onPatch({ ...partial, scheduleSet: true });
   }
+
+  const tzOptions = scheduleTimeZoneOptions(timeZone);
 
   return (
     <div className="space-y-7">
       <PanelSection
         title="Drop schedule"
-        description="Your shop opens and closes automatically at these times. A big countdown builds hype until you open."
+        description="Your shop opens and closes automatically at these times. Pick the timezone your buyers should expect — times below are in that zone."
       >
         {!draft.scheduleSet && (
           <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 px-3 py-2.5">
@@ -72,13 +71,32 @@ export function StudioLaunchPanel({
 
         <div className="space-y-4">
           <div className="space-y-1.5">
+            <Label htmlFor="studio-timezone">Timezone</Label>
+            <select
+              id="studio-timezone"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-base sm:text-sm"
+              value={timeZone}
+              onChange={(e) => setScheduleField({ scheduleTimezone: e.target.value })}
+            >
+              {tzOptions.map((z) => (
+                <option key={z.value} value={z.value}>
+                  {z.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Open and close times use this timezone (including daylight saving).
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label htmlFor="studio-start" className="text-sm font-medium">
                 Opens at
               </label>
               <button
                 type="button"
-                onClick={() => setScheduleField({ startLocal: nowLocal() })}
+                onClick={() => setScheduleField({ startLocal: nowInTimeZone(timeZone) })}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
               >
                 <Zap className="size-3" /> Open now
@@ -99,7 +117,7 @@ export function StudioLaunchPanel({
               </label>
               <button
                 type="button"
-                onClick={() => setScheduleField({ endLocal: plusHoursLocal(3) })}
+                onClick={() => setScheduleField({ endLocal: plusHoursInTimeZone(3, timeZone) })}
                 className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
               >
                 <Clock className="size-3" /> In 3 hours

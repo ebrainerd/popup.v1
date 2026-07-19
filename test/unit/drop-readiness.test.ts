@@ -23,6 +23,7 @@ const baseShop: ShopWithDetails = {
   native_live_tos_accepted_at: null,
   status: "draft",
   schedule_set: false,
+  schedule_timezone: null,
   peak_viewers: 0,
   featured_at: null,
   wizard_completed_steps: [],

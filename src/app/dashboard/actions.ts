@@ -54,6 +54,7 @@ const shopSchema = z
     cover_url: z.string().url().optional().or(z.literal("")),
     start_at: z.string().min(1).optional(),
     end_at: z.string().min(1).optional(),
+    schedule_timezone: z.string().trim().min(1).max(64).optional(),
     visibility: z.enum(["public", "private"]),
     shipping_rate: z.coerce.number().min(0).max(100000),
     live_url: z.string().url().optional().or(z.literal("")),
@@ -187,6 +188,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
     cover_url: formData.get("cover_url") ?? "",
     start_at: formData.get("start_at"),
     end_at: formData.get("end_at"),
+    schedule_timezone: formData.get("schedule_timezone") || undefined,
     visibility: formData.get("visibility") ?? "public",
     shipping_rate: formData.get("shipping_rate") ?? 0,
   });
@@ -205,7 +207,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
 
   const { data: current } = await supabase
     .from("shops")
-    .select("status, schedule_set, start_at, end_at")
+    .select("status, schedule_set, start_at, end_at, schedule_timezone")
     .eq("id", shopId)
     .eq("seller_id", user.id)
     .maybeSingle();
@@ -218,11 +220,13 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
   let startIso = current.start_at;
   let endIso = current.end_at;
   let scheduleSet = current.schedule_set;
+  let scheduleTimezone = current.schedule_timezone;
 
   if (hasScheduleInput) {
     startIso = new Date(d.start_at!).toISOString();
     endIso = new Date(d.end_at!).toISOString();
     scheduleSet = true;
+    scheduleTimezone = d.schedule_timezone?.trim() || scheduleTimezone;
   } else if (current.status !== "draft") {
     return { error: "Start and end times are required." };
   }
@@ -240,6 +244,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
       start_at: startIso,
       end_at: endIso,
       schedule_set: scheduleSet,
+      schedule_timezone: scheduleTimezone,
       visibility,
       shipping_rate: toCents(d.shipping_rate),
       status: nextStatus,
@@ -810,6 +815,7 @@ const finishShopSetupSchema = z
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     scheduleSet: z.boolean().default(false),
+    scheduleTimezone: z.string().trim().min(1).max(64).optional(),
     startAt: z.string().optional().or(z.literal("")),
     endAt: z.string().optional().or(z.literal("")),
     products: z.array(finishProductSchema).min(1, "Add at least one product."),
@@ -832,15 +838,26 @@ function wizardScheduleFields(input: {
   scheduleSet?: boolean;
   startAt?: string;
   endAt?: string;
-}): { start_at: string; end_at: string; schedule_set: boolean } {
+  scheduleTimezone?: string;
+}): {
+  start_at: string;
+  end_at: string;
+  schedule_set: boolean;
+  schedule_timezone: string | null;
+} {
   if (input.scheduleSet && input.startAt && input.endAt) {
     const start = new Date(input.startAt);
     const end = new Date(input.endAt);
     if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end > start) {
-      return { start_at: start.toISOString(), end_at: end.toISOString(), schedule_set: true };
+      return {
+        start_at: start.toISOString(),
+        end_at: end.toISOString(),
+        schedule_set: true,
+        schedule_timezone: input.scheduleTimezone?.trim() || null,
+      };
     }
   }
-  return { ...PLACEHOLDER_SCHEDULE, schedule_set: false };
+  return { ...PLACEHOLDER_SCHEDULE, schedule_set: false, schedule_timezone: null };
 }
 
 function finishProductInsert(
@@ -907,7 +924,7 @@ export async function finishShopSetup(
   if (shopId) {
     const { data: current } = await supabase
       .from("shops")
-      .select("status, schedule_set, start_at, end_at")
+      .select("status, schedule_set, start_at, end_at, schedule_timezone")
       .eq("id", shopId)
       .eq("seller_id", user.id)
       .maybeSingle();
@@ -918,8 +935,13 @@ export async function finishShopSetup(
     const scheduleUpdate = schedule.schedule_set
       ? schedule
       : current.schedule_set
-        ? { start_at: current.start_at, end_at: current.end_at, schedule_set: true }
-        : { ...PLACEHOLDER_SCHEDULE, schedule_set: false };
+        ? {
+            start_at: current.start_at,
+            end_at: current.end_at,
+            schedule_set: true,
+            schedule_timezone: current.schedule_timezone,
+          }
+        : { ...PLACEHOLDER_SCHEDULE, schedule_set: false, schedule_timezone: null };
 
     const { error } = await supabase
       .from("shops")
@@ -1011,6 +1033,7 @@ const saveShopDraftSchema = z.object({
     youtubeUrl: z.string().url().optional().or(z.literal("")),
     twitchUrl: z.string().url().optional().or(z.literal("")),
     scheduleSet: z.boolean().default(false),
+    scheduleTimezone: z.string().trim().min(1).max(64).optional(),
     startAt: z.string().optional().or(z.literal("")),
     endAt: z.string().optional().or(z.literal("")),
     products: z.array(saveDraftProductSchema).default([]),
@@ -1130,7 +1153,7 @@ export async function saveShopDraft(
     if (shopId) {
       const { data: current } = await supabase
         .from("shops")
-        .select("status, schedule_set, start_at, end_at")
+        .select("status, schedule_set, start_at, end_at, schedule_timezone")
         .eq("id", shopId)
         .eq("seller_id", user.id)
         .maybeSingle();
@@ -1140,8 +1163,13 @@ export async function saveShopDraft(
       const scheduleUpdate = schedule.schedule_set
         ? schedule
         : current.schedule_set
-          ? { start_at: current.start_at, end_at: current.end_at, schedule_set: true }
-          : { ...PLACEHOLDER_SCHEDULE, schedule_set: false };
+          ? {
+              start_at: current.start_at,
+              end_at: current.end_at,
+              schedule_set: true,
+              schedule_timezone: current.schedule_timezone,
+            }
+          : { ...PLACEHOLDER_SCHEDULE, schedule_set: false, schedule_timezone: null };
 
       const { error } = await supabase
         .from("shops")

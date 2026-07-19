@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
+import {
+  isoToLocalInput,
+  isoToZonedInput,
+  localInputToIso,
+  zonedInputToIso,
+} from "@/lib/datetime";
 
 describe("datetime conversion", () => {
   it("handles empty/invalid input", () => {
@@ -8,6 +13,9 @@ describe("datetime conversion", () => {
     expect(isoToLocalInput("not-a-date")).toBe("");
     expect(localInputToIso("")).toBe("");
     expect(localInputToIso("not-a-date")).toBe("");
+    expect(isoToZonedInput(null, "UTC")).toBe("");
+    expect(zonedInputToIso("", "UTC")).toBe("");
+    expect(zonedInputToIso("nope", "America/Los_Angeles")).toBe("");
   });
 
   it("localInputToIso returns a UTC ISO string", () => {
@@ -16,17 +24,37 @@ describe("datetime conversion", () => {
     expect(Number.isNaN(new Date(iso).getTime())).toBe(false);
   });
 
-  it("round-trips an ISO timestamp back to itself (timezone-independent)", () => {
-    // The bug was a one-way timezone shift; the inverse pair must round-trip
-    // regardless of the runner's timezone.
+  it("round-trips an ISO timestamp via runtime-local helpers", () => {
     const original = "2026-06-21T18:30:00.000Z";
     const local = isoToLocalInput(original);
     expect(localInputToIso(local)).toBe(original);
   });
 
-  it("a future local time stays in the future after conversion", () => {
-    const future = isoToLocalInput(new Date(Date.now() + 3_600_000).toISOString());
-    const iso = localInputToIso(future);
+  it("round-trips wall clocks in America/Los_Angeles (PDT, UTC-7)", () => {
+    // 10:00 PDT = 17:00 UTC
+    const iso = zonedInputToIso("2026-07-19T10:00", "America/Los_Angeles");
+    expect(iso).toBe("2026-07-19T17:00:00.000Z");
+    expect(isoToZonedInput(iso, "America/Los_Angeles")).toBe("2026-07-19T10:00");
+  });
+
+  it("round-trips wall clocks in America/New_York (EDT, UTC-4)", () => {
+    const iso = zonedInputToIso("2026-07-19T10:00", "America/New_York");
+    expect(iso).toBe("2026-07-19T14:00:00.000Z");
+    expect(isoToZonedInput(iso, "America/New_York")).toBe("2026-07-19T10:00");
+  });
+
+  it("round-trips wall clocks in UTC", () => {
+    const iso = zonedInputToIso("2026-07-19T10:00", "UTC");
+    expect(iso).toBe("2026-07-19T10:00:00.000Z");
+    expect(isoToZonedInput(iso, "UTC")).toBe("2026-07-19T10:00");
+  });
+
+  it("a future zoned local time stays in the future after conversion", () => {
+    const future = isoToZonedInput(
+      new Date(Date.now() + 3_600_000).toISOString(),
+      "America/Los_Angeles",
+    );
+    const iso = zonedInputToIso(future, "America/Los_Angeles");
     expect(new Date(iso).getTime()).toBeGreaterThan(Date.now());
   });
 });

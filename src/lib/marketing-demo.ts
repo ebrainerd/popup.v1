@@ -32,6 +32,7 @@ export function marketingDemoDraft(): ShopWizardDraft {
     twitchUrl: "",
     startLocal: hoursFromNow(48),
     endLocal: hoursFromNow(52),
+    scheduleTimezone: "America/Los_Angeles",
     scheduleSet: true,
     completedSteps: ["details", "products", "live", "layout", "schedule"],
     theme: {

@@ -79,6 +79,7 @@ describe("shop wizard", () => {
     const withSchedule = {
       ...base,
       scheduleSet: true,
+      scheduleTimezone: "UTC",
       startLocal: "2099-06-01T18:00",
       endLocal: "2099-06-01T20:00",
     };
@@ -93,10 +94,12 @@ describe("shop wizard", () => {
       ...defaultWizardDraft(),
       name: "Summer drop",
       scheduleSet: true,
+      scheduleTimezone: "America/Los_Angeles",
       startLocal: "2099-06-01T18:00",
       endLocal: "2099-06-01T20:00",
     });
     expect(payload.scheduleSet).toBe(true);
+    expect(payload.scheduleTimezone).toBe("America/Los_Angeles");
     expect(payload.startAt).not.toBe("");
     expect(payload.endAt).not.toBe("");
   });

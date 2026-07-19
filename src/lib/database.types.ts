@@ -83,6 +83,7 @@ export interface Database {
           start_at: string;
           end_at: string;
           schedule_set: boolean;
+          schedule_timezone: string | null;
           visibility: ShopVisibility;
           shipping_rate: number;
           is_live: boolean;
@@ -111,6 +112,7 @@ export interface Database {
           start_at: string;
           end_at: string;
           schedule_set?: boolean;
+          schedule_timezone?: string | null;
           visibility?: ShopVisibility;
           shipping_rate?: number;
           is_live?: boolean;
