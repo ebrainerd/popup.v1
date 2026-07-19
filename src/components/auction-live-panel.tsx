@@ -18,6 +18,7 @@ import {
   type AuctionEndedBroadcast,
 } from "@/lib/realtime";
 import type { AuctionRunWithProduct } from "@/lib/auctions";
+import { shouldAcceptAuctionQueuedUpdate } from "@/lib/auction-bidding";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,8 @@ export function AuctionLivePanel({
 }) {
   const router = useRouter();
   const { emit, currentUser } = useShopRoom();
+  // Parent keys this by initial.run.id so soft-refresh remounts onto the
+  // canonical active run instead of keeping a stale duplicate in memory.
   const [state, setState] = useState<LiveAuctionState | null>(initial);
   const [maxBid, setMaxBid] = useState("");
   const [pending, startTransition] = useTransition();
@@ -91,39 +94,45 @@ export function AuctionLivePanel({
 
   useShopEvent(ROOM_EVENTS.auctionQueued, (payload) => {
     const p = payload as AuctionQueuedBroadcast;
-    setEnded(null);
-    setState({
-      run: {
-        id: p.auctionId,
-        shop_id: shopId,
-        product_id: p.productId,
-        seller_id: "",
-        status: "queued",
-        starting_bid: p.startingBid,
-        min_increment: p.minIncrement,
-        current_bid: p.startingBid,
-        current_winner_id: null,
-        winning_bid_id: null,
-        bid_count: 0,
-        starts_at: null,
-        ends_at: null,
-        soft_close_seconds: 10,
-        sudden_death: p.suddenDeath,
-        checkout_expires_at: null,
-        stripe_session_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        product: {
-          id: p.productId,
-          title: p.productTitle,
-          auction_allow_prebids: p.allowPrebids,
-          auction_sudden_death: p.suddenDeath,
-        } as AuctionRunWithProduct["product"],
-      },
-      nextMinimumBid: p.startingBid,
-      viewerState: "none",
-      yourMaxBid: null,
-      winnerName: null,
+    // Allow first queue into an empty panel; never clobber a live lot or a
+    // different product's run (that was wiping $4 bids when any lot queued).
+    setState((prev) => {
+      if (!shouldAcceptAuctionQueuedUpdate(prev?.run, p, { allowWhenEmpty: true })) {
+        return prev;
+      }
+      return {
+        run: {
+          id: p.auctionId,
+          shop_id: shopId,
+          product_id: p.productId,
+          seller_id: "",
+          status: "queued",
+          starting_bid: p.startingBid,
+          min_increment: p.minIncrement,
+          current_bid: p.startingBid,
+          current_winner_id: null,
+          winning_bid_id: null,
+          bid_count: 0,
+          starts_at: null,
+          ends_at: null,
+          soft_close_seconds: 10,
+          sudden_death: p.suddenDeath,
+          checkout_expires_at: null,
+          stripe_session_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          product: {
+            id: p.productId,
+            title: p.productTitle,
+            auction_allow_prebids: p.allowPrebids,
+            auction_sudden_death: p.suddenDeath,
+          } as AuctionRunWithProduct["product"],
+        },
+        nextMinimumBid: p.startingBid,
+        viewerState: "none",
+        yourMaxBid: null,
+        winnerName: null,
+      };
     });
   });
 

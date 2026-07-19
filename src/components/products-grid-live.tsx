@@ -256,6 +256,7 @@ function ProductCard({
           <div className="w-full max-sm:shrink-0 sm:w-auto">
             {isAuction ? (
               <AuctionProductActions
+                key={initialAuction?.run.id ?? `auction-${product.id}`}
                 product={product}
                 shopId={shopId}
                 shopOpen={shopOpen}
@@ -359,6 +360,7 @@ function ProductDetailDialog({
             <div className="w-full max-sm:shrink-0 sm:w-auto">
               {isAuction ? (
                 <AuctionProductActions
+                  key={initialAuction?.run.id ?? `auction-${product.id}`}
                   product={product}
                   shopId={shopId}
                   shopOpen={shopOpen}

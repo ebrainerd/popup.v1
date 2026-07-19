@@ -581,7 +581,7 @@ export interface Database {
       };
       auto_queue_shop_auctions: { Args: { p_shop_id: string }; Returns: number };
       queue_auction_run: { Args: { p_product_id: string }; Returns: string };
-      start_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
+      start_auction_run: { Args: { p_auction_id: string }; Returns: string };
       place_auction_bid: {
         Args: { p_auction_id: string; p_max_amount: number };
         Returns: Record<string, unknown>;

@@ -164,3 +164,27 @@ export function resolveAuctionDurationForDb(
     auction_ends_with_shop: false,
   };
 }
+
+type AuctionRunQueuedGuard = {
+  id: string;
+  product_id: string;
+  status: string;
+  bid_count: number;
+};
+
+/**
+ * Whether a realtime auctionQueued broadcast may replace local run state.
+ * Never clobber a live/awaiting lot or a different product — that was resetting
+ * visible bids for everyone when any lot was queued.
+ */
+export function shouldAcceptAuctionQueuedUpdate(
+  current: AuctionRunQueuedGuard | null | undefined,
+  payload: { auctionId: string; productId: string },
+  options?: { allowWhenEmpty?: boolean },
+): boolean {
+  if (!current) return options?.allowWhenEmpty ?? false;
+  if (current.product_id !== payload.productId) return false;
+  if (current.status === "live" || current.status === "awaiting_payment") return false;
+  if (current.bid_count > 0 && current.id !== payload.auctionId) return false;
+  return true;
+}

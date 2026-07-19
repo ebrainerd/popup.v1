@@ -106,7 +106,7 @@ export function AuctionControls({
   );
 
   // Highlight the run that needs the seller's attention: a live lot first,
-  // then an unpaid win, then whatever is queued (matches pickPrimaryAuctionRun).
+  // then an unpaid win, then whatever is queued (matches pickBestAuctionRunForProduct).
   const ACTIVE_PRIORITY: Record<string, number> = { live: 0, awaiting_payment: 1, queued: 2 };
   const activeRun = [...runs]
     .filter((r) => r.status in ACTIVE_PRIORITY)
@@ -189,8 +189,11 @@ export function AuctionControls({
         setError(res.error);
         return;
       }
-      const duration = run.product.auction_duration_seconds ?? 60;
-      const endsAt = new Date(Date.now() + duration * 1000).toISOString();
+      const endsAt = res.data?.ends_at as string | undefined;
+      if (!endsAt) {
+        setError("Auction started but end time was missing.");
+        return;
+      }
       refreshRun(run.id, { status: "live", starts_at: new Date().toISOString(), ends_at: endsAt });
       const payload: AuctionStartedBroadcast = {
         auctionId: run.id,

@@ -18,6 +18,7 @@ import {
   type AuctionStartedBroadcast,
 } from "@/lib/realtime";
 import { formatCurrency } from "@/lib/utils";
+import { shouldAcceptAuctionQueuedUpdate } from "@/lib/auction-bidding";
 
 type AuctionState = {
   run: AuctionRunWithProduct;
@@ -45,6 +46,8 @@ export function AuctionProductActions({
 }) {
   const router = useRouter();
   const { emit, currentUser } = useShopRoom();
+  // Parent keys this by initial.run.id so a refresh that switches to the
+  // canonical run remounts with correct SSR state (avoids duplicate-run drift).
   const [state, setState] = useState<AuctionState | null>(
     initial?.run.product_id === product.id ? initial : null,
   );
@@ -75,32 +78,37 @@ export function AuctionProductActions({
     const p = payload as AuctionQueuedBroadcast;
     if (p.productId !== product.id) return;
     setEnded(null);
-    setState({
-      run: {
-        id: p.auctionId,
-        shop_id: shopId,
-        product_id: p.productId,
-        seller_id: "",
-        status: "queued",
-        starting_bid: p.startingBid,
-        min_increment: p.minIncrement,
-        current_bid: p.startingBid,
-        current_winner_id: null,
-        winning_bid_id: null,
-        bid_count: 0,
-        starts_at: null,
-        ends_at: null,
-        soft_close_seconds: 10,
-        sudden_death: p.suddenDeath,
-        checkout_expires_at: null,
-        stripe_session_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        product,
-      },
-      nextMinimumBid: p.startingBid,
-      viewerState: "none",
-      yourMaxBid: null,
+    setState((prev) => {
+      if (!shouldAcceptAuctionQueuedUpdate(prev?.run, p, { allowWhenEmpty: true })) {
+        return prev;
+      }
+      return {
+        run: {
+          id: p.auctionId,
+          shop_id: shopId,
+          product_id: p.productId,
+          seller_id: "",
+          status: "queued",
+          starting_bid: p.startingBid,
+          min_increment: p.minIncrement,
+          current_bid: p.startingBid,
+          current_winner_id: null,
+          winning_bid_id: null,
+          bid_count: 0,
+          starts_at: null,
+          ends_at: null,
+          soft_close_seconds: 10,
+          sudden_death: p.suddenDeath,
+          checkout_expires_at: null,
+          stripe_session_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          product,
+        },
+        nextMinimumBid: p.startingBid,
+        viewerState: "none",
+        yourMaxBid: null,
+      };
     });
   });
 
