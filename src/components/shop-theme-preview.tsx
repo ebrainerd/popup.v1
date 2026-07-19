@@ -206,9 +206,17 @@ function LayoutPreview({
         {shopName.trim() || "Your shop name"}
       </p>
       {theme.showSellerBio && (
-        <p className="flex items-center gap-1 text-[10px]" style={{ color: visual.mutedForeground }}>
-          <User className="size-3" /> @yourhandle
-        </p>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <p className="flex items-center gap-1 text-[10px]" style={{ color: visual.mutedForeground }}>
+            <User className="size-3" /> @yourhandle
+          </p>
+          <span
+            className="rounded-md px-1.5 py-0.5 text-[9px] font-semibold text-white"
+            style={{ background: theme.accent }}
+          >
+            Follow
+          </span>
+        </div>
       )}
     </div>
   );
