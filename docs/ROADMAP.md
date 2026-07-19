@@ -1,9 +1,12 @@
 # PopUp — Build Roadmap
 
+> **Historical reference.** MVP milestones M1–M3 are **shipped**. For live
+> production status, ops gates, and what ships next, see **`docs/HANDOFF.md`**.
+
 Built in vertical, demoable slices. Decisions follow the design doc plus the
 defaults agreed at kickoff.
 
-## ✅ Milestone 1 — Foundation (current)
+## ✅ Milestone 1 — Foundation (shipped)
 
 - Project scaffold: Next.js 16 (App Router) + Tailwind v4 + UI kit + PWA
 - Supabase clients (browser/server/middleware) + service-role helper
@@ -17,7 +20,7 @@ defaults agreed at kickoff.
 - Public shop page (countdown, live embed, products, follow)
 - Public seller profiles
 
-## ✅ Milestone 2 — Realtime & live (current)
+## ✅ Milestone 2 — Realtime & live (shipped)
 
 - **Bug fix:** "Live now" Explore tab now shows currently-open shops (not only
   shops that are actively streaming)
@@ -35,13 +38,16 @@ defaults agreed at kickoff.
 
 ### Notes / limitations
 
-- "Opening" (time-based) notifications need a scheduler (Supabase cron / Edge
-  Function) since there's no server event at open time — deferred. Go-live
-  notifications fire on the seller's "Go live" action.
-- Live video embed appears on page load; toggling live does not yet hot-swap the
-  embed for already-connected viewers (chat/presence/flash drops do update live).
+- **Opening-time and drop reminders are shipped.** A cron job runs every 15
+  minutes on `/api/cron/send-drop-reminders` (cron-job.org on Vercel Hobby).
+  Opening-time sends also fire from `POST /api/shop/[id]/opening-reminders` when
+  a shop opens on the clock. Go-live notifications still fire on the seller's
+  "Go live" action.
+- Live video embed appears on page load. Toggling live does not yet hot-swap the
+  embed for already-connected viewers. Chat, presence, and flash drops do update
+  live.
 
-## ✅ Milestone 3 — Payments, orders & ratings (current)
+## ✅ Milestone 3 — Payments, orders & ratings (shipped)
 
 - **Stripe Connect (Express)** onboarding via the Payouts page; dashboard banner
   prompts sellers to connect. `account.updated` webhook syncs status.
@@ -68,13 +74,29 @@ defaults agreed at kickoff.
 
 ## MVP complete 🎉
 
-All three milestones are in. Post-MVP candidates: scheduled "opening soon"
-notifications (cron), live-embed hot-swap, and polish items that do not block
-invite-only seller-led marketing.
+All three milestones shipped. Post-MVP polish still open includes live-embed
+hot-swap and items that do not block invite-only seller-led marketing.
 
 **First marketing scope:** seller-led link drops in `invite_only` mode. Several
-post-MVP ideas are explicitly **deferred** — see below and `docs/HANDOFF.md` §
-"Not for first marketing".
+ideas remain **deferred** — see below and `docs/HANDOFF.md` § "Not for first
+marketing".
+
+## Post-MVP shipped
+
+These features landed after M1–M3. They are live in the repo and production
+(subject to migration apply on hosted Supabase — see `docs/HANDOFF.md`).
+
+| Feature | Notes |
+| ------- | ----- |
+| **Invite-only discovery** | `NEXT_PUBLIC_DISCOVERY_MODE=invite_only`; Explore is a holding page in prod |
+| **Live auctions** | `docs/AUCTIONS_PRD.md`; migrations `0013+` through `0029` auction stock fix |
+| **Native PopUp Live (LiveKit)** | `docs/NATIVE_LIVE_STREAMING.md`; migrations `0018`–`0019` |
+| **Shop layouts (The Room + Lookbook)** | `docs/SHOP_LAYOUT_ARCHETYPES.md`; pickable `classic` + `catalog` |
+| **Seller terms gate** | First shop create; migration `0020` |
+| **OAuth profile onboarding** | `/onboarding`; migration `0021`; see `docs/AUTH_PROFILE_ROADMAP.md` |
+| **Support tickets** | `/support`; migration `0027` |
+| **Products / orders realtime** | Migrations `0026`–`0028` |
+| **Auction auto-queue + pre-bids** | Migrations `0022`, `0024` |
 
 ## Deferred — not for first marketing (revisit triggers)
 
@@ -87,8 +109,8 @@ post-MVP ideas are explicitly **deferred** — see below and `docs/HANDOFF.md` �
 | **International shipping / tax** | US only | Founding seller demand + tax/shipping vendor scoped |
 | **Native iOS / Android apps** | Not built | `docs/NATIVE_APP_DECISION.md` — PWA bar met **and** push habit / publisher pain measured |
 
-Shipped since this list was written: opening-soon notifications (cron), auctions,
-native PopUp Live (LiveKit), invite-only mode, shop layout archetypes.
+Opening-time and drop reminders are **not** deferred — they shipped (see M2
+notes and **Post-MVP shipped** above).
 
 ## Open items / decisions (from design doc §11)
 

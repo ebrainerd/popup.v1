@@ -10,6 +10,7 @@ opt-in.
 | ----- | ---- | ---------- | -------------- |
 | Unit | Vitest | ✅ | Pure logic: fee math, shop-status, currency, embeds, profanity filter |
 | Smoke e2e | Playwright | ✅ | Routing, SSR, auth guard, 404 — against a placeholder backend |
+| Load smoke | k6 | ❌ opt-in | Read-heavy shop page under concurrent VUs — see `scripts/load/README.md` |
 | RLS integration | Vitest | ⏭️ gated | Row Level Security guarantees against a real Supabase |
 
 ## Commands
@@ -50,6 +51,18 @@ npx vitest run test/integration/rls.test.ts
 ```
 
 Without those env vars the suite is skipped automatically.
+
+## Load smoke (`scripts/load/`)
+
+k6 shop-page smoke test. Install k6 first. See `scripts/load/README.md`.
+
+```bash
+npm run load:shop-smoke -- <shop-url>
+```
+
+Use this before marketing launch. Pair with the living launch checklist in
+`docs/PRE_MARKETING_TEST.md` and the GO/NO-GO gate in
+`docs/MARKETING_LAUNCH_GATE.md`.
 
 ## Full checkout flow (manual / staging)
 

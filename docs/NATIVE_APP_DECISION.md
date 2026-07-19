@@ -3,6 +3,8 @@
 **Status:** Docs-only decision record. No native app work is planned or required for
 first marketing.
 
+**Last reviewed:** July 2026. Decision unchanged for invite-only first marketing.
+
 PopUp's first marketing phase is **invite-only, seller-led drops**: buyers arrive via
 a seller's link, watch/bid/buy in the browser, and leave. That loop does not require
 App Store or Play Store binaries. This doc defines when native becomes worth the

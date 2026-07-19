@@ -1,5 +1,10 @@
 # PopUp Invite-Only Launch & Creator Loop Fix Plan
 
+> **P0 engineering items are largely implemented** — `invite_only` discovery mode,
+> migrations **`0011`–`0012`**, and related launch fixes are in the repo. This
+> document stays **authoritative for strategy** and **Explore re-enable gates**.
+> For ops, env, and live status, see **`docs/HANDOFF.md`**.
+
 ## Recommendation
 
 Run PopUp in **seller-led, invite-link-only launch mode** for now.

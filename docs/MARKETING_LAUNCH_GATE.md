@@ -1,8 +1,11 @@
 # Marketing launch gate — evidence-based status
 
-**Branch audited:** `cursor/pre-marketing-readiness-d74f`  
-**Audit date:** 2026-07-09  
-**Auditor:** docs-only pass (no human prod dry-run in this environment)
+**Audit snapshot:** 2026-07-09 (docs-only; no human production dry-run in that pass).  
+**Repo tip at audit:** migrations through `0029_auction_stock_decrement.sql` (29 total).  
+**Current recommendation:** **NO-GO** until a real two-person production dry-run is recorded.
+
+This document is a point-in-time audit. Re-run `docs/PRE_MARKETING_TEST.md` and update
+scores after each production test session. Do not flip to **GO** without dry-run evidence.
 
 ---
 
@@ -10,7 +13,9 @@
 
 > **One founding seller can run a real drop to a phone-heavy audience; money clears; emails land; they want to schedule the next drop.**
 
-Paid marketing (founding-seller outreach, ads, broad announcements) should not start until this gate is **proven in production** with a real two-person dry-run — not inferred from code or infra checklists alone.
+Paid marketing (founding-seller outreach, ads, broad announcements) must not start
+until this gate is **proven in production** with a real two-person dry-run. Do not
+infer readiness from code or infra checklists alone.
 
 **Primary test plan:** `docs/PRE_MARKETING_TEST.md`  
 **Infrastructure companion:** `docs/PRODUCTION_READINESS.md`  
@@ -22,20 +27,20 @@ Paid marketing (founding-seller outreach, ads, broad announcements) should not s
 
 | Metric | Count | Notes |
 | ------ | ----- | ----- |
-| **pass** | 18 | Mostly infra wiring + automated CI on this branch |
+| **pass** | 18 | Mostly infra wiring + automated CI on mainline at audit time |
 | **fail** | 0 | No verified production regressions in this audit |
 | **unknown** | 42 | Requires human prod test (Phases 0–21) |
 | **blocked** | 2 | Human dry-run prerequisite; prod shop UUID for k6 |
 
 **Gate score:** **18 / 62 scored items (29%)** — infra and code health only; **0% of buyer/seller drop-loop items verified in prod.**
 
-### Eng readiness landed on this branch (does not flip GO)
+### Eng readiness in mainline (does not flip GO)
 
 | Theme | What shipped | Still needs |
 | ----- | ------------ | ----------- |
 | Mobile shop room | Collapsible chat, stacked bid/buy, sticky auction bar, iOS 16px inputs | Human phone smoke (MANUAL_TESTING M1–M6) |
 | Seller success kit | Share kit + drop health + promotion checklist on manage page | Human S1–S6 on a real seller account |
-| Trust edges | Buyer-safe signup, order dispute hints, email support footers | Real-inbox email proof in prod dry-run |
+| Trust edges | Buyer-safe signup, order dispute hints, email support footers, `/support` + `support_tickets` (0027) | Real-inbox email proof in prod dry-run |
 | Docs / strategy | Non-goals, `NATIVE_APP_DECISION.md`, this gate | Owner dry-run + optional attorney |
 
 ---
@@ -44,12 +49,13 @@ Paid marketing (founding-seller outreach, ads, broad announcements) should not s
 
 Do **not** start paid marketing or founding-seller outreach at scale until:
 
-1. A complete two-person production dry-run (`docs/PRE_MARKETING_TEST.md`) is recorded with pass marks.
-2. At least one **real live purchase** (Phases 11–12) with buyer **and** seller emails received in real inboxes.
-3. Native live stream verified with **2+ viewers** on production (Phase 8).
-4. k6 shop smoke re-run on a **current** published shop URL after any major change.
+1. You record a complete two-person production dry-run (`docs/PRE_MARKETING_TEST.md`) with pass marks.
+2. At least one **real live purchase** (Phases 11–12) delivers buyer **and** seller emails to real inboxes.
+3. Native live stream works with **2+ viewers** on production (Phase 8).
+4. You re-run k6 shop smoke on a **current** published shop URL after any major change.
 
-Infra is largely wired (per `docs/HANDOFF.md`); product behavior on the critical path is **unverified** in production from this environment.
+Infra is largely wired (per `docs/HANDOFF.md`). Product behavior on the critical path
+remains **unverified** in production until a human dry-run completes.
 
 ---
 
@@ -73,7 +79,7 @@ Legend: **pass** | **fail** | **unknown** | **blocked**
 | A10 | Sentry + uptime monitor on `/api/health` | **pass** | `docs/HANDOFF.md` — checked |
 | A11 | `RELEASE_DELAY_HOURS=72` in production | **unknown** | `docs/PRODUCTION_READINESS.md` wiring — unchecked; requires Vercel env confirm |
 | A12 | `PLATFORM_FEE_BPS=900` in production | **unknown** | `docs/PRODUCTION_READINESS.md` wiring — unchecked |
-| A13 | Migrations applied through latest (`0022`) | **unknown** | `docs/HANDOFF.md` says through `0022`; prod apply not verified here |
+| A13 | Migrations applied through latest in repo (`0029`) | **unknown** | Repo tip `0029_auction_stock_decrement.sql`; prod apply not verified in audit |
 | A14 | Attorney review of terms/privacy (optional) | **unknown** | `docs/HANDOFF.md` Before marketing — unchecked |
 
 ### B — Seller kit & drop loop (`docs/CREATOR_DROP_LOOP.md`)
@@ -175,11 +181,11 @@ Maps to Phases 18–19 and marketing sign-off block.
 | H6 | Sentry clean during test sessions | **unknown** | Sign-off — unchecked |
 | H7 | All PRE_MARKETING_TEST phases ✅ or documented ⏭️ | **unknown** | All phase tables empty — no session recorded |
 
-### I — Code health (this branch, local CI)
+### I — Code health (mainline CI at audit time)
 
 | ID | Item | Status | Evidence |
 | -- | ---- | ------ | -------- |
-| I1 | `npm run typecheck` | **pass** | 2026-07-09 on `cursor/pre-marketing-readiness-d74f` |
+| I1 | `npm run typecheck` | **pass** | 2026-07-09 on mainline |
 | I2 | `npm run test` | **pass** | 142 passed, 10 skipped |
 | I3 | `npm run lint` | **pass** | 0 errors, 7 warnings |
 | I4 | `npm run build` | **pass** | 2026-07-09 |
@@ -239,7 +245,7 @@ Maps to Phases 18–19 and marketing sign-off block.
 2. **Complete one real live purchase with email proof** — low-price SKU, live Stripe card, confirm buyer + seller emails in inbox (not sandbox). Phases 11.4–11.5, 12.2.
 3. **Verify native live with 2+ viewers on production** — Phase 8.1–8.5 on seller phone + buyer phone; confirm video within ~5s.
 4. **Re-run k6 shop smoke** — `npm run load:shop-smoke -- https://www.popupdrop.co/shop/<published-shop-uuid>` after dry-run shop exists; confirm p95 &lt; 3s, 0% failures.
-5. **Confirm production env vars** — `RELEASE_DELAY_HOURS=72`, `PLATFORM_FEE_BPS=900`, migrations through `0022` on hosted Supabase; tick `docs/HANDOFF.md` Before marketing only after dry-run evidence exists.
+5. **Confirm production env vars** — `RELEASE_DELAY_HOURS=72`, `PLATFORM_FEE_BPS=900`, migrations through `0029` on hosted Supabase; tick `docs/HANDOFF.md` Before marketing only after dry-run evidence exists.
 
 ---
 

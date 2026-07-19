@@ -1,5 +1,13 @@
 # PopUp Creator Drop Loop PRD
 
+> **Status: mostly shipped; some items partial.** This PRD is a **historical
+> requirements doc**. Rough mapping: **Milestone A** (drop page + launch kit) —
+> shipped; **Milestone B** (drop reminders + cron) — shipped; **Milestone C**
+> (waiting room + post-drop loop) — largely shipped; **Milestone D** (curated
+> marketplace) — partial (invite-only mode; Explore gates in
+> `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md`). For live status, see
+> **`docs/HANDOFF.md`**.
+
 ## Purpose
 
 PopUp should reduce cold-start risk by launching as creator-led drop
@@ -45,9 +53,10 @@ Already shipped:
 - Go-live follower notifications through web push and email when providers are
   configured.
 
-Known gaps this PRD addresses:
+Known gaps this PRD addressed (see status banner for what shipped):
 
-- Opening-time notifications are deferred.
+- Opening-time and drop reminders — **shipped** (cron every 15 min on
+  `/api/cron/send-drop-reminders`; opening sends on shop open).
 - Empty marketplace states do not help buyers find future value.
 - The product does not yet capture drop-level intent before checkout.
 - Sellers do not have a launch kit that helps them bring their own audience.
@@ -73,7 +82,8 @@ Known gaps this PRD addresses:
 
 ### Non-goals for this phase
 
-- Native streaming.
+- **Native PopUp Live (LiveKit) shipped** after this PRD; YouTube/Twitch embeds
+  remain supported. See `docs/NATIVE_LIVE_STREAMING.md`.
 - International shipping and tax.
 - Full CRM or marketing automation.
 - Replacing seller-owned social channels.

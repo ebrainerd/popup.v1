@@ -1,114 +1,133 @@
-# PopUp — Project Handoff & Status
+# PopUp — Project Handoff and Status
 
-Living doc so anyone (human or agent) can pick up where we left off. Update it
-as things change.
+Living document for humans and agents. Update this file when status changes.
 
 ## What PopUp is
 
-Time-boxed virtual pop-up shops. Sellers open shops that run on a schedule, go
-live (native **PopUp Live** via LiveKit or YouTube/Twitch embed), run flash
-drops and live auctions, and sell physical goods; buyers reach shops via direct
-link (invite-only launch) or Explore (marketplace mode), follow creators, chat
-in "the room," and check out via Stripe. Stack: **Next.js 16 (App Router) +
-Tailwind v4 + Supabase + Stripe + LiveKit + Vercel**.
+PopUp is a web app for time-boxed virtual pop-up shops. Sellers open a shop on a
+schedule. They go live with **PopUp Live** (LiveKit) or a YouTube or Twitch
+embed. They run flash drops and live auctions. They sell physical goods.
+
+Buyers open shops by direct link in **invite-only** mode. In **marketplace**
+mode, buyers can also use Explore. Buyers can follow creators, chat in the room,
+and check out with Stripe.
+
+**Stack:** Next.js 16 (App Router) + Tailwind v4 + Supabase + Stripe + LiveKit +
+Vercel.
+
+**Tagline:** Shops that live for the moment.
+
+**Tagline pairing:** Live streaming, auctions and real-time chat.
 
 ## Production
 
 | Item | Value |
 | ---- | ----- |
-| **Site** | https://www.popupdrop.co (also `popupdrop.co` → www) |
-| **Discovery mode** | `invite_only` (default) — link-only shops; Explore is a holding page |
+| **Site** | https://www.popupdrop.co (`popupdrop.co` redirects to www) |
+| **Discovery mode** | `invite_only` (default). Shops use links only. Explore is a holding page. |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations** | Through **`0029_auction_stock_decrement.sql`** (apply in order; HANDOFF production table may lag until owner applies) |
+| **Migrations (repo tip)** | Through **`0029_auction_stock_decrement.sql`**. Apply files in order. Hosted production may lag the repo tip. |
 
 ## Where to look
 
 | Topic | File |
 | ----- | ---- |
-| Run locally / scripts | `README.md` |
-| **Pre-marketing manual test (full checklist)** | **`docs/PRE_MARKETING_TEST.md`** |
-| **Marketing launch gate (GO/NO-GO status)** | **`docs/MARKETING_LAUNCH_GATE.md`** |
-| Feature roadmap (M1–M3 done) | `docs/ROADMAP.md` |
-| Creator-led drop loop PRD | `docs/CREATOR_DROP_LOOP.md` |
-| Invite-only launch plan | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
+| Run locally and scripts | `README.md` |
+| Pre-marketing manual test (full checklist) | `docs/PRE_MARKETING_TEST.md` |
+| Marketing launch gate (GO / NO-GO) | `docs/MARKETING_LAUNCH_GATE.md` |
+| Feature roadmap (M1–M3 shipped) | `docs/ROADMAP.md` |
+| Creator-led drop loop PRD (historical) | `docs/CREATOR_DROP_LOOP.md` |
+| Invite-only launch plan (historical + Explore gates) | `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` |
 | Live auctions PRD (shipped) | `docs/AUCTIONS_PRD.md` |
 | Native live streaming | `docs/NATIVE_LIVE_STREAMING.md` |
-| Product UX review notes | `docs/PRODUCT_UX_REVIEW.md` |
-| **Shop layout archetypes (customization spec)** | **`docs/SHOP_LAYOUT_ARCHETYPES.md`** |
-| **Native app decision (when / if to build)** | **`docs/NATIVE_APP_DECISION.md`** |
-| Testing & CI | `docs/TESTING.md` |
+| Product UX review notes (historical) | `docs/PRODUCT_UX_REVIEW.md` |
+| Shop layout archetypes | `docs/SHOP_LAYOUT_ARCHETYPES.md` |
+| Native app decision | `docs/NATIVE_APP_DECISION.md` |
+| Testing and CI | `docs/TESTING.md` |
 | Manual post-feature checklists | `docs/MANUAL_TESTING.md` |
-| Auth & profile signup flows | `docs/AUTH_PROFILE_ROADMAP.md` |
+| Auth and profile signup flows (shipped) | `docs/AUTH_PROFILE_ROADMAP.md` |
 | Deploy, env vars, go-live checklist | `docs/DEPLOYMENT.md` |
-| Production launch & load testing | `docs/PRODUCTION_READINESS.md` |
+| Production launch and load testing | `docs/PRODUCTION_READINESS.md` |
+| Marketing playbook | `docs/MARKETING.md` |
 | k6 load scripts | `scripts/load/README.md` |
-| Cloud-agent run notes (Docker/Supabase) | `AGENTS.md` |
+| Cloud-agent run notes (Docker / Supabase) | `AGENTS.md` |
 | DB schema | `supabase/migrations/*.sql` (apply in order) |
-| **Figma design system / brand** | **[PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw)** |
+| Figma design system / brand | [PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw) |
 
 ## Brand identity (Ember Market)
 
-**Direction locked** (Figma Color Proposal + Logo pages):
+Direction is locked (Figma Color Proposal and Logo pages).
 
 | Decision | Choice |
 | -------- | ------ |
-| Palette | **Ember Market** (dark + Ember light) — live in `globals.css` |
-| Type | **Syne ExtraBold** logo only · **Geist** UI · **Geist Mono** timers |
+| Palette | **Ember Market** (dark + Ember light) in `globals.css` |
+| Type | **Syne ExtraBold** for logo only. **Geist** for UI. **Geist Mono** for timers. |
 | Logo lockup | **L2** — arcs mark + Syne tick (`src/components/logo.tsx`, icons, OG) |
 | Light mode | Ember light (warm paper `#FAF8F4`) |
-| Motion / surfaces | Ember charcoal base `#14100C` + var-driven glows |
-| Seller shop accents | **Warm family only** (ember / amber / terracotta / gilt) |
+| Motion / surfaces | Ember charcoal base `#14100C` + CSS-variable glows |
+| Seller shop accents | Warm family only (ember / amber / terracotta / gilt) |
 | Tagline | **Shops that live for the moment.** |
 | Tagline pairing | **Live streaming, auctions & real-time chat.** (`src/lib/brand-copy.ts`) |
 
-**Done in app**
+### Done in app
 
 - [x] Ember tokens + brand gradient / ambient orbs
 - [x] Warm shop presets + accent swatches
 - [x] L2 logo component + favicon / maskable / `icon.svg` + `og.jpg`
 - [x] Marketing Remotion / seed demo accents aligned
 - [x] Tagline + pairing in hero, metadata, footer, manifest
-
-**Optional follow-ups**
-
-- [x] Sync Figma Color / Primitives variables to Ember (kit component paints may still need a pass)
+- [x] Figma Color / Primitives variables synced to Ember (kit component paints may still need a pass)
 
 ## Status (high level)
 
-All three MVP milestones shipped and live in production, plus post-launch work:
+All three MVP milestones shipped and run in production. Post-MVP work also
+shipped:
 
-- Navigation, Explore (marketplace mode), search, draft→publish, inventory
-  reservations, light/dark theme, buyer order detail, full **order-email lifecycle**
+- Navigation, Explore (marketplace mode), search, draft to publish, inventory
+  reservations, light / dark theme, buyer order detail, full order-email lifecycle
 - **Invite-only launch mode** (`NEXT_PUBLIC_DISCOVERY_MODE=invite_only`)
 - Multiple photos per product, $0.50 minimum price, HEIC uploads
 - **Live auctions** (`docs/AUCTIONS_PRD.md`)
 - **Native PopUp Live** (LiveKit) + live reminders (`0018`–`0019`)
 - **Seller terms gate** on first shop create (`0020`)
+- OAuth profile onboarding (`0021`)
+- Auction auto-queue and pre-bids (`0022`, `0024`)
+- Security hardening (`0025`)
+- Products and orders realtime (`0026`, `0028`)
+- Support tickets at `/support` (`0027`)
+- Auction stock decrement fix (`0029`)
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
-- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — phases 0–6 landed.
-  **Pickable layouts today:** **The Room** (`classic`) — stream + chat first,
-  products below — and **Lookbook** (`catalog`) — products first, stream band
-  below. Defined in `SHOP_PICKABLE_LAYOUTS`. Legacy `broadcast` (Live Stage) /
-  `countdown` (Drop Clock) are retired from the picker and fold into `classic`
-  via `normalizeLayout()` (enum slugs may remain in DB for backward compatibility).
-  Smoke: `docs/MANUAL_TESTING.md` → shop layouts + mobile room; pre-marketing
-  Phase 17.
+- **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — phases 0–6 done
+
+### Shop layouts (pickable today)
+
+| Layout | Slug | Behavior |
+| ------ | ---- | -------- |
+| **The Room** | `classic` | Stream + chat first; products below |
+| **Lookbook** | `catalog` | Products first; stream band below |
+
+Defined in `SHOP_PICKABLE_LAYOUTS`. Legacy `broadcast` (Live Stage) and
+`countdown` (Drop Clock) are retired from the picker. They fold into `classic`
+via `normalizeLayout()`. Enum slugs may remain in the DB for compatibility.
+
+Smoke: `docs/MANUAL_TESTING.md` → shop layouts + mobile room; pre-marketing
+Phase 17.
 
 ## Shop layout archetypes — COMPLETE (Phases 0–6)
 
-**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md`. Implementation complete; **seller picker
-ships two layouts** (The Room + Lookbook). Retired slugs remain in the enum for
-backward compatibility only.
+**Spec:** `docs/SHOP_LAYOUT_ARCHETYPES.md`. Implementation is complete. The
+seller picker ships two layouts (The Room + Lookbook). Retired slugs remain in
+the enum for backward compatibility only.
 
 - **Phases 0–3, 5:** metadata + defaults, editor archetype picker + preview phase
   toggle, buyer-page parity for Lookbook (`catalog`) and The Room (`classic`).
-- **Phase 4 — Drop Clock (`countdown`):** built, then folded into The Room for the
-  narrowed picker (`normalizeLayout`).
-- **Phase 6 — QA & docs:** smoke matrices in `docs/MANUAL_TESTING.md`; prefer the
-  **two pickable** layouts for ongoing QA. Automated gate
-  (`typecheck`/`lint`/`test`/`build`) green.
+- **Phase 4 — Drop Clock (`countdown`):** built, then folded into The Room for
+  the narrowed picker (`normalizeLayout`).
+- **Phase 6 — QA and docs:** smoke matrices in `docs/MANUAL_TESTING.md`. Prefer
+  the two pickable layouts for ongoing QA. Automated gate
+  (`typecheck` / `lint` / `test` / `build`) green.
 
 ### Key files
 
@@ -120,19 +139,20 @@ src/components/shop-page-view.tsx
 src/components/stream-slot.tsx
 ```
 
-### Re-verifying layout work
+### Re-verify layout work
 
 ```bash
 npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
-Then walk `docs/MANUAL_TESTING.md` → "Shop layout archetypes". Local-stack
-gotcha hit during Phase 6 QA: a stale DB volume can leave migrations partially
-applied (e.g. missing `profiles.follower_count`), which makes owner shop pages
-404 on otherwise-valid shops — run `supabase db reset` to re-apply all
-migrations + `seed.sql` grants. Keep the customize preview and buyer page in
-sync if you touch any layout (comment cross-links exist in `shop-page-view.tsx`
-↔ `shop-theme-preview.tsx`).
+Then walk `docs/MANUAL_TESTING.md` → "Shop layout archetypes".
+
+Local-stack note: a stale DB volume can leave migrations partly applied (for
+example missing `profiles.follower_count`). Owner shop pages then 404 on valid
+shops. Run `supabase db reset` to re-apply all migrations and `seed.sql` grants.
+
+Keep the customize preview and buyer page in sync when you change a layout.
+Cross-links exist in `shop-page-view.tsx` and `shop-theme-preview.tsx`.
 
 ### Infrastructure (owner — done)
 
@@ -146,53 +166,56 @@ sync if you touch any layout (comment cross-links exist in `shop-page-view.tsx`
 - [x] `CRON_SECRET` + daily `release-funds` on Vercel
 - [x] Drop reminders via **cron-job.org** every 15 min (Hobby-safe)
 - [x] Sentry + uptime monitor on `/api/health`
-- [x] Migrations through `0022` applied on production (apply any later repo migrations in order)
+- [x] Hosted migrations applied through at least `0022` (apply any later repo
+      migrations through `0029` in order)
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
 
 ## Marketing gate (GO / NO-GO)
 
-**Gate:** One founding seller can run a real drop to a phone-heavy audience; money
-clears; emails land; they want to schedule the next drop.
+**Gate:** One founding seller can run a real drop to a phone-heavy audience.
+Money clears. Emails land. The seller wants to schedule the next drop.
 
-**Current status: NO-GO** — see scored checklist in **`docs/MARKETING_LAUNCH_GATE.md`**.
-Eng readiness work on this branch (mobile room, seller kit, trust copy, non-goals)
-does **not** replace the human production dry-run.
+**Current status: NO-GO** — see the scored checklist in
+**`docs/MARKETING_LAUNCH_GATE.md`**.
+
+Engineering readiness on mainline (mobile room, seller kit, trust copy,
+non-goals) does **not** replace the human production dry-run.
 
 ## Not for first marketing (non-goals)
 
-First marketing is **invite-only, seller-led drops** — sellers bring buyers via
-shop link; PopUp is not a WhatNot-scale marketplace yet. The items below are
-**explicitly out of scope** for the first marketing gate. Each has a **revisit
-trigger** so we do not defer them forever.
+First marketing is **invite-only, seller-led drops**. Sellers bring buyers via
+shop link. PopUp is not a large marketplace yet. The items below are out of
+scope for the first marketing gate. Each row has a revisit trigger.
 
 | Non-goal | Revisit when |
 | -------- | ------------ |
-| **Marketplace Explore** (`NEXT_PUBLIC_DISCOVERY_MODE=marketplace`) | ≥ **10** upcoming public drops in the next **14 days**, ≥ **3** creators with prior successful drops, and ≥ **1** drop in the next **48h** on most days — then flip mode and run `docs/PRE_MARKETING_TEST.md` Phase 21. See `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` § "When to reintroduce Explore". |
-| **Categories / recommendations** | Marketplace mode is live **and** Explore has enough listings that unfiltered "All" feels noisy; start with manual curation (`featured_at`), not algorithms. |
-| **Carrier tracking APIs** (Shippo / EasyPost / AfterShip) | Seller support volume or payout disputes show that manual tracking links are a recurring pain **or** ≥ **50** shipped orders/month need automated in-transit status. Until then: seller-entered tracking + time-based hold (`RELEASE_DELAY_HOURS`). |
-| **Likes / clips / replays / deep social graph** | A measured retention goal (e.g. buyers returning without seller link) fails **and** seller interviews cite content replay as a growth lever — not before marketplace habit exists. |
-| **International shipping / tax** | Founding sellers ask for non-US buyers **and** Stripe/tax tooling is scoped; until then US addresses only (`allowed_countries: ["US"]`). |
-| **Native iOS / Android apps** | Mobile-web/PWA bar is met (`docs/NATIVE_APP_DECISION.md`) **and** habitual return, push reliability, or seller phone publishing becomes a measured bottleneck. **Not** for invite-only founding drops. |
+| **Marketplace Explore** (`NEXT_PUBLIC_DISCOVERY_MODE=marketplace`) | At least **10** upcoming public drops in the next **14 days**, at least **3** creators with prior successful drops, and at least **1** drop in the next **48h** on most days. Then flip mode and run `docs/PRE_MARKETING_TEST.md` Phase 21. See `docs/INVITE_ONLY_LAUNCH_FIX_PLAN.md` section "When to reintroduce Explore". |
+| **Categories / recommendations** | Marketplace mode is live **and** Explore has enough listings that unfiltered "All" feels noisy. Start with manual curation (`featured_at`), not algorithms. |
+| **Carrier tracking APIs** (Shippo / EasyPost / AfterShip) | Seller support volume or payout disputes show that manual tracking links are a recurring pain, **or** at least **50** shipped orders per month need automated in-transit status. Until then: seller-entered tracking + time-based hold (`RELEASE_DELAY_HOURS`). |
+| **Likes / clips / replays / deep social graph** | A measured retention goal fails **and** seller interviews cite content replay as a growth lever. Do not start before marketplace habit exists. |
+| **International shipping / tax** | Founding sellers ask for non-US buyers **and** Stripe/tax tooling is scoped. Until then US addresses only (`allowed_countries: ["US"]`). |
+| **Native iOS / Android apps** | Mobile-web / PWA bar is met (`docs/NATIVE_APP_DECISION.md`) **and** habitual return, push reliability, or seller phone publishing becomes a measured bottleneck. **Not** for invite-only founding drops. |
 
-**Mobile bar for first marketing:** mobile web + PWA on shop links — not app store
-binaries. Details: **`docs/NATIVE_APP_DECISION.md`**.
+**Mobile bar for first marketing:** mobile web + PWA on shop links — not app
+store binaries. Details: **`docs/NATIVE_APP_DECISION.md`**.
 
-## ⚠️ Before marketing (remaining)
+## Before marketing (remaining)
 
 Use **`docs/PRE_MARKETING_TEST.md`** — the full two-person checklist. Short list:
 
 - [ ] Complete pre-marketing test pass (seller + buyer dry-run drop)
 - [ ] Real purchase end-to-end with emails to real inboxes (not Resend sandbox)
-- [ ] k6 smoke on a published shop URL (already passed once; re-run after major changes)
+- [ ] k6 smoke on a published shop URL (re-run after major changes)
 - [ ] Optional: attorney review of `/legal/terms` and `/legal/privacy`
 - [ ] Mobile web + PWA bar on a real shop link (Phase 20 in pre-marketing test)
 
-**Not part of first marketing gate:** flipping to marketplace Explore — see non-goals
-table above.
+**Not part of first marketing gate:** flipping to marketplace Explore — see the
+non-goals table above.
 
 ### Standing ops
 
-- [ ] Apply new DB migrations as they land (`supabase/migrations/`, in order)
+- [ ] Apply new DB migrations as they land (`supabase/migrations/`, in order,
+      through repo tip `0029` and later)
 - [ ] Stripe webhook events: `checkout.session.completed`, `account.updated`,
       `checkout.session.expired`
 - [ ] `RELEASE_DELAY_HOURS=72` in production (`0` is for staging/local only)
@@ -201,7 +224,7 @@ table above.
 
 ## Email notifications (current behavior)
 
-All emails are best-effort and **no-op without `RESEND_API_KEY`**:
+All emails are best-effort. They no-op without `RESEND_API_KEY`:
 
 - **Purchase** → buyer confirmation + seller new-sale (seller email includes shipping address)
 - **Mark shipped** → buyer email with tracking link
@@ -209,27 +232,28 @@ All emails are best-effort and **no-op without `RESEND_API_KEY`**:
 - **Shipped, unconfirmed ~3 days** → buyer receipt nudge (max 2, ~4 days apart)
 - **Drop reminders** (24h / 1h / opening) → buyer email (+ push if VAPID set); cron every 15 min
 - **Go live** → followers + live-reminder subscribers (instant, no cron)
+- **Support ticket** → `support@popupdrop.co`
 
 Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.
 
 ## Conventions for future agents
 
-- Branch names: `cursor/<descriptive-name>-<suffix>`. One PR per logical change;
-  open as draft; merge only when the user says so.
+- Branch names: `cursor/<descriptive-name>-<suffix>`. One PR per logical change.
+  Open as draft. Merge only when the user says so.
 - Before pushing, run: `npm run typecheck && npm run lint && npm run test &&
   npm run build`, and `npm run test:e2e` for UI changes (build first).
 - After UI or integration features, walk the relevant checklist in
   `docs/MANUAL_TESTING.md` or `docs/PRE_MARKETING_TEST.md` for launch-affecting work.
 - Env vars are documented in `docs/DEPLOYMENT.md` (full reference + checklist).
-- Hand-maintained `src/lib/database.types.ts` mirrors the migrations — update it
-  alongside any schema change (or regenerate via `npm run db:types`).
+- Hand-maintained `src/lib/database.types.ts` mirrors the migrations. Update it
+  with any schema change (or regenerate via `npm run db:types`).
 - Realtime: one Supabase channel per shop (`src/components/shop-room.tsx`) with
-  presence + broadcast; use `emit` (not `broadcast`) when the sender's own UI
-  must also update (Realtime doesn't echo to the sender).
+  presence + broadcast. Use `emit` (not `broadcast`) when the sender UI must also
+  update (Realtime does not echo to the sender).
 
 ## Known future work / ideas
 
 - Scale hardening (Realtime connection limits, Explore caching) — k6 smoke in `scripts/load/`
 - Deferred items with revisit triggers — see **Not for first marketing** above and
-  `docs/ROADMAP.md` § "Deferred"
+  `docs/ROADMAP.md` section "Deferred"
 - Nonce-based strict CSP; per-viewer avatar stack in the room

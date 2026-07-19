@@ -14,7 +14,7 @@ Do **not** run paid marketing until all of these are true:
 
 - [x] Custom domain live; `NEXT_PUBLIC_SITE_URL` and all OAuth/webhook URLs updated
 - [x] Resend domain verified; buyers/sellers receive order emails on your domain
-- [x] All Supabase migrations applied through latest (`0020` seller terms + native live)
+- [x] All Supabase migrations applied through latest in repo (`0029_auction_stock_decrement.sql`; apply in order if production lags)
 - [x] `CRON_SECRET` set; daily release-funds cron confirmed in Vercel logs
 - [x] Drop-reminder cron scheduled (cron-job.org every 15 min on Hobby)
 - [ ] Staging or prod load test at **2× expected peak** (see [Load testing](#load-testing))
@@ -30,7 +30,7 @@ Do **not** run paid marketing until all of these are true:
 | Service | Free / trial today | Production recommendation | Why it matters for PopUp |
 | ------- | ------------------ | ------------------------- | ------------------------ |
 | **Domain** | — | Buy + point DNS to Vercel | Trust, email deliverability, OAuth, Stripe webhooks |
-| **Vercel** | Hobby | **Pro (~$20/mo)** strongly recommended | Hobby allows **one cron per day** only — drop reminders (`*/15 * * * *`) cannot deploy on Hobby; better headroom for traffic spikes |
+| **Vercel** | Hobby | **Pro (~$20/mo)** strongly recommended | Hobby allows **one cron per day** only — use cron-job.org for 15-min drop reminders (wired in prod); better headroom for traffic spikes |
 | **Supabase** | Free | **Pro (~$25/mo)** for launch | Backups / PITR, higher DB + Storage + Realtime limits; free projects can pause when idle |
 | **Resend** | 100 emails/day | **Paid** once volume grows | Order emails, drop reminders, live notifications; domain verification required |
 | **LiveKit** | Free tier caps | **Paid** if native live is core to marketing | Concurrent viewers + egress limits during live drops |
@@ -62,19 +62,25 @@ Do **not** run paid marketing until all of these are true:
 - [x] **Turnstile** site key + Supabase captcha secret paired
 - [x] **Uptime monitor** on `GET /api/health`
 - [ ] **Legal pages** attorney review optional (`/legal/terms`, `/legal/privacy` — contacts live)
-- [x] **Migrations** through `0020_seller_terms_accepted.sql`
+- [x] **Migrations** through latest in repo (`0029_auction_stock_decrement.sql`; apply in order if production lags)
 
-### Drop reminder cron (known gap on Hobby)
+### Drop reminder cron (external on Hobby — wired)
 
-`/api/cron/send-drop-reminders` exists but is **not** in `vercel.json` on Hobby
-because Vercel rejects sub-daily cron schedules on that plan.
+`/api/cron/send-drop-reminders` is **not** in `vercel.json` on Hobby. Vercel
+rejects sub-daily cron schedules on that plan.
 
-Pick one:
+**Production uses cron-job.org** (every 15 minutes) to call:
+
+`GET https://www.popupdrop.co/api/cron/send-drop-reminders?secret=<CRON_SECRET>`
+
+This is wired per `docs/HANDOFF.md` — not an open infra gap. See
+`docs/DEPLOYMENT.md` § External scheduler for setup steps.
+
+Alternatives if you change hosting:
 
 1. **Vercel Pro** — add to `vercel.json`:
    `{ "path": "/api/cron/send-drop-reminders", "schedule": "*/15 * * * *" }`
-2. **External scheduler** (e.g. cron-job.org) — every 15 min:
-   `GET https://yourdomain.com/api/cron/send-drop-reminders?secret=<CRON_SECRET>`
+2. **Another external scheduler** — same GET URL and `CRON_SECRET` as above
 3. **Daily best-effort only** — fold a limited pass into release-funds (opening
    reminders only; 1h/24h windows need sub-hour scheduling)
 
@@ -170,7 +176,7 @@ See `scripts/load/README.md` for copy-paste commands.
 ### Config week — done on popupdrop.co
 
 1. Domain + Resend + Supabase SMTP + Google OAuth production ✅
-2. Migrations through `0020`; cron + `CRON_SECRET` ✅
+2. Migrations through latest in repo (`0029`); cron + `CRON_SECRET` ✅
 3. Drop reminders via cron-job.org (Hobby-safe) ✅
 4. Consider Supabase Pro before heavy traffic; confirm backups / PITR
 
@@ -230,7 +236,7 @@ If you **do** want to rename the app everywhere, difficulty depends on scope.
 | **Stripe account** | Legal entity name on Connect account is separate from UI brand |
 | **Already-sent emails** | Old links and branding in inboxes |
 | **Google OAuth verification** | Large name/logo changes can trigger re-review |
-| **Theme preset label** | `"Neon PopUp"` in `shop-theme.ts` — seller-visible |
+| **Theme preset label** | Seller-visible labels in `shop-theme.ts` (Ember Night, Atelier, After Dark, Market Stall) |
 
 ### Recommended approach
 
