@@ -57,7 +57,12 @@ export function RemindMeButton({
       ? `${reminderCount} people want a reminder`
       : "Be first in the room";
 
-  const helper = useWaitlistCopy
+  // Set expectations for the three drop-reminder windows (24h, 1h, opening).
+  const timingHint = useWaitlistCopy
+    ? null
+    : "We’ll notify you 24 hours before, 1 hour before, and when the drop opens.";
+
+  const waitlistHelper = useWaitlistCopy
     ? "We’ll notify you when reminders are live — you’re on the list for now."
     : null;
 
@@ -76,8 +81,11 @@ export function RemindMeButton({
         )}
         {subscribed ? cancelLabel : joinLabel}
       </Button>
+      {timingHint && <p className="max-w-xs text-xs text-muted-foreground">{timingHint}</p>}
       <p className="text-xs text-muted-foreground">{socialProof}</p>
-      {subscribed && helper && <p className="text-xs text-muted-foreground">{helper}</p>}
+      {subscribed && waitlistHelper && (
+        <p className="max-w-xs text-xs text-muted-foreground">{waitlistHelper}</p>
+      )}
     </div>
   );
 }
