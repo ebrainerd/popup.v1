@@ -47,6 +47,7 @@ const baseShop: ShopWithDetails = {
     auction_starting_bid: null,
     auction_min_increment: null,
     auction_duration_seconds: null,
+    auction_ends_with_shop: false,
     auction_allow_prebids: true,
     auction_sudden_death: false,
     created_at: new Date().toISOString(),

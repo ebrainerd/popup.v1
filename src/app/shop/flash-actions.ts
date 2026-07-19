@@ -6,8 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { toCents } from "@/lib/utils";
 import { endedShopEditError } from "@/lib/shop-edit-guard";
 import {
-  DEFAULT_AUCTION_DURATION,
   MIN_INCREMENT_CENTS,
+  resolveAuctionDurationForDb,
+  validateAuctionDurationConfig,
 } from "@/lib/auction-bidding";
 import type { FlashItemBroadcast } from "@/lib/realtime";
 
@@ -184,6 +185,7 @@ const flashItemSchema = z
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
     auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_ends_with_shop: z.boolean().optional(),
     auction_allow_prebids: z.boolean().optional(),
     auction_sudden_death: z.boolean().optional(),
   })
@@ -215,10 +217,14 @@ const flashItemSchema = z
         path: ["auction_min_increment"],
       });
     }
-    if (!d.auction_duration_seconds || d.auction_duration_seconds < 1) {
+    const durationCheck = validateAuctionDurationConfig(
+      d.auction_ends_with_shop,
+      d.auction_duration_seconds,
+    );
+    if (!durationCheck.ok) {
       ctx.addIssue({
         code: "custom",
-        message: "Choose an auction duration.",
+        message: durationCheck.message,
         path: ["auction_duration_seconds"],
       });
     }
@@ -236,7 +242,7 @@ export type FlashItemResult =
   | { ok: false; error: string };
 
 const FLASH_ITEM_SELECT =
-  "id, shop_id, title, description, photo_url, photo_urls, price, quantity, discount_price, is_flash_only, flash_expires_at, sale_type, auction_starting_bid, auction_min_increment, auction_duration_seconds, auction_allow_prebids, auction_sudden_death, shipping_rate, created_at";
+  "id, shop_id, title, description, photo_url, photo_urls, price, quantity, discount_price, is_flash_only, flash_expires_at, sale_type, auction_starting_bid, auction_min_increment, auction_duration_seconds, auction_ends_with_shop, auction_allow_prebids, auction_sudden_death, shipping_rate, created_at";
 
 /** Create a flash-only item that exists only while the shop is open. */
 export async function createFlashItem(
@@ -251,6 +257,7 @@ export async function createFlashItem(
     auction_starting_bid?: number;
     auction_min_increment?: number;
     auction_duration_seconds?: number;
+    auction_ends_with_shop?: boolean;
     auction_allow_prebids?: boolean;
     auction_sudden_death?: boolean;
   },
@@ -280,6 +287,11 @@ export async function createFlashItem(
     : toCents(parsed.data.price);
   const photoUrl = parsed.data.photo_url || null;
   const photoUrls = photoUrl ? [photoUrl] : [];
+  const duration = resolveAuctionDurationForDb(
+    isAuction,
+    parsed.data.auction_ends_with_shop,
+    parsed.data.auction_duration_seconds,
+  );
 
   const { data, error } = await supabase
     .from("products")
@@ -298,9 +310,7 @@ export async function createFlashItem(
       auction_min_increment: isAuction
         ? toCents(parsed.data.auction_min_increment ?? 1)
         : null,
-      auction_duration_seconds: isAuction
-        ? parsed.data.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION
-        : null,
+      ...duration,
       auction_allow_prebids: isAuction ? parsed.data.auction_allow_prebids !== false : true,
       auction_sudden_death: isAuction ? Boolean(parsed.data.auction_sudden_death) : false,
     })

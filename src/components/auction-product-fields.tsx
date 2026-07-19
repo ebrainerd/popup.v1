@@ -4,7 +4,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { CheckboxWithHelp, LabelWithHelp } from "@/components/field-help";
 import { cn } from "@/lib/utils";
-import { AUCTION_DURATION_PRESETS } from "@/lib/auction-bidding";
+import {
+  AUCTION_DURATION_PRESET_GROUPS,
+  AUCTION_DURATION_PRESETS,
+  auctionDurationToSelectValue,
+  parseAuctionDurationSelectValue,
+} from "@/lib/auction-bidding";
 
 export type SaleType = "buy_now" | "auction";
 
@@ -13,6 +18,7 @@ export type AuctionFieldState = {
   startingBid: string;
   minIncrement: string;
   durationSeconds: number;
+  endsWithShop: boolean;
   allowPrebids: boolean;
   suddenDeath: boolean;
 };
@@ -22,6 +28,7 @@ export const defaultAuctionFields = (): AuctionFieldState => ({
   startingBid: "",
   minIncrement: "1.00",
   durationSeconds: 60,
+  endsWithShop: false,
   allowPrebids: true,
   suddenDeath: false,
 });
@@ -69,6 +76,8 @@ export function AuctionFields({
   onChange: (patch: Partial<AuctionFieldState>) => void;
 }) {
   if (state.saleType !== "auction") return null;
+
+  const selectValue = auctionDurationToSelectValue(state.endsWithShop, state.durationSeconds);
 
   return (
     <div className="space-y-4 rounded-lg border border-border bg-muted/30 p-4">
@@ -132,31 +141,43 @@ export function AuctionFields({
 
       <div className="space-y-1.5">
         <LabelWithHelp
-          htmlFor="auction_duration_seconds"
-          helpLabel="Countdown length"
+          htmlFor="auction_duration_select"
+          helpLabel="Auction length"
           help={
             <>
-              How long the on-screen timer runs after you press Start auction. When it reaches
-              zero, the highest bidder wins. By default, a bid in the last 10 seconds adds 10 more
-              seconds so buyers can respond — turn on Sudden death to disable that extension.
+              Short presets run a live flash countdown after you press Start auction. Until shop
+              closes keeps bidding open until your shop&apos;s scheduled end time. By default, a bid
+              in the last 10 seconds adds 10 more seconds so buyers can respond — turn on Sudden
+              death to disable that extension.
             </>
           }
         >
-          Countdown length
+          Auction length
         </LabelWithHelp>
         <select
-          id="auction_duration_seconds"
-          name="auction_duration_seconds"
+          id="auction_duration_select"
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-base sm:text-sm"
-          value={state.durationSeconds}
-          onChange={(e) => onChange({ durationSeconds: Number(e.target.value) })}
+          value={selectValue}
+          onChange={(e) => onChange(parseAuctionDurationSelectValue(e.target.value))}
         >
-          {AUCTION_DURATION_PRESETS.map((p) => (
-            <option key={p.seconds} value={p.seconds}>
-              {p.label}
-            </option>
+          {AUCTION_DURATION_PRESET_GROUPS.map((group) => (
+            <optgroup key={group.key} label={group.label}>
+              {AUCTION_DURATION_PRESETS.filter((p) => p.group === group.key).map((p) => (
+                <option
+                  key={p.seconds ?? "shop"}
+                  value={p.seconds === null ? "shop" : String(p.seconds)}
+                >
+                  {p.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
+        {state.endsWithShop ? (
+          <input type="hidden" name="auction_ends_with_shop" value="on" />
+        ) : (
+          <input type="hidden" name="auction_duration_seconds" value={state.durationSeconds} />
+        )}
       </div>
 
       <CheckboxWithHelp

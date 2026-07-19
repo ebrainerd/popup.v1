@@ -8,8 +8,9 @@ import { deriveShopStatus, toCents, computeEndShopTimes } from "@/lib/utils";
 import { endedShopEditError } from "@/lib/shop-edit-guard";
 import { resolveShopVisibility } from "@/lib/discovery";
 import {
-  DEFAULT_AUCTION_DURATION,
   MIN_INCREMENT_CENTS,
+  resolveAuctionDurationForDb,
+  validateAuctionDurationConfig,
 } from "@/lib/auction-bidding";
 import { shopThemeToJson } from "@/lib/shop-theme";
 import { isNativeLiveEnabled, shopLiveKitRoomName } from "@/lib/live-stream";
@@ -628,7 +629,8 @@ const productSchema = z
     shipping_rate: z.coerce.number().min(0).max(100000).default(0),
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
-    auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_duration_seconds: z.coerce.number().int().min(0).nullish(),
+    auction_ends_with_shop: z.coerce.boolean().optional(),
     auction_allow_prebids: z.coerce.boolean().optional(),
     auction_sudden_death: z.coerce.boolean().optional(),
   })
@@ -662,16 +664,21 @@ const productSchema = z
         path: ["auction_min_increment"],
       });
     }
-    if (!d.auction_duration_seconds || d.auction_duration_seconds < 1) {
+    const durationCheck = validateAuctionDurationConfig(
+      d.auction_ends_with_shop,
+      d.auction_duration_seconds,
+    );
+    if (!durationCheck.ok) {
       ctx.addIssue({
         code: "custom",
-        message: "Choose an auction duration.",
+        message: durationCheck.message,
         path: ["auction_duration_seconds"],
       });
     }
   });
 
 function parseProductForm(formData: FormData) {
+  const endsWithShop = formData.get("auction_ends_with_shop") === "on";
   return {
     shop_id: formData.get("shop_id"),
     title: formData.get("title"),
@@ -682,7 +689,10 @@ function parseProductForm(formData: FormData) {
     shipping_rate: formData.get("shipping_rate") ?? 0,
     auction_starting_bid: formData.get("auction_starting_bid") ?? undefined,
     auction_min_increment: formData.get("auction_min_increment") ?? undefined,
-    auction_duration_seconds: formData.get("auction_duration_seconds") ?? undefined,
+    auction_duration_seconds: endsWithShop
+      ? undefined
+      : (formData.get("auction_duration_seconds") ?? undefined),
+    auction_ends_with_shop: endsWithShop,
     auction_allow_prebids: formData.get("auction_allow_prebids") === "on",
     auction_sudden_death: formData.get("auction_sudden_death") === "on",
   };
@@ -691,6 +701,11 @@ function parseProductForm(formData: FormData) {
 function productInsertFromParsed(d: z.infer<typeof productSchema>, photoUrls: string[]) {
   const isAuction = d.sale_type === "auction";
   const startingCents = isAuction ? toCents(d.auction_starting_bid ?? 0) : toCents(d.price);
+  const duration = resolveAuctionDurationForDb(
+    isAuction,
+    d.auction_ends_with_shop,
+    d.auction_duration_seconds,
+  );
   return {
     shop_id: d.shop_id,
     title: d.title,
@@ -703,7 +718,7 @@ function productInsertFromParsed(d: z.infer<typeof productSchema>, photoUrls: st
     shipping_rate: toCents(d.shipping_rate ?? 0),
     auction_starting_bid: isAuction ? startingCents : null,
     auction_min_increment: isAuction ? toCents(d.auction_min_increment ?? 1) : null,
-    auction_duration_seconds: isAuction ? d.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION : null,
+    ...duration,
     auction_allow_prebids: isAuction ? d.auction_allow_prebids !== false : true,
     auction_sudden_death: isAuction ? Boolean(d.auction_sudden_death) : false,
   };
@@ -721,7 +736,8 @@ const finishProductSchema = z
     shipping_rate: z.coerce.number().min(0).max(100000),
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
-    auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_duration_seconds: z.coerce.number().int().min(0).nullish(),
+    auction_ends_with_shop: z.boolean().optional(),
     auction_allow_prebids: z.boolean().optional(),
     auction_sudden_death: z.boolean().optional(),
   })
@@ -755,10 +771,14 @@ const finishProductSchema = z
         path: ["auction_min_increment"],
       });
     }
-    if (!d.auction_duration_seconds || d.auction_duration_seconds < 1) {
+    const durationCheck = validateAuctionDurationConfig(
+      d.auction_ends_with_shop,
+      d.auction_duration_seconds,
+    );
+    if (!durationCheck.ok) {
       ctx.addIssue({
         code: "custom",
-        message: "Choose an auction duration.",
+        message: durationCheck.message,
         path: ["auction_duration_seconds"],
       });
     }
@@ -838,6 +858,7 @@ function finishProductInsert(
     auction_starting_bid: product.auction_starting_bid,
     auction_min_increment: product.auction_min_increment,
     auction_duration_seconds: product.auction_duration_seconds,
+    auction_ends_with_shop: product.auction_ends_with_shop,
     auction_allow_prebids: product.auction_allow_prebids,
     auction_sudden_death: product.auction_sudden_death,
   });
@@ -974,7 +995,8 @@ const saveDraftProductSchema = z.object({
   shipping_rate: z.coerce.number().min(0).max(100000).default(0),
   auction_starting_bid: z.coerce.number().min(0).optional(),
   auction_min_increment: z.coerce.number().min(0).optional(),
-  auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+  auction_duration_seconds: z.coerce.number().int().min(0).nullish(),
+  auction_ends_with_shop: z.boolean().optional(),
   auction_allow_prebids: z.boolean().optional(),
   auction_sudden_death: z.boolean().optional(),
 });
@@ -1002,6 +1024,11 @@ function saveDraftProductRow(shopId: string, product: z.infer<typeof saveDraftPr
   const isAuction = product.sale_type === "auction";
   const buyNowCents = toCents(Math.max(product.price, MIN_PRICE_USD));
   const startingCents = toCents(Math.max(product.auction_starting_bid ?? MIN_PRICE_USD, MIN_PRICE_USD));
+  const duration = resolveAuctionDurationForDb(
+    isAuction,
+    product.auction_ends_with_shop,
+    product.auction_duration_seconds,
+  );
   return {
     shop_id: shopId,
     title: product.title,
@@ -1014,9 +1041,7 @@ function saveDraftProductRow(shopId: string, product: z.infer<typeof saveDraftPr
     shipping_rate: toCents(product.shipping_rate),
     auction_starting_bid: isAuction ? startingCents : null,
     auction_min_increment: isAuction ? toCents(product.auction_min_increment ?? 1) : null,
-    auction_duration_seconds: isAuction
-      ? product.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION
-      : null,
+    ...duration,
     auction_allow_prebids: isAuction ? product.auction_allow_prebids !== false : true,
     auction_sudden_death: isAuction ? Boolean(product.auction_sudden_death) : false,
   };
@@ -1329,7 +1354,8 @@ const updateProductSchema = z
     shipping_rate: z.coerce.number().min(0).max(100000).default(0),
     auction_starting_bid: z.coerce.number().min(0).optional(),
     auction_min_increment: z.coerce.number().min(0).optional(),
-    auction_duration_seconds: z.coerce.number().int().min(0).optional(),
+    auction_duration_seconds: z.coerce.number().int().min(0).nullish(),
+    auction_ends_with_shop: z.coerce.boolean().optional(),
     auction_allow_prebids: z.boolean().optional(),
     auction_sudden_death: z.boolean().optional(),
   })
@@ -1343,6 +1369,19 @@ const updateProductSchema = z
     }
     if (d.sale_type === "auction" && d.quantity !== 1) {
       ctx.addIssue({ code: "custom", message: "Auction quantity must be 1.", path: ["quantity"] });
+    }
+    if (d.sale_type === "auction") {
+      const durationCheck = validateAuctionDurationConfig(
+        d.auction_ends_with_shop,
+        d.auction_duration_seconds,
+      );
+      if (!durationCheck.ok) {
+        ctx.addIssue({
+          code: "custom",
+          message: durationCheck.message,
+          path: ["auction_duration_seconds"],
+        });
+      }
     }
   });
 
@@ -1360,7 +1399,8 @@ export async function updateProduct(input: {
   shipping_rate?: number;
   auction_starting_bid?: number;
   auction_min_increment?: number;
-  auction_duration_seconds?: number;
+  auction_duration_seconds?: number | null;
+  auction_ends_with_shop?: boolean;
   auction_allow_prebids?: boolean;
   auction_sudden_death?: boolean;
 }): Promise<UpdateProductResult> {
@@ -1403,6 +1443,11 @@ export async function updateProduct(input: {
 
   const isAuction = d.sale_type === "auction";
   const startingCents = isAuction ? toCents(d.auction_starting_bid ?? d.price) : toCents(d.price);
+  const duration = resolveAuctionDurationForDb(
+    isAuction,
+    d.auction_ends_with_shop,
+    d.auction_duration_seconds,
+  );
 
   const { error } = await supabase
     .from("products")
@@ -1417,7 +1462,7 @@ export async function updateProduct(input: {
       shipping_rate: toCents(d.shipping_rate ?? 0),
       auction_starting_bid: isAuction ? startingCents : null,
       auction_min_increment: isAuction ? toCents(d.auction_min_increment ?? 1) : null,
-      auction_duration_seconds: isAuction ? d.auction_duration_seconds ?? DEFAULT_AUCTION_DURATION : null,
+      ...duration,
       auction_allow_prebids: isAuction ? d.auction_allow_prebids !== false : true,
       auction_sudden_death: isAuction ? Boolean(d.auction_sudden_death) : false,
     })
@@ -1515,6 +1560,7 @@ export async function duplicateShop(shopId: string): Promise<void> {
         auction_starting_bid: p.auction_starting_bid,
         auction_min_increment: p.auction_min_increment,
         auction_duration_seconds: p.auction_duration_seconds,
+        auction_ends_with_shop: p.auction_ends_with_shop,
         auction_allow_prebids: p.auction_allow_prebids,
         auction_sudden_death: p.auction_sudden_death,
       })),

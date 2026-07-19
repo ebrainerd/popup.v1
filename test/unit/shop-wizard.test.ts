@@ -62,6 +62,7 @@ describe("shop wizard", () => {
             startingBid: "",
             minIncrement: "1.00",
             durationSeconds: 60,
+            endsWithShop: false,
             allowPrebids: true,
             suddenDeath: false,
           },
@@ -118,6 +119,7 @@ describe("shop wizard", () => {
             startingBid: "",
             minIncrement: "1.00",
             durationSeconds: 60,
+            endsWithShop: false,
             allowPrebids: true,
             suddenDeath: false,
           },
@@ -135,6 +137,7 @@ describe("shop wizard", () => {
             startingBid: "",
             minIncrement: "1.00",
             durationSeconds: 60,
+            endsWithShop: false,
             allowPrebids: true,
             suddenDeath: false,
           },
@@ -170,6 +173,7 @@ describe("shop wizard", () => {
         startingBid: "10.00",
         minIncrement: "2.00",
         durationSeconds: 120,
+        endsWithShop: false,
         allowPrebids: false,
         suddenDeath: true,
       },
@@ -187,5 +191,40 @@ describe("shop wizard", () => {
     expect(clone.photo_urls).not.toBe(source.photo_urls);
     expect(clone.auctionFields).toEqual(source.auctionFields);
     expect(wizardProductToPayload(clone).id).toBeUndefined();
+  });
+
+  it("accepts until-shop-closes auction length in product validation", () => {
+    const draft = markStepComplete(
+      {
+        ...defaultWizardDraft(),
+        name: "Summer drop",
+        products: [
+          {
+            clientId: "p1",
+            title: "Rare print",
+            description: "",
+            price: "50.00",
+            quantity: "1",
+            shippingRate: "0.00",
+            photo_urls: [],
+            auctionFields: {
+              saleType: "auction" as const,
+              startingBid: "50.00",
+              minIncrement: "5.00",
+              durationSeconds: 60,
+              endsWithShop: true,
+              allowPrebids: true,
+              suddenDeath: false,
+            },
+          },
+        ],
+      },
+      "details",
+    );
+    expect(getStepValidation("products", draft).valid).toBe(true);
+    expect(wizardProductToPayload(draft.products[0]!)).toMatchObject({
+      auction_duration_seconds: null,
+      auction_ends_with_shop: true,
+    });
   });
 });

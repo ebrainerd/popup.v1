@@ -145,6 +145,7 @@ export function productToWizardDraft(product: Product): WizardProductDraft {
       startingBid: ((product.auction_starting_bid ?? product.price) / 100).toFixed(2),
       minIncrement: ((product.auction_min_increment ?? 100) / 100).toFixed(2),
       durationSeconds: product.auction_duration_seconds ?? 60,
+      endsWithShop: product.auction_ends_with_shop ?? false,
       allowPrebids: product.auction_allow_prebids,
       suddenDeath: product.auction_sudden_death,
     },
@@ -206,7 +207,7 @@ function isProductValid(product: WizardProductDraft): boolean {
     start >= 0.5 &&
     !Number.isNaN(inc) &&
     inc >= 0.5 &&
-    product.auctionFields.durationSeconds >= 1
+    (product.auctionFields.endsWithShop || product.auctionFields.durationSeconds >= 1)
   );
 }
 
@@ -346,7 +347,10 @@ export function wizardProductToPayload(p: WizardProductDraft, draftMode = false)
       ? parseFloat(p.auctionFields.startingBid) || 0.5
       : parseFloat(p.auctionFields.startingBid) || 0,
     auction_min_increment: parseFloat(p.auctionFields.minIncrement) || 1,
-    auction_duration_seconds: p.auctionFields.durationSeconds || 60,
+    auction_duration_seconds: p.auctionFields.endsWithShop
+      ? null
+      : p.auctionFields.durationSeconds || 60,
+    auction_ends_with_shop: p.auctionFields.endsWithShop,
     auction_allow_prebids: p.auctionFields.allowPrebids,
     auction_sudden_death: p.auctionFields.suddenDeath,
   };
