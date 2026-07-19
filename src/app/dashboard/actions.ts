@@ -226,7 +226,7 @@ export async function updateShop(_prev: ActionState, formData: FormData): Promis
     startIso = new Date(d.start_at!).toISOString();
     endIso = new Date(d.end_at!).toISOString();
     scheduleSet = true;
-    scheduleTimezone = d.schedule_timezone?.trim() || scheduleTimezone;
+    scheduleTimezone = d.schedule_timezone?.trim() || scheduleTimezone || "UTC";
   } else if (current.status !== "draft") {
     return { error: "Start and end times are required." };
   }
@@ -853,7 +853,9 @@ function wizardScheduleFields(input: {
         start_at: start.toISOString(),
         end_at: end.toISOString(),
         schedule_set: true,
-        schedule_timezone: input.scheduleTimezone?.trim() || null,
+        // Always persist a zone when a real schedule is set so edit UIs don't
+        // fall back to an empty <select> (which looked like Hawaii).
+        schedule_timezone: input.scheduleTimezone?.trim() || "UTC",
       };
     }
   }
