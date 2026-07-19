@@ -1,5 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
+  formatShopOpenAt,
+  formatShopScheduleWhen,
   isoToLocalInput,
   isoToZonedInput,
   localInputToIso,
@@ -57,4 +59,17 @@ describe("datetime conversion", () => {
     const iso = zonedInputToIso(future, "America/Los_Angeles");
     expect(new Date(iso).getTime()).toBeGreaterThan(Date.now());
   });
+
+  it("formats Opens labels in the shop timezone (SSR-stable)", () => {
+    const iso = "2026-07-19T17:00:00.000Z"; // 10:00am PDT
+    const label = formatShopOpenAt(iso, "America/Los_Angeles");
+    expect(label).toMatch(/10:00 AM/);
+    expect(label).toMatch(/PDT|GMT-7|UTC-7/);
+    // No ICU narrow/no-break spaces (would hydrate-mismatch Node vs browser).
+    expect(label).not.toMatch(/[\u00a0\u202f\u2009]/);
+    // Same input + zone must be deterministic (no runtime-local dependence).
+    expect(formatShopOpenAt(iso, "America/Los_Angeles")).toBe(label);
+    expect(formatShopScheduleWhen(iso, "America/New_York")).toMatch(/1:00 PM/);
+  });
 });
+

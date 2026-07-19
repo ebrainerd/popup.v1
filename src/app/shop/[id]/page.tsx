@@ -14,6 +14,8 @@ import { getLiveReminderCount, getUserLiveReminder } from "@/lib/live-reminders"
 import { parseLiveEmbed } from "@/lib/embeds";
 import { effectiveStreamProvider, isNativeLiveEnabled } from "@/lib/live-stream";
 import { derivePublishedShopWindow } from "@/lib/utils";
+import { formatShopScheduleWhen } from "@/lib/datetime";
+import { DEFAULT_SCHEDULE_TIMEZONE } from "@/lib/timezones";
 import { ShopThemeShell } from "@/components/shop-theme-shell";
 import { ShopPageView } from "@/components/shop-page-view";
 import {
@@ -38,9 +40,13 @@ export async function generateMetadata({
 
   const seller = shop.seller;
   const sellerLabel = seller ? `@${seller.username}` : "PopUp";
+  const opensWhen = formatShopScheduleWhen(
+    shop.start_at,
+    shop.schedule_timezone?.trim() || DEFAULT_SCHEDULE_TIMEZONE,
+  );
   const description =
     shop.description ??
-    `${shop.name} by ${sellerLabel} — limited drop on PopUp. Opens ${new Date(shop.start_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}.`;
+    `${shop.name} by ${sellerLabel} — limited drop on PopUp. Opens ${opensWhen}.`;
   const site = getSiteUrl();
   const ogImage = shop.cover_url ?? `${site}/opengraph-image`;
 

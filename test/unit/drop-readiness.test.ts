@@ -23,7 +23,7 @@ const baseShop: ShopWithDetails = {
   native_live_tos_accepted_at: null,
   status: "draft",
   schedule_set: false,
-  schedule_timezone: null,
+  schedule_timezone: "America/Los_Angeles",
   peak_viewers: 0,
   featured_at: null,
   wizard_completed_steps: [],
@@ -68,6 +68,8 @@ describe("computeDropHealth", () => {
     );
     expect(health.productCount).toBe(1);
     expect(health.reminderCount).toBe(3);
+    expect(health.scheduleTimezone).toBe("America/Los_Angeles");
+    expect(health.openingAt).toBe(baseShop.start_at);
     expect(health.items.find((i) => i.id === "details")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "products")?.done).toBe(true);
     expect(health.items.find((i) => i.id === "cover")?.done).toBe(true);
@@ -90,6 +92,19 @@ describe("computeDropHealth", () => {
     );
     expect(health.items.find((i) => i.id === "published")?.done).toBe(true);
     expect(health.readyCount).toBe(7);
+  });
+
+  it("leaves scheduleTimezone null when shop has none saved", () => {
+    const health = computeDropHealth(
+      { ...baseShop, schedule_timezone: null },
+      {
+        stripe_onboarded: true,
+        follower_count: 0,
+        seller_terms_accepted_at: new Date().toISOString(),
+      },
+      0,
+    );
+    expect(health.scheduleTimezone).toBeNull();
   });
 
   it("marks schedule complete when set", () => {

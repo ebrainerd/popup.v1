@@ -1,5 +1,10 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Bell, Clock, Package, Users } from "lucide-react";
 import type { DropHealth } from "@/lib/drop-readiness";
+import { detectBrowserTimeZone, formatShopOpenAt } from "@/lib/datetime";
+import { DEFAULT_SCHEDULE_TIMEZONE } from "@/lib/timezones";
 
 export function DropHealthSummary({
   health,
@@ -8,13 +13,17 @@ export function DropHealthSummary({
   health: DropHealth;
   isEnded?: boolean;
 }) {
-  const opensAt = new Date(health.openingAt).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // Always paint a stable placeholder on SSR + first client render, then format
+  // after mount. Avoids Node/browser ICU mismatches and never shows UTC as local.
+  const [opensAt, setOpensAt] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedTz = health.scheduleTimezone?.trim() || null;
+    const tz = savedTz || detectBrowserTimeZone() || DEFAULT_SCHEDULE_TIMEZONE;
+    queueMicrotask(() => {
+      setOpensAt(formatShopOpenAt(health.openingAt, tz));
+    });
+  }, [health.openingAt, health.scheduleTimezone]);
 
   return (
     <div className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-muted/30 p-3 sm:grid-cols-4">
@@ -29,7 +38,7 @@ export function DropHealthSummary({
       <Stat
         icon={Clock}
         label={isEnded ? "Opened" : "Opens"}
-        value={opensAt}
+        value={opensAt ?? "—"}
         compact
       />
     </div>

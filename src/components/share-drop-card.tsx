@@ -18,6 +18,7 @@ export function ShareDropCard({
   shopName,
   sellerHandle,
   startAt,
+  scheduleTimezone,
   shopUrl,
   variant = "default",
 }: {
@@ -25,6 +26,8 @@ export function ShareDropCard({
   shopName: string;
   sellerHandle: string;
   startAt: string;
+  /** Shop schedule IANA zone — captions must use this, not the browser TZ. */
+  scheduleTimezone?: string | null;
   /** Full shop URL for SSR / dashboard previews (avoids hydration mismatch). */
   shopUrl?: string;
   variant?: "default" | "dashboard";
@@ -35,7 +38,7 @@ export function ShareDropCard({
   const url =
     shopUrl ??
     (typeof window !== "undefined" ? `${window.location.origin}${fallbackUrl}` : fallbackUrl);
-  const captions = buildSellerShareCaptions(shopName, sellerHandle, startAt);
+  const captions = buildSellerShareCaptions(shopName, sellerHandle, startAt, scheduleTimezone);
 
   function copyText(text: string, kind: "link" | string) {
     navigator.clipboard.writeText(text).then(() => {

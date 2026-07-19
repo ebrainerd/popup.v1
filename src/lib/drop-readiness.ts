@@ -22,6 +22,8 @@ export type DropHealth = {
   reminderCount: number;
   isPublished: boolean;
   openingAt: string;
+  /** IANA zone for openingAt display; null means hydrate on the client. */
+  scheduleTimezone: string | null;
 };
 
 type SellerContext = {
@@ -105,5 +107,6 @@ export function computeDropHealth(
     reminderCount,
     isPublished,
     openingAt: shop.start_at,
+    scheduleTimezone: shop.schedule_timezone?.trim() || null,
   };
 }

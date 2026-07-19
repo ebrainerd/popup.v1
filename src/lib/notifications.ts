@@ -5,6 +5,8 @@ import { createServiceRoleClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/env";
 import { carrierTrackingUrl } from "@/lib/utils";
 import { transactionalEmailFooter } from "@/lib/support-copy";
+import { formatShopScheduleWhen } from "@/lib/datetime";
+import { DEFAULT_SCHEDULE_TIMEZONE } from "@/lib/timezones";
 
 let vapidConfigured: boolean | null = null;
 
@@ -667,6 +669,7 @@ type DropReminderRow = {
     name: string;
     start_at: string;
     end_at: string;
+    schedule_timezone: string | null;
     status: string;
     seller: { username: string; display_name: string | null } | null;
   } | null;
@@ -724,7 +727,7 @@ export async function sendDropReminders(): Promise<number> {
       .select(
         `id, user_id, email_enabled, push_enabled,
          before_24h_sent_at, before_1h_sent_at, opening_sent_at,
-         shop:shops!drop_reminders_shop_id_fkey(id, name, start_at, end_at, status, seller:profiles!shops_seller_id_fkey(username, display_name))`,
+         shop:shops!drop_reminders_shop_id_fkey(id, name, start_at, end_at, schedule_timezone, status, seller:profiles!shops_seller_id_fkey(username, display_name))`,
       )
       .is("cancelled_at", null);
 
@@ -764,13 +767,10 @@ export async function sendDropReminders(): Promise<number> {
       const copy = REMINDER_COPY[window];
       const sellerName = shop.seller?.username ? `@${shop.seller.username}` : "A creator";
       const url = `${site}/shop/${shop.id}`;
-      const when = new Date(shop.start_at).toLocaleString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      });
+      const when = formatShopScheduleWhen(
+        shop.start_at,
+        shop.schedule_timezone?.trim() || DEFAULT_SCHEDULE_TIMEZONE,
+      );
 
       const emailWanted = r.email_enabled && isEmailReminderDeliveryConfigured();
       const pushWanted = r.push_enabled && (await userHasPushSubscription(r.user_id));
@@ -850,7 +850,7 @@ export async function sendOpeningRemindersForShop(shopId: string): Promise<numbe
 
     const { data: shop } = await supabase
       .from("shops")
-      .select("id, name, start_at, end_at, status, seller:profiles!shops_seller_id_fkey(username, display_name)")
+      .select("id, name, start_at, end_at, schedule_timezone, status, seller:profiles!shops_seller_id_fkey(username, display_name)")
       .eq("id", shopId)
       .maybeSingle();
     if (!shop || shop.status === "draft") return 0;
