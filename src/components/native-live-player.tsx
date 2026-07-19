@@ -8,6 +8,38 @@ import { ROOM_EVENTS, type LiveBroadcast } from "@/lib/realtime";
 import { getPublicLiveKitUrl } from "@/lib/live-stream";
 import { cn } from "@/lib/utils";
 
+function mutedStorageKey(shopId: string) {
+  return `popup:stream-muted:${shopId}`;
+}
+
+function readStoredMuted(shopId: string): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const v = sessionStorage.getItem(mutedStorageKey(shopId));
+    if (v === "0") return false;
+    if (v === "1") return true;
+  } catch {
+    // sessionStorage unavailable (private mode quirks) — stay muted.
+  }
+  return true;
+}
+
+function writeStoredMuted(shopId: string, muted: boolean) {
+  try {
+    sessionStorage.setItem(mutedStorageKey(shopId), muted ? "1" : "0");
+  } catch {
+    // ignore
+  }
+}
+
+function applyMutedToShopAudio(shopId: string, muted: boolean) {
+  document
+    .querySelectorAll<HTMLMediaElement>(`audio[data-popup-live-audio="${shopId}"]`)
+    .forEach((el) => {
+      el.muted = muted;
+    });
+}
+
 export function NativeLivePlayer({
   shopId,
   initialIsLive,
@@ -20,11 +52,21 @@ export function NativeLivePlayer({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const roomRef = useRef<Room | null>(null);
+  const mutedRef = useRef(true);
   const [isLive, setIsLive] = useState(initialIsLive);
   const [prevInitialIsLive, setPrevInitialIsLive] = useState(initialIsLive);
   const [muted, setMuted] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+
+  // Restore mute preference after mount so SSR stays muted (autoplay-safe).
+  useEffect(() => {
+    queueMicrotask(() => {
+      const stored = readStoredMuted(shopId);
+      mutedRef.current = stored;
+      setMuted(stored);
+    });
+  }, [shopId]);
 
   if (prevInitialIsLive !== initialIsLive) {
     setPrevInitialIsLive(initialIsLive);
@@ -44,7 +86,17 @@ export function NativeLivePlayer({
       roomRef.current = null;
     }
     if (containerRef.current) containerRef.current.innerHTML = "";
-  }, []);
+    document
+      .querySelectorAll(`audio[data-popup-live-audio="${shopId}"]`)
+      .forEach((el) => el.remove());
+  }, [shopId]);
+
+  // Toggle mute on attached elements only — never tear down the LiveKit room.
+  useEffect(() => {
+    mutedRef.current = muted;
+    writeStoredMuted(shopId, muted);
+    applyMutedToShopAudio(shopId, muted);
+  }, [muted, shopId]);
 
   useEffect(() => {
     if (!isLive) {
@@ -77,7 +129,8 @@ export function NativeLivePlayer({
           }
           if (track.kind === Track.Kind.Audio) {
             const el = track.attach();
-            el.muted = muted;
+            el.dataset.popupLiveAudio = shopId;
+            el.muted = mutedRef.current;
             document.body.appendChild(el);
           }
         });
@@ -103,7 +156,7 @@ export function NativeLivePlayer({
       cancelled = true;
       void disconnect();
     };
-  }, [isLive, shopId, disconnect, muted]);
+  }, [isLive, shopId, disconnect]);
 
   if (!isLive) return null;
 
@@ -140,7 +193,7 @@ export function NativeLivePlayer({
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-4 text-center text-sm text-white">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 p-4 text-sm text-center text-white">
             {error}
           </div>
         )}
