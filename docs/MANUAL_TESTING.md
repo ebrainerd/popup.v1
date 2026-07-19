@@ -118,7 +118,7 @@ phase toggle and the **Desktop / Mobile** viewport toggle.
 | # | Layout | Presets to try | Expected preview (Desktop) | ✓ |
 | - | ------ | -------------- | -------------------------- | - |
 | L1 | **The Room** (`classic`) | Market Stall (rec.) + Ember Night | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
-| L2 | **Lookbook** (`catalog`) | Gallery (rec.) + Dark Room | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
+| L2 | **Lookbook** (`catalog`) | Atelier (rec.) + After Dark | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
