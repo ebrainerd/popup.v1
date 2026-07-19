@@ -1,5 +1,11 @@
 # PopUp Auctions PRD
 
+> **Status: Shipped.** This PRD is a **historical spec**. Current behavior lives
+> in migrations **`0013+`** (through **`0029_auction_stock_decrement.sql`**),
+> shop auction server actions, and manual checks in **`docs/PRE_MARKETING_TEST.md`**
+> Phase 10 and **`docs/MANUAL_TESTING.md`**. For live status, see
+> **`docs/HANDOFF.md`**.
+
 ## Purpose
 
 Auctions should become a core PopUp feature because they make a live shop feel

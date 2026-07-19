@@ -12,7 +12,7 @@ for broader UX context.
 > enum for backward compatibility; code may still branch on them for legacy shops
 > and preview, but **do not implement them as active picker options.**
 
-**Status:** **All phases complete (June 2026).** Phase 0 (metadata + defaults),
+**Status:** **All phases complete (July 2026).** Phase 0 (metadata + defaults),
 Phase 1 (editor archetype picker + preview phase toggle), Phase 2 (Live Stage /
 `broadcast`), Phase 3 (Lookbook / `catalog`), Phase 4 (Drop Clock / `countdown`),
 and Phase 5 (The Room / `classic`) shipped the buyer-page parity work; **Phase 6
@@ -33,7 +33,7 @@ drop”), not interchangeable skins of the same page.
 
 **Non-goals for v1 of this work**
 
-- New color presets (keep Neon PopUp, Gallery, Dark Room, Market Stall)
+- New color presets (keep existing theme presets: Ember Night, Atelier, After Dark, Market Stall)
 - Per-layout custom CSS or drag-and-drop page builder
 - Different layouts per shop phase (one layout per shop is enough)
 - Re-adding Live Stage (`broadcast`) or Drop Clock (`countdown`) to the picker — retired July 2026
@@ -557,7 +557,9 @@ Extend `test/unit/shop-theme.test.ts`:
 
 ---
 
-## 11. Open questions (resolve before Phase 2)
+## 11. Open questions (resolved — phases 0–6 complete, July 2026)
+
+> **Obsolete for implementation:** These were pre–Phase 2 decisions. Phases 0–6 shipped July 2026; answers below are the record.
 
 1. **Rename slugs?** Recommendation: **no** — rebrand UI only unless marketing needs new URLs.
 2. **Auto-apply defaults on layout pick?** Recommendation: **confirm dialog**, not silent.

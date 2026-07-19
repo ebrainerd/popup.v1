@@ -1,22 +1,31 @@
 # PopUp
 
-Time-boxed virtual pop-up shops. Sellers open a shop on a schedule, go live, run
-flash drops, and sell physical goods with instant checkout — buyers discover
-public shops in an Explore feed and follow their favorite sellers.
+**Shops that live for the moment.**
 
-This repository contains the **MVP web app** (Next.js + Supabase + Stripe),
-built in milestones. See `docs/ROADMAP.md` for what's shipped and what's next.
+PopUp is a web application for time-boxed virtual pop-up shops. Sellers open a
+shop on a schedule. They go live, run flash drops, and sell physical goods.
+Buyers reach shops by direct link. In marketplace mode, buyers can also
+discover shops in Explore.
 
-> **Picking up the project?** Start with **`docs/HANDOFF.md`** — current status,
-> production URL (`https://www.popupdrop.co`), and conventions.  
-> **Before marketing:** walk **`docs/PRE_MARKETING_TEST.md`** with a partner.
+Production site: [https://www.popupdrop.co](https://www.popupdrop.co)
+
+Default discovery mode is `invite_only`. Shops are available only via link.
+Explore shows a holding page. Set `NEXT_PUBLIC_DISCOVERY_MODE=marketplace` to
+enable marketplace discovery.
+
+> **Picking up the project?** Start with **`docs/HANDOFF.md`** for current
+> status, production URL, and conventions.  
+> **Before marketing:** complete **`docs/PRE_MARKETING_TEST.md`** with a
+> partner.
 
 ## Stack
 
-- **Framework:** Next.js 16 (App Router, React Server Components) + TypeScript
+- **Framework:** Next.js 16.2.9 (App Router, React Server Components) + React 19 + TypeScript
 - **Styling:** Tailwind CSS v4 + a small shadcn-style component kit (`src/components/ui`)
 - **Backend:** Supabase (Postgres, Auth, Realtime, Storage) with Row Level Security
-- **Payments:** Stripe Connect (Milestone 3)
+- **Payments:** Stripe Connect
+- **Live streaming:** LiveKit (PopUp Live); YouTube and Twitch embeds are also supported
+- **Hosting:** Vercel
 - **PWA:** Web manifest + service worker (installable on mobile)
 
 ## Getting started
@@ -33,24 +42,26 @@ npm install
 cp .env.example .env.local
 ```
 
-Fill in your Supabase project URL + anon key (and the service-role key for
-server-only operations). For Google login, enable the Google provider in
-**Supabase → Authentication → Providers** and add
-`<SITE_URL>/auth/callback` as a redirect URL.
+Set your Supabase project URL, anon key, and service-role key in `.env.local`.
+The service-role key is for server-only operations. Do not expose it to the
+browser.
 
-### 3. Apply the database schema
+For Google login, enable the Google provider in **Supabase → Authentication →
+Providers**. Add `<SITE_URL>/auth/callback` as a redirect URL.
 
-Using the Supabase CLI against a local stack:
+### 3. Start Supabase and apply the database schema
+
+Use the Supabase CLI for a local stack:
 
 ```bash
 supabase start
-supabase db reset            # runs supabase/migrations/*.sql
+supabase db reset
 ```
 
-Or paste `supabase/migrations/0001_init.sql` into the Supabase SQL editor for a
-hosted project. The migration creates all tables, RLS policies, storage buckets
-(`covers`, `products`, `avatars`), and the trigger that auto-creates a profile
-on signup.
+`supabase db reset` runs all migrations in `supabase/migrations/*.sql` in order
+through `0029_auction_stock_decrement.sql`. The migrations create tables, RLS
+policies, storage buckets (`covers`, `products`, `avatars`), and the trigger
+that auto-creates a profile on signup.
 
 ### 4. Run the dev server
 
@@ -62,34 +73,33 @@ Open [http://localhost:3000](http://localhost:3000).
 
 ## Useful scripts
 
-| Command            | Description                            |
-| ------------------ | -------------------------------------- |
-| `npm run dev`      | Start the dev server                   |
-| `npm run build`    | Production build                       |
-| `npm run start`    | Run the production build               |
-| `npm run lint`     | ESLint                                 |
-| `npm run typecheck`| `tsc --noEmit`                         |
-| `npm run test`     | Unit tests (Vitest)                    |
-| `npm run test:e2e` | Playwright smoke tests (build first)   |
+| Command                 | Description                          |
+| ----------------------- | ------------------------------------ |
+| `npm run dev`           | Start the dev server                 |
+| `npm run build`         | Production build                     |
+| `npm run start`         | Run the production build             |
+| `npm run lint`          | ESLint                               |
+| `npm run typecheck`     | `tsc --noEmit`                       |
+| `npm run test`          | Unit tests (Vitest)                  |
+| `npm run test:e2e`      | Playwright smoke tests (build first) |
+| `npm run load:shop-smoke` | k6 shop-page load smoke test       |
 
 CI (GitHub Actions) runs typecheck, lint, unit tests, build, and Playwright
-smoke tests on every PR. See `docs/TESTING.md` for the full testing guide,
-including the gated RLS integration suite.
+smoke tests on every pull request. See `docs/TESTING.md` for the full testing
+guide, including the gated RLS integration suite.
 
-## What's in this milestone
+## Current product
 
-**Milestone 1 — Foundation (this PR):**
+Milestones M1 through M3 are shipped in production. Post-MVP features are also
+live. Capabilities include:
 
-- Next.js + Tailwind + PWA scaffold and PopUp branding
-- Supabase schema + RLS for profiles, shops, products, orders, follows,
-  ratings, and chat
-- Auth: email/password + Google OAuth, session middleware, route guards
-- Seller dashboard: overview stats, calendar, shop list
-- Shop CRUD with cover/product image uploads to Supabase Storage
-- Product management per shop
-- Public Explore feed (All / Live now / Opening soon) with live countdowns
-- Public shop page with countdown, live embed (YouTube/Twitch), products
-- Follow sellers; public seller profiles
+- Auth (email/password and Google OAuth), seller dashboard, shop and product CRUD
+- Realtime chat, presence, flash drops, and follower notifications
+- Stripe Connect onboarding, Checkout, orders, fulfillment, and ratings
+- Live auctions and native PopUp Live streaming (LiveKit)
+- Shop layouts: The Room (classic) and Lookbook (catalog)
+- Drop reminders, invite-only discovery mode, and support tickets
+- Ember Market brand identity
 
-See `docs/ROADMAP.md` for Milestones 2 (realtime chat, presence, flash drops)
-and 3 (Stripe Checkout, orders, fulfillment, ratings).
+For the full feature list and roadmap, see `docs/ROADMAP.md`. For production
+status and conventions, see `docs/HANDOFF.md`.

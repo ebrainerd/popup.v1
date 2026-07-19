@@ -1,5 +1,8 @@
 # Pre-marketing test plan
 
+**Status:** Living launch checklist. Update pass/fail after each production dry-run.
+Do not start paid marketing until `docs/MARKETING_LAUNCH_GATE.md` shows **GO**.
+
 **Purpose:** A complete manual checklist for two people (one seller, one buyer) to
 walk every PopUp feature on production before paid marketing. Work through it
 section by section, record pass/fail, and fix bugs before launch.
@@ -168,7 +171,7 @@ Seller completes all five wizard steps. Save draft midway and resume once.
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
-| 3.11 | Try each theme preset (Neon PopUp, Gallery, Dark Room, Market Stall) | Preview updates | |
+| 3.11 | Try each theme preset (Ember Night, Atelier, After Dark, Market Stall) | Preview updates | |
 | 3.12 | Change layout (**The Room**, **Lookbook**), accent color, grid 2 vs 3 columns | Only two layouts in picker; preview reflects changes; switching layout offers "Apply recommended settings" | |
 | 3.13 | Toggle sections: chat, seller bio, reminder CTA | Toggles persist | |
 
@@ -591,4 +594,4 @@ Severity: blocker | major | minor
 
 ---
 
-*Last updated: July 2026 — production at https://www.popupdrop.co, migrations through `0022_auto_queue_shop_auctions.sql` (apply later migrations in order).*
+*Last updated: July 2026 — production at https://www.popupdrop.co. Apply all migrations in `supabase/migrations/` in order through latest in repo (`0029_auction_stock_decrement.sql`; production may lag).*

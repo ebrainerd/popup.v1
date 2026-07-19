@@ -117,8 +117,8 @@ phase toggle and the **Desktop / Mobile** viewport toggle.
 
 | # | Layout | Presets to try | Expected preview (Desktop) | ✓ |
 | - | ------ | -------------- | -------------------------- | - |
-| L1 | **The Room** (`classic`) | Market Stall (rec.) + Neon PopUp | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
-| L2 | **Lookbook** (`catalog`) | Gallery (rec.) + Dark Room | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
+| L1 | **The Room** (`classic`) | Market Stall (rec.) + Ember Night | Title (with seller bio) → **stream beside chat sidebar** (two columns) → products below. | |
+| L2 | **Lookbook** (`catalog`) | Atelier (rec.) + After Dark | Title → **product grid first** → slim stream/countdown band → reminder → chat. No oversized hero. | |
 
 | # | Step | Expected | ✓ |
 | - | ---- | -------- | - |
@@ -272,16 +272,3 @@ Connect onboarding. Start from a shop manage page with the payments banner.
 | R2 | Click **7 days**, **This month**, **All time** | URL updates `?range=` (30 days uses clean `/dashboard`); selected pill highlights; gross sales label reflects range |
 | R3 | Seller with mixed orders (incl. refunded/canceled) | Gross sales for a bounded range excludes refunded/canceled; counts only orders in range |
 | R4 | Active shops / Total shops / Avg rating | Unchanged by range pills (not order-scoped) |
-
----
-
-
-```markdown
-## [Feature name]
-
-**Requires:** [migrations, env vars, flags]
-
-| # | Step | Expected |
-| - | ---- | -------- |
-| 1 | … | … |
-```

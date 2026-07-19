@@ -5,9 +5,12 @@
 **Production URL:** https://www.popupdrop.co (invite-only mode)  
 **Review method:** Codebase audit of all routes and user flows, local stack testing (`npm run dev` + Supabase), Playwright smoke tests, and interactive browser walkthrough on localhost.
 
-> **Note (June 2026):** This review predates the custom domain and several shipped
-> fixes (seller terms gate, native live, legal pages). Use `docs/PRE_MARKETING_TEST.md`
-> for current launch validation; treat P0 items below as historical unless still open.
+> **Historical audit snapshot — June 2026.** Do not treat findings below as live
+> product truth. Brand is now **Ember Market** (see `docs/HANDOFF.md`). Many P0/P1
+> items shipped after this review (custom domain, Turnstile, seller terms gate,
+> native PopUp Live, legal pages, shop layouts, support tickets). **Verify open
+> items** via **`docs/PRE_MARKETING_TEST.md` Phase 22** and
+> **`docs/MARKETING_LAUNCH_GATE.md`** before marketing — not by re-reading this doc.
 
 ---
 

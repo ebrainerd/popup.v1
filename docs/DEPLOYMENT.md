@@ -51,6 +51,20 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Cloudflare Turnstile → site key (secret goes in Supabase) | `0x4AAAA…` |
 | `NEXT_SERVER_ACTIONS_ENCRYPTION_KEY` | `openssl rand -base64 32` — **build-time** secret so Server Action IDs stay stable across deploys and server instances | `…` |
 
+### Optional — native live (LiveKit)
+
+Set these when you use **PopUp Live** (native streaming). YouTube/Twitch embeds work
+without them.
+
+| Variable | Where to get it | Example |
+| --- | --- | --- |
+| `LIVEKIT_API_KEY` | LiveKit Cloud → Settings → Keys | `API…` |
+| `LIVEKIT_API_SECRET` | Same Keys page (secret) | `…` |
+| `LIVEKIT_URL` | LiveKit Cloud → project WebSocket URL (server) | `wss://your-project.livekit.cloud` |
+| `NEXT_PUBLIC_LIVEKIT_URL` | Same URL (browser clients) | `wss://your-project.livekit.cloud` |
+| `NATIVE_LIVE_ENABLED` | Server flag; set `true` to allow native live when keys exist | `true` |
+| `NEXT_PUBLIC_NATIVE_LIVE_ENABLED` | Client kill switch; set `false` to hide native live in the UI | `true` (omit or unset = enabled) |
+
 ### Optional — notifications
 
 | Variable | Where to get it | Example |
@@ -91,6 +105,13 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 [ ] NEXT_PUBLIC_SENTRY_DSN
 [ ] NEXT_PUBLIC_TURNSTILE_SITE_KEY
 [ ] NEXT_SERVER_ACTIONS_ENCRYPTION_KEY   # openssl rand -base64 32; redeploy after set
+# Optional — native live (PopUp Live)
+[ ] LIVEKIT_API_KEY
+[ ] LIVEKIT_API_SECRET
+[ ] LIVEKIT_URL
+[ ] NEXT_PUBLIC_LIVEKIT_URL
+[ ] NATIVE_LIVE_ENABLED=true
+[ ] NEXT_PUBLIC_NATIVE_LIVE_ENABLED=true   # set false to hide native live in UI
 # Optional (notifications)
 [ ] RESEND_API_KEY
 [ ] RESEND_FROM
@@ -102,8 +123,9 @@ all others are server-only secrets. After adding/changing any, **redeploy**.
 ## 1. Supabase (per environment)
 
 1. Create the project; copy URL + anon + service-role keys.
-2. Apply migrations (in order) from `supabase/migrations/` — via the SQL editor,
-   or with the CLI:
+2. Apply **all** migrations in order from `supabase/migrations/` through the latest
+   in the repo (`0029_auction_stock_decrement.sql` at time of writing). Use the SQL
+   editor or the CLI:
    ```bash
    supabase link --project-ref <ref>
    supabase db push
@@ -223,6 +245,9 @@ These take the app from "deployed" to "ready for real users and real money."
 - [ ] Set **Sentry** DSNs (`SENTRY_DSN`, `NEXT_PUBLIC_SENTRY_DSN`) so errors are
       actually captured (no-ops until set).
 - [ ] Set **VAPID** + **Resend** keys if you want web-push / email notifications.
+- [ ] Set **LiveKit** vars for native live (`LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`,
+      `LIVEKIT_URL`, `NEXT_PUBLIC_LIVEKIT_URL`, `NATIVE_LIVE_ENABLED=true`; optional
+      `NEXT_PUBLIC_NATIVE_LIVE_ENABLED=false` to hide native live in the UI).
 
 ### Domain & infra
 - [x] **Custom domain** on Vercel (`popupdrop.co`); `NEXT_PUBLIC_SITE_URL`,
@@ -243,7 +268,9 @@ These take the app from "deployed" to "ready for real users and real money."
 
 Walk **`docs/PRE_MARKETING_TEST.md`** for the full manual pass. Infrastructure:
 
-- [x] Production Supabase migrated through `0020`; RLS verified locally / staging
+- [x] Production Supabase migrated through latest in repo (`0029`); apply any newer
+      migrations in order if production lags
+- [x] RLS verified locally / staging
 - [x] Google OAuth redirect URLs set for `https://www.popupdrop.co`
 - [x] Stripe **live** keys + webhook configured; Connect enabled
 - [ ] Confirm `RELEASE_DELAY_HOURS=72`, `PLATFORM_FEE_BPS=900`, `CRON_SECRET` in Vercel
@@ -251,5 +278,7 @@ Walk **`docs/PRE_MARKETING_TEST.md`** for the full manual pass. Infrastructure:
 - [x] Sentry DSNs set
 - [x] `NEXT_PUBLIC_SITE_URL=https://www.popupdrop.co` / `NEXT_PUBLIC_APP_ENV=production`
 - [x] VAPID + Resend keys set
+- [x] `NEXT_PUBLIC_DISCOVERY_MODE=invite_only` (default launch mode)
+- [x] LiveKit env vars set for PopUp Live (`LIVEKIT_*`, `NEXT_PUBLIC_LIVEKIT_URL`, `NATIVE_LIVE_ENABLED`)
 - [ ] CI green on `main`
 - [ ] Two-person dry-run drop completed (`docs/PRE_MARKETING_TEST.md`)

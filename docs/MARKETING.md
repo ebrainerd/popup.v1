@@ -117,9 +117,9 @@ Goal: let proof recruit the next cohort.
 | `marketing/assets/app_experience_wide.webp` | Hero product shot: real shop UI (live seller, chat, sold-out grid) with 3D pop effects — landing pages, X/LinkedIn posts, decks |
 | `marketing/assets/app_experience_square.webp` | Square version of the product shot for IG feed |
 | `marketing/assets/app_screenshot_clean.webp` | Clean (no effects) staged shop screenshot for press/docs |
-| `marketing/assets/ig_launch_post.webp` | Square claymation launch/announcement post |
-| `marketing/assets/story_founding_seller.webp` | 1080x1920 claymation story for founding-seller recruitment |
-| `marketing/assets/og_banner.webp` | Wide claymation banner (X header, YouTube, deck cover) |
+| `marketing/assets/ig_launch_post.webp` | Square Ember Market launch/announcement post |
+| `marketing/assets/story_founding_seller.webp` | 1080x1920 story for founding-seller recruitment |
+| `marketing/assets/og_banner.webp` | Wide banner (X header, YouTube, deck cover) |
 | `public/og.jpg` | Automatic link-preview card on every shared URL (uses the app-experience shot; bump the `?v=` in `layout.tsx` when replacing) |
 
 The product shots were made by staging a real shop locally (seeded products,
@@ -127,10 +127,14 @@ sold-out items, live chat, streaming cover), screenshotting the actual UI, and
 running a stylization pass that adds the LIVE badge, hearts/chat bubbles, and
 confetti while keeping the interface legible.
 
-Style notes for future assets: claymation 3D renders on near-black
-(#14070d), brand colors coral `#ff3b8b` / teal `#00e6c8` / yellow `#ffd60a`,
-rounded chunky type. Matches the landing page illustrations in
-`public/landing/`.
+**Brand (Ember Market):** ember orange accents, charcoal base (`#14100C`), warm
+paper light mode (`#FAF8F4`). Seller shop accents stay in the warm family (ember,
+amber, terracotta, gilt). Type: Syne ExtraBold logo lockup, Geist UI, Geist Mono
+timers. Tagline: *Shops that live for the moment.* See `docs/HANDOFF.md` § Brand
+identity and the [PopUp Design System](https://www.figma.com/design/AObYmWZZML1UhGVHetDoVw).
+
+Older claymation assets in `marketing/assets/` may still show legacy coral/teal;
+prefer new shots that match Ember Market when you create replacements.
 
 ## Measuring (keep it simple)
 

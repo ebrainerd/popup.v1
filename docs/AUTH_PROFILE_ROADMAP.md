@@ -1,7 +1,15 @@
-# Auth & profile roadmap
+# Auth & profile (shipped)
 
-Shipped as part of the auth/profile signup work. Use this as a reference for what
-changed and how the flows behave in production.
+> **Shipped feature reference.** This is not a pending roadmap. Use it to see
+> what changed and how signup flows behave in production. For live ops status,
+> see **`docs/HANDOFF.md`**.
+
+## Status
+
+All tasks below are **shipped** in the app. Repo schema includes migration
+`0021_profile_setup_username.sql` (through **`0029`** in `supabase/migrations/`).
+Apply hosted production migrations in order — see **`docs/DEPLOYMENT.md`**, not
+ad-hoc SQL in this doc.
 
 ## Tasks (all implemented)
 
@@ -46,12 +54,9 @@ changed and how the flows behave in production.
 
 ## Apply migration on production
 
-```bash
-supabase link --project-ref <ref>
-supabase db push
-```
-
-Or paste `0021_profile_setup_username.sql` in Supabase SQL editor.
+Use **`docs/DEPLOYMENT.md`** for the full go-live checklist and migration
+workflow. Apply all pending repo migrations in order (including `0021` and any
+later files through `0029`).
 
 ## Related files
 
