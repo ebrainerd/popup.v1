@@ -1,7 +1,12 @@
 import type { Product, Shop } from "@/lib/database.types";
 import type { AuctionFieldState } from "@/components/auction-product-fields";
 import { defaultAuctionFields } from "@/components/auction-product-fields";
-import { isoToLocalInput, localInputToIso } from "@/lib/datetime";
+import {
+  detectBrowserTimeZone,
+  isoToZonedInput,
+  plusHoursInTimeZone,
+  zonedInputToIso,
+} from "@/lib/datetime";
 import { parseLiveEmbed } from "@/lib/embeds";
 import { defaultShopTheme, parseShopTheme, type ShopTheme } from "@/lib/shop-theme";
 import {
@@ -43,8 +48,17 @@ export type ShopWizardDraft = {
   twitchUrl: string;
   startLocal: string;
   endLocal: string;
+  /** IANA timezone for startLocal/endLocal wall clocks. */
+  scheduleTimezone: string;
   /** Whether the seller has committed a real open/close window (vs the default). */
   scheduleSet: boolean;
+  /**
+   * Server-provided UTC ISO for client-side conversion into `startLocal` /
+   * `endLocal`. Never send these back on save — they exist so RSC can avoid
+   * converting in UTC (which shifts wall clocks, e.g. 10am→5pm PDT).
+   */
+  scheduleStartIso?: string | null;
+  scheduleEndIso?: string | null;
   products: WizardProductDraft[];
   completedSteps: WizardStepId[];
   theme: ShopTheme;
@@ -54,8 +68,30 @@ export function wizardStorageKey(shopId?: string): string {
   return shopId ? `popup-shop-wizard:${shopId}` : "popup-shop-wizard:new";
 }
 
-function plusHoursLocal(h: number): string {
-  return isoToLocalInput(new Date(Date.now() + h * 3_600_000).toISOString());
+/**
+ * Convert server ISO schedule fields (or empty defaults) into datetime-local
+ * wall clocks in the draft timezone. Call only in the browser after mount.
+ */
+export function hydrateWizardScheduleLocal(draft: ShopWizardDraft): ShopWizardDraft {
+  const timeZone = draft.scheduleTimezone || detectBrowserTimeZone();
+  if (draft.scheduleSet && draft.scheduleStartIso && draft.scheduleEndIso) {
+    return {
+      ...draft,
+      scheduleTimezone: timeZone,
+      startLocal: isoToZonedInput(draft.scheduleStartIso, timeZone),
+      endLocal: isoToZonedInput(draft.scheduleEndIso, timeZone),
+      scheduleStartIso: undefined,
+      scheduleEndIso: undefined,
+    };
+  }
+  return {
+    ...draft,
+    scheduleTimezone: timeZone,
+    startLocal: draft.startLocal || plusHoursInTimeZone(1, timeZone),
+    endLocal: draft.endLocal || plusHoursInTimeZone(3, timeZone),
+    scheduleStartIso: undefined,
+    scheduleEndIso: undefined,
+  };
 }
 
 export function defaultWizardDraft(): ShopWizardDraft {
@@ -67,8 +103,10 @@ export function defaultWizardDraft(): ShopWizardDraft {
     streamSource: "native",
     youtubeUrl: "",
     twitchUrl: "",
-    startLocal: plusHoursLocal(1),
-    endLocal: plusHoursLocal(3),
+    // Filled on the client via hydrateWizardScheduleLocal — avoid UTC SSR defaults.
+    startLocal: "",
+    endLocal: "",
+    scheduleTimezone: "",
     scheduleSet: false,
     products: [],
     completedSteps: [],
@@ -170,9 +208,13 @@ export function shopToWizardDraft(shop: Shop, products: Product[]): ShopWizardDr
     ),
     youtubeUrl: streams.youtubeUrl,
     twitchUrl: streams.twitchUrl,
-    startLocal: scheduleSet ? isoToLocalInput(shop.start_at) : plusHoursLocal(1),
-    endLocal: scheduleSet ? isoToLocalInput(shop.end_at) : plusHoursLocal(3),
+    // Leave datetime-local empty on the server; ShopStudio hydrates in the browser.
+    startLocal: "",
+    endLocal: "",
+    scheduleTimezone: shop.schedule_timezone ?? "",
     scheduleSet,
+    scheduleStartIso: scheduleSet ? shop.start_at : null,
+    scheduleEndIso: scheduleSet ? shop.end_at : null,
     products: products.map(productToWizardDraft),
     completedSteps: [],
     theme: parseShopTheme(shop.shop_theme),
@@ -236,7 +278,7 @@ export function getStepValidation(
       if (!draft.startLocal || !draft.endLocal) {
         return { valid: false, message: "Pick when your drop opens and closes." };
       }
-      if (new Date(draft.endLocal) <= new Date(draft.startLocal)) {
+      if (draft.endLocal <= draft.startLocal) {
         return { valid: false, message: "Closing time must be after the opening time." };
       }
       return { valid: true };
@@ -309,10 +351,11 @@ function buildWizardPersistPayload(
   draft: ShopWizardDraft,
   options?: { draftMode?: boolean },
 ) {
+  const timeZone = draft.scheduleTimezone || "UTC";
   const scheduleValid =
     draft.scheduleSet &&
     Boolean(draft.startLocal && draft.endLocal) &&
-    new Date(draft.endLocal) > new Date(draft.startLocal);
+    draft.endLocal > draft.startLocal;
 
   return {
     shopId: draft.shopId,
@@ -324,8 +367,9 @@ function buildWizardPersistPayload(
     youtubeUrl: draft.streamSource === "external" ? draft.youtubeUrl.trim() : "",
     twitchUrl: draft.streamSource === "external" ? draft.twitchUrl.trim() : "",
     scheduleSet: scheduleValid,
-    startAt: scheduleValid ? localInputToIso(draft.startLocal) : "",
-    endAt: scheduleValid ? localInputToIso(draft.endLocal) : "",
+    scheduleTimezone: timeZone,
+    startAt: scheduleValid ? zonedInputToIso(draft.startLocal, timeZone) : "",
+    endAt: scheduleValid ? zonedInputToIso(draft.endLocal, timeZone) : "",
     products: mapWizardProducts(draft, Boolean(options?.draftMode)),
     completedSteps: draft.completedSteps,
     theme: draft.theme,

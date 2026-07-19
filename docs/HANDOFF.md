@@ -27,7 +27,7 @@ Vercel.
 | **Discovery mode** | `invite_only` (default). Shops use links only. Explore is a holding page. |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations (repo tip)** | Through **`0030_auction_ends_with_shop.sql`**. Apply files in order. Hosted production may lag the repo tip. |
+| **Migrations (repo tip)** | Through **`0031_shop_schedule_timezone.sql`**. Apply files in order. Hosted production may lag the repo tip. |
 
 ## Where to look
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -19,6 +19,7 @@ import { getPublicLiveKitUrl } from "@/lib/live-stream";
 import {
   defaultWizardDraft,
   getStepValidation,
+  hydrateWizardScheduleLocal,
   wizardDraftToFinishPayload,
   wizardDraftToSavePayload,
   wizardHasDraftContent,
@@ -83,18 +84,18 @@ export function ShopStudio({
   const isDesktop = useIsDesktop();
 
   const [hydrated, setHydrated] = useState(false);
-  const [draft, setDraft] = useState<ShopWizardDraft>(initialDraft ?? defaultWizardDraft());
+  const [draft, setDraft] = useState<ShopWizardDraft>(() => initialDraft ?? defaultWizardDraft());
   const [tab, setTab] = useState<StudioTab>("shop");
   const [phase, setPhase] = useState<ShopPreviewPhase>("open");
   const [viewport, setViewport] = useState<StudioViewport>("desktop");
-  const [lastSaved, setLastSaved] = useState<string>(() =>
-    JSON.stringify(wizardDraftToSavePayload(initialDraft ?? defaultWizardDraft())),
-  );
+  const [lastSaved, setLastSaved] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [exitOpen, setExitOpen] = useState(false);
   const [tourOpen, setTourOpen] = useState(false);
   const [finishing, startFinishing] = useTransition();
+  /** Hydrate once per shop identity — ignore revalidatePath prop churn after autosave. */
+  const hydratedKeyRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!hydrated || !firstShop) return;
@@ -104,13 +105,20 @@ export function ShopStudio({
   }, [hydrated, firstShop]);
 
   useEffect(() => {
+    const key = initialDraft?.shopId ?? shopId ?? "new";
+    if (hydratedKeyRef.current === key) {
+      // Same shop after RSC revalidate — keep in-progress edits (esp. schedule).
+      setHydrated(true);
+      return;
+    }
+    hydratedKeyRef.current = key;
     queueMicrotask(() => {
-      const base = initialDraft ?? defaultWizardDraft();
+      const base = hydrateWizardScheduleLocal(initialDraft ?? defaultWizardDraft());
       setDraft(base);
       setLastSaved(JSON.stringify(wizardDraftToSavePayload(base)));
       setHydrated(true);
     });
-  }, [initialDraft]);
+  }, [initialDraft, shopId]);
 
   useEffect(() => {
     if (!hydrated || !shopId) return;
