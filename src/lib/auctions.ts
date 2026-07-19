@@ -10,6 +10,7 @@ export type AuctionProductState = {
   nextMinimumBid: number;
   viewerState: "winning" | "outbid" | "none";
   yourMaxBid: number | null;
+  winnerName: string | null;
 };
 
 const ACTIVE_AUCTION_STATUSES = ["queued", "live", "awaiting_payment"] as const;
@@ -172,6 +173,24 @@ export async function getAuctionProductStates(
     byProduct.set(run.product_id, list);
   }
 
+  const winnerIds = [
+    ...new Set(
+      typedRuns
+        .map((run) => run.current_winner_id)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const winnerNames = new Map<string, string>();
+  if (winnerIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("id, username")
+      .in("id", winnerIds);
+    for (const profile of profiles ?? []) {
+      if (profile.username) winnerNames.set(profile.id, profile.username);
+    }
+  }
+
   const result: Record<string, AuctionProductState> = {};
   for (const [productId, productRuns] of byProduct) {
     const run = pickBestAuctionRunForProduct(productRuns);
@@ -197,6 +216,9 @@ export async function getAuctionProductStates(
       nextMinimumBid: Number(nextMin ?? run.starting_bid),
       viewerState,
       yourMaxBid,
+      winnerName: run.current_winner_id
+        ? (winnerNames.get(run.current_winner_id) ?? null)
+        : null,
     };
   }
   return result;

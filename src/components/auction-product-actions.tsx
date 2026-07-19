@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Gavel } from "lucide-react";
 import { useShopRoom, useShopEvent } from "@/components/shop-room";
@@ -8,8 +8,10 @@ import { placeAuctionBid } from "@/app/shop/auction-actions";
 import { createAuctionCheckoutSession } from "@/app/shop/checkout-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FieldHelp } from "@/components/field-help";
 import type { Product } from "@/lib/database.types";
 import type { AuctionRunWithProduct } from "@/lib/auctions";
+import { MAX_BID_HELP } from "@/lib/auction-copy";
 import {
   ROOM_EVENTS,
   type AuctionBidBroadcast,
@@ -25,12 +27,36 @@ import {
   openCheckoutTab,
 } from "@/lib/open-stripe-checkout";
 
+export type AuctionLiveSnapshot = {
+  currentBid: number;
+  bidCount: number;
+  startingBid: number;
+  winnerName: string | null;
+  status: string;
+};
+
 type AuctionState = {
   run: AuctionRunWithProduct;
   nextMinimumBid: number;
   viewerState: "winning" | "outbid" | "none";
   yourMaxBid: number | null;
+  winnerName: string | null;
 };
+
+function resolveWinnerName(
+  payload: Pick<AuctionBidBroadcast, "currentWinnerId" | "currentWinnerName">,
+  prev: AuctionState | null,
+): string | null {
+  if (payload.currentWinnerName) return payload.currentWinnerName;
+  if (
+    prev &&
+    payload.currentWinnerId &&
+    payload.currentWinnerId === prev.run.current_winner_id
+  ) {
+    return prev.winnerName;
+  }
+  return null;
+}
 
 export function AuctionProductActions({
   product,
@@ -40,6 +66,7 @@ export function AuctionProductActions({
   isOwner,
   userId,
   initial,
+  onLiveChange,
 }: {
   product: Product;
   shopId: string;
@@ -48,6 +75,8 @@ export function AuctionProductActions({
   isOwner: boolean;
   userId: string | null;
   initial: AuctionState | null;
+  /** Keep the product-card price/leader in sync with live bids. */
+  onLiveChange?: (snapshot: AuctionLiveSnapshot | null) => void;
 }) {
   const router = useRouter();
   const { emit, currentUser } = useShopRoom();
@@ -60,6 +89,21 @@ export function AuctionProductActions({
   const [maxBid, setMaxBid] = useState("");
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!onLiveChange) return;
+    if (!state) {
+      onLiveChange(null);
+      return;
+    }
+    onLiveChange({
+      currentBid: state.run.current_bid,
+      bidCount: state.run.bid_count,
+      startingBid: state.run.starting_bid,
+      winnerName: state.winnerName,
+      status: state.run.status,
+    });
+  }, [state, onLiveChange]);
 
   const applyBid = useCallback((payload: AuctionBidBroadcast) => {
     setState((prev) => {
@@ -75,6 +119,7 @@ export function AuctionProductActions({
           ends_at: payload.endsAt,
         },
         nextMinimumBid: payload.nextMinimumBid,
+        winnerName: resolveWinnerName(payload, prev),
       };
     });
   }, []);
@@ -113,6 +158,7 @@ export function AuctionProductActions({
         nextMinimumBid: p.startingBid,
         viewerState: "none",
         yourMaxBid: null,
+        winnerName: null,
       };
     });
   });
@@ -146,6 +192,7 @@ export function AuctionProductActions({
           current_winner_id: p.currentWinnerId ?? prev.run.current_winner_id,
         },
         nextMinimumBid: p.nextMinimumBid ?? prev.nextMinimumBid,
+        winnerName: p.currentWinnerId ? prev.winnerName : null,
       };
     });
   });
@@ -175,7 +222,11 @@ export function AuctionProductActions({
     setEnded(p);
     setState((prev) => {
       if (!prev || prev.run.id !== p.auctionId) return prev;
-      return { ...prev, run: { ...prev.run, status: p.status as typeof prev.run.status } };
+      return {
+        ...prev,
+        run: { ...prev.run, status: p.status as typeof prev.run.status },
+        winnerName: p.winnerName ?? prev.winnerName,
+      };
     });
   });
 
@@ -219,6 +270,7 @@ export function AuctionProductActions({
               viewerState: (data.viewer_state as AuctionState["viewerState"]) ?? "none",
               yourMaxBid: data.your_max_bid as number,
               nextMinimumBid: data.next_minimum_bid as number,
+              winnerName: resolveWinnerName(payload, s),
             }
           : s,
       );
@@ -303,33 +355,39 @@ export function AuctionProductActions({
             <Gavel className="size-4" />
             Bid {formatCurrency(state.nextMinimumBid)}
           </Button>
-          <div className="flex w-full items-end gap-2 max-sm:flex-col sm:w-auto">
-            <Input
-              type="number"
-              min={state.nextMinimumBid / 100}
-              step="0.01"
-              placeholder={(state.nextMinimumBid / 100).toFixed(2)}
-              value={maxBid}
-              onChange={(e) => setMaxBid(e.target.value)}
-              className="h-9 w-full text-base max-sm:w-full sm:w-24 sm:text-sm"
-              aria-label="Max bid in USD"
-            />
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full max-sm:w-full sm:w-auto"
-              disabled={pending}
-              onClick={() => {
-                const dollars = parseFloat(maxBid);
-                if (Number.isNaN(dollars)) {
-                  setError("Enter a valid max bid.");
-                  return;
-                }
-                placeBid(Math.round(dollars * 100));
-              }}
-            >
-              Max bid
-            </Button>
+          <div className="flex w-full flex-col gap-1 max-sm:items-stretch sm:w-auto">
+            <div className="flex items-center gap-1 max-sm:justify-center sm:justify-start">
+              <span className="text-[11px] text-muted-foreground">Max bid (USD)</span>
+              <FieldHelp label="max bid">{MAX_BID_HELP}</FieldHelp>
+            </div>
+            <div className="flex w-full items-end gap-2 max-sm:flex-col sm:w-auto">
+              <Input
+                type="number"
+                min={state.nextMinimumBid / 100}
+                step="0.01"
+                placeholder={(state.nextMinimumBid / 100).toFixed(2)}
+                value={maxBid}
+                onChange={(e) => setMaxBid(e.target.value)}
+                className="h-9 w-full text-base max-sm:w-full sm:w-24 sm:text-sm"
+                aria-label="Max bid in USD"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full max-sm:w-full sm:w-auto"
+                disabled={pending}
+                onClick={() => {
+                  const dollars = parseFloat(maxBid);
+                  if (Number.isNaN(dollars)) {
+                    setError("Enter a valid max bid.");
+                    return;
+                  }
+                  placeBid(Math.round(dollars * 100));
+                }}
+              >
+                Max bid
+              </Button>
+            </div>
           </div>
         </div>
         {isQueued && (

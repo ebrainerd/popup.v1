@@ -6,7 +6,10 @@ import Image from "next/image";
 import { Package, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useShopEvent } from "@/components/shop-room";
-import { AuctionProductActions } from "@/components/auction-product-actions";
+import {
+  AuctionProductActions,
+  type AuctionLiveSnapshot,
+} from "@/components/auction-product-actions";
 import { BuyButton } from "@/components/buy-button";
 import { Badge } from "@/components/ui/badge";
 import { celebrate } from "@/lib/confetti";
@@ -17,7 +20,7 @@ import {
   type FlashItemBroadcast,
 } from "@/lib/realtime";
 import type { Product } from "@/lib/database.types";
-import type { AuctionRunWithProduct, AuctionProductState } from "@/lib/auctions";
+import type { AuctionProductState } from "@/lib/auctions";
 import { cn, formatCurrency } from "@/lib/utils";
 import { isFlashDiscounted, productDisplayPrice } from "@/lib/product-pricing";
 import { useShopOpen } from "@/hooks/use-shop-open";
@@ -27,12 +30,16 @@ function photosOf(product: Product): string[] {
   return product.photo_url ? [product.photo_url] : [];
 }
 
-type AuctionActionState = {
-  run: AuctionRunWithProduct;
-  nextMinimumBid: number;
-  viewerState: "winning" | "outbid" | "none";
-  yourMaxBid: number | null;
-};
+function snapshotFromInitial(initial: AuctionProductState | null): AuctionLiveSnapshot | null {
+  if (!initial) return null;
+  return {
+    currentBid: initial.run.current_bid,
+    bidCount: initial.run.bid_count,
+    startingBid: initial.run.starting_bid,
+    winnerName: initial.winnerName,
+    status: initial.run.status,
+  };
+}
 
 export function ProductsGridLive({
   shopId,
@@ -199,13 +206,16 @@ function ProductCard({
   isAuthed: boolean;
   isOwner: boolean;
   userId: string | null;
-  initialAuction: AuctionActionState | null;
+  initialAuction: AuctionProductState | null;
   onOpenDetails: () => void;
 }) {
   const photos = photosOf(product);
   const discounted = isFlashDiscounted(product);
   const soldOut = product.quantity <= 0;
   const isAuction = product.sale_type === "auction";
+  const [liveAuction, setLiveAuction] = useState<AuctionLiveSnapshot | null>(() =>
+    snapshotFromInitial(initialAuction),
+  );
 
   return (
     <div
@@ -252,7 +262,7 @@ function ProductCard({
           <p className="line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
         )}
         <div className="mt-auto flex flex-col gap-3 pt-2 max-sm:items-stretch sm:flex-row sm:items-end sm:justify-between">
-          <PriceBlock product={product} />
+          <PriceBlock product={product} liveAuction={isAuction ? liveAuction : null} />
           <div className="w-full max-sm:shrink-0 sm:w-auto">
             {isAuction ? (
               <AuctionProductActions
@@ -264,6 +274,7 @@ function ProductCard({
                 isOwner={isOwner}
                 userId={userId}
                 initial={initialAuction}
+                onLiveChange={setLiveAuction}
               />
             ) : (
               <BuyButton
@@ -297,12 +308,15 @@ function ProductDetailDialog({
   isAuthed: boolean;
   isOwner: boolean;
   userId: string | null;
-  initialAuction: AuctionActionState | null;
+  initialAuction: AuctionProductState | null;
   onClose: () => void;
 }) {
   const photos = photosOf(product);
   const soldOut = product.quantity <= 0;
   const isAuction = product.sale_type === "auction";
+  const [liveAuction, setLiveAuction] = useState<AuctionLiveSnapshot | null>(() =>
+    snapshotFromInitial(initialAuction),
+  );
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -356,7 +370,7 @@ function ProductDetailDialog({
             <p className="whitespace-pre-wrap text-sm text-foreground/90">{product.description}</p>
           )}
           <div className="flex flex-col gap-3 border-t border-border pt-3 max-sm:items-stretch sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-            <PriceBlock product={product} />
+            <PriceBlock product={product} liveAuction={isAuction ? liveAuction : null} />
             <div className="w-full max-sm:shrink-0 sm:w-auto">
               {isAuction ? (
                 <AuctionProductActions
@@ -368,6 +382,7 @@ function ProductDetailDialog({
                   isOwner={isOwner}
                   userId={userId}
                   initial={initialAuction}
+                  onLiveChange={setLiveAuction}
                 />
               ) : (
                 <BuyButton
@@ -387,29 +402,51 @@ function ProductDetailDialog({
   );
 }
 
-function PriceBlock({ product }: { product: Product }) {
+function PriceBlock({
+  product,
+  liveAuction = null,
+}: {
+  product: Product;
+  liveAuction?: AuctionLiveSnapshot | null;
+}) {
   const discounted = isFlashDiscounted(product);
   const soldOut = product.quantity <= 0;
   const isAuction = product.sale_type === "auction";
   const displayPrice = productDisplayPrice(product);
+  const hasBids = Boolean(liveAuction && liveAuction.bidCount > 0);
+  const auctionAmount = hasBids ? liveAuction!.currentBid : displayPrice;
+  const auctionLabel = hasBids ? "Current bid" : "Starting";
 
   return (
     <div>
       {isAuction ? (
-        discounted ? (
+        discounted && !hasBids ? (
           <div className="flex items-baseline gap-2">
             <span
               key={product.discount_price}
               className="animate-price-pop text-lg font-bold text-live"
             >
-              Starting {formatCurrency(displayPrice)}
+              {auctionLabel} {formatCurrency(auctionAmount)}
             </span>
             <span className="text-sm text-muted-foreground line-through">
               {formatCurrency(product.price)}
             </span>
           </div>
         ) : (
-          <span className="text-lg font-bold">Starting {formatCurrency(displayPrice)}</span>
+          <div>
+            <span
+              key={hasBids ? liveAuction!.currentBid : displayPrice}
+              className={cn("text-lg font-bold", hasBids && "animate-price-pop")}
+            >
+              {auctionLabel} {formatCurrency(auctionAmount)}
+            </span>
+            {hasBids && liveAuction?.winnerName && (
+              <p className="text-xs text-muted-foreground">
+                Leading:{" "}
+                <span className="font-medium text-foreground">@{liveAuction.winnerName}</span>
+              </p>
+            )}
+          </div>
         )
       ) : discounted ? (
         <div className="flex items-baseline gap-2">
