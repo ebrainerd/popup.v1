@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   IMAGE_UPLOAD_ACCEPT,
   isAcceptableImageFile,
+  isHeicFile,
   prepareImageForUpload,
 } from "@/lib/image-upload-client";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ export function ImageUpload({
     onChange?.(next);
   };
   const [uploading, setUploading] = useState(false);
+  const [converting, setConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [cropFile, setCropFile] = useState<File | null>(null);
@@ -85,7 +87,13 @@ export function ImageUpload({
 
     setUploading(true);
     try {
-      const prepared = await prepareImageForUpload(file);
+      if (isHeicFile(file)) setConverting(true);
+      let prepared: File;
+      try {
+        prepared = await prepareImageForUpload(file);
+      } finally {
+        setConverting(false);
+      }
       if (cropAspect) {
         setCropFile(prepared);
         return;
@@ -154,7 +162,7 @@ export function ImageUpload({
             ) : (
               <ImagePlus className="size-6" />
             )}
-            {uploading ? "Uploading…" : label}
+            {uploading ? (converting ? "Converting…" : "Uploading…") : label}
           </button>
         )}
       </div>

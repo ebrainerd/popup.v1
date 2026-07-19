@@ -1,12 +1,15 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
-const heic2anyMock = vi.fn();
+const heicToMock = vi.fn();
 
-vi.mock("heic2any", () => ({
-  default: heic2anyMock,
+vi.mock("heic-to/csp", () => ({
+  heicTo: heicToMock,
 }));
 
+const createImageBitmapMock = vi.fn();
+
 import {
+  HEIC_CONVERT_TIMEOUT_MS,
   IMAGE_UPLOAD_ACCEPT,
   isAcceptableImageFile,
   isHeicFile,
@@ -49,29 +52,74 @@ describe("isAcceptableImageFile", () => {
 
 describe("prepareImageForUpload", () => {
   beforeEach(() => {
-    heic2anyMock.mockReset();
+    heicToMock.mockReset();
+    createImageBitmapMock.mockReset();
+    vi.stubGlobal("createImageBitmap", createImageBitmapMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
   });
 
   it("passes through non-HEIC files unchanged", async () => {
     const file = new File([new Uint8Array([1, 2, 3])], "photo.jpg", { type: "image/jpeg" });
     const result = await prepareImageForUpload(file);
     expect(result).toBe(file);
-    expect(heic2anyMock).not.toHaveBeenCalled();
+    expect(heicToMock).not.toHaveBeenCalled();
+    expect(createImageBitmapMock).not.toHaveBeenCalled();
   });
 
-  it("converts HEIC to JPEG before upload", async () => {
+  it("converts HEIC to JPEG via heic-to when native decode fails", async () => {
     const heic = new File([new Uint8Array([1])], "IMG_0001.heic", { type: "image/heic" });
     const jpegBlob = new Blob([new Uint8Array([9, 9, 9])], { type: "image/jpeg" });
-    heic2anyMock.mockResolvedValue(jpegBlob);
+    createImageBitmapMock.mockRejectedValue(new Error("unsupported"));
+    heicToMock.mockResolvedValue(jpegBlob);
 
     const result = await prepareImageForUpload(heic);
-    expect(heic2anyMock).toHaveBeenCalledWith({
+    expect(heicToMock).toHaveBeenCalledWith({
       blob: heic,
-      toType: "image/jpeg",
+      type: "image/jpeg",
       quality: 0.9,
     });
     expect(result.name).toBe("IMG_0001.jpg");
     expect(result.type).toBe("image/jpeg");
+  });
+
+  it("maps CSP EvalError from heic-to to a friendly error", async () => {
+    const heic = new File([new Uint8Array([1])], "IMG_0001.heic", { type: "image/heic" });
+    createImageBitmapMock.mockRejectedValue(new Error("unsupported"));
+    heicToMock.mockRejectedValue(
+      new EvalError(
+        "Evaluating a string as JavaScript violates the following Content Security Policy directive",
+      ),
+    );
+
+    await expect(prepareImageForUpload(heic)).rejects.toThrow(
+      "Couldn't convert this iPhone photo",
+    );
+  });
+
+  it("rejects empty conversion output with a friendly error", async () => {
+    const heic = new File([new Uint8Array([1])], "IMG_0001.heic", { type: "image/heic" });
+    createImageBitmapMock.mockRejectedValue(new Error("unsupported"));
+    heicToMock.mockResolvedValue(new Blob([], { type: "image/jpeg" }));
+
+    await expect(prepareImageForUpload(heic)).rejects.toThrow(
+      "Couldn't convert this iPhone photo",
+    );
+  });
+
+  it("rejects on conversion timeout", async () => {
+    vi.useFakeTimers();
+    const heic = new File([new Uint8Array([1])], "IMG_0001.heic", { type: "image/heic" });
+    createImageBitmapMock.mockRejectedValue(new Error("unsupported"));
+    heicToMock.mockImplementation(() => new Promise(() => {}));
+
+    const promise = prepareImageForUpload(heic);
+    const assertion = expect(promise).rejects.toThrow("Couldn't convert this iPhone photo");
+    await vi.advanceTimersByTimeAsync(HEIC_CONVERT_TIMEOUT_MS);
+    await assertion;
   });
 });
 
