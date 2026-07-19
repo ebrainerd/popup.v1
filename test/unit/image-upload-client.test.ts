@@ -86,6 +86,20 @@ describe("prepareImageForUpload", () => {
     expect(result.type).toBe("image/jpeg");
   });
 
+  it("maps CSP EvalError from heic-to to a friendly error", async () => {
+    const heic = new File([new Uint8Array([1])], "IMG_0001.heic", { type: "image/heic" });
+    createImageBitmapMock.mockRejectedValue(new Error("unsupported"));
+    heicToMock.mockRejectedValue(
+      new EvalError(
+        "Evaluating a string as JavaScript violates the following Content Security Policy directive",
+      ),
+    );
+
+    await expect(prepareImageForUpload(heic)).rejects.toThrow(
+      "Couldn't convert this iPhone photo",
+    );
+  });
+
   it("rejects empty conversion output with a friendly error", async () => {
     const heic = new File([new Uint8Array([1])], "IMG_0001.heic", { type: "image/heic" });
     createImageBitmapMock.mockRejectedValue(new Error("unsupported"));

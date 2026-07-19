@@ -55,6 +55,8 @@ async function convertHeicNative(file: File): Promise<Blob> {
 }
 
 async function convertHeicWithLibrary(file: File): Promise<Blob> {
+  // Use heic-to/csp (not the default entry): production CSP forbids unsafe-eval.
+  // Default heic-to and the old heic2any blob worker hit EvalError (Sentry POPUP-7).
   const { heicTo } = await import("heic-to/csp");
   const blob = await heicTo({ blob: file, type: "image/jpeg", quality: 0.9 });
   if (!blob || blob.size === 0) throw new Error(HEIC_CONVERT_ERROR);
