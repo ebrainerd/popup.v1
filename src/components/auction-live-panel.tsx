@@ -269,7 +269,7 @@ export function AuctionLivePanel({
   function placeBid(amountCents: number) {
     setError(null);
     startTransition(async () => {
-      const res = await placeAuctionBid(run.id, amountCents, shopId);
+      const res = await placeAuctionBid(run.id, amountCents);
       if (!res.ok) {
         setError(res.error);
         return;

@@ -91,7 +91,6 @@ export async function cancelAuction(auctionId: string, shopId: string): Promise<
 export async function placeAuctionBid(
   auctionId: string,
   maxAmountCents: number,
-  shopId: string,
 ): Promise<AuctionActionResult> {
   const { supabase, user } = await requireUser();
   if (!user) return { ok: false, error: "Log in to bid." };
@@ -102,7 +101,9 @@ export async function placeAuctionBid(
   });
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath(`/shop/${shopId}`);
+  // Intentionally no revalidatePath — that soft-refreshes the whole shop page,
+  // remounts the live player, and forces buyers to unmute again. Bid UI is
+  // already synced via applyBid + ROOM_EVENTS.auctionBid.
   return { ok: true, data: data as Record<string, unknown> };
 }
 

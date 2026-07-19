@@ -168,7 +168,7 @@ export function AuctionProductActions({
     if (!requireAuth()) return;
     setError(null);
     startTransition(async () => {
-      const res = await placeAuctionBid(state.run.id, amountCents, shopId);
+      const res = await placeAuctionBid(state.run.id, amountCents);
       if (!res.ok) {
         setError(res.error);
         return;
