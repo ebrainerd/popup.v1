@@ -1,3 +1,6 @@
+import { formatShopScheduleWhen } from "@/lib/datetime";
+import { DEFAULT_SCHEDULE_TIMEZONE } from "@/lib/timezones";
+
 export type ShareCaption = { label: string; text: string };
 
 /** Seller-facing captions for promoting a drop before it opens. */
@@ -5,14 +8,12 @@ export function buildSellerShareCaptions(
   shopName: string,
   sellerHandle: string,
   startAt: string,
+  scheduleTimezone?: string | null,
 ): ShareCaption[] {
-  const when = new Date(startAt).toLocaleString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  const when = formatShopScheduleWhen(
+    startAt,
+    scheduleTimezone?.trim() || DEFAULT_SCHEDULE_TIMEZONE,
+  );
   return [
     {
       label: "Text / post",

@@ -177,6 +177,7 @@ export function ShopPageView({
           shopName={shop.name}
           sellerHandle={seller.username}
           startAt={shop.start_at}
+          scheduleTimezone={shop.schedule_timezone}
         />
       </div>
     ) : null;

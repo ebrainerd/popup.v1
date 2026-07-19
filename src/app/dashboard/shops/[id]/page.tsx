@@ -163,6 +163,7 @@ export default async function ManageShopPage({
               shopName={shop.name}
               sellerHandle={profile.username}
               startAt={shop.start_at}
+              scheduleTimezone={shop.schedule_timezone}
               shopUrl={shopUrl}
               variant="dashboard"
             />
@@ -199,6 +200,7 @@ export default async function ManageShopPage({
         productCount={shop.products.length}
         startAt={shop.start_at}
         endAt={shop.end_at}
+        scheduleTimezone={shop.schedule_timezone}
         payoutsConnected={payoutsConnected}
         paymentsRequired={paymentsRequired}
         termsAccepted={termsAccepted}

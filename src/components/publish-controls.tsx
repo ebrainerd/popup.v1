@@ -17,6 +17,7 @@ export function PublishControls({
   productCount,
   startAt,
   endAt,
+  scheduleTimezone,
   payoutsConnected = true,
   paymentsRequired = false,
   termsAccepted = true,
@@ -29,6 +30,7 @@ export function PublishControls({
   productCount: number;
   startAt: string;
   endAt: string;
+  scheduleTimezone?: string | null;
   payoutsConnected?: boolean;
   paymentsRequired?: boolean;
   termsAccepted?: boolean;
@@ -145,7 +147,12 @@ export function PublishControls({
             </div>
           )}
           {!isEnded && (
-            <CloseShopButton shopId={shopId} startAt={startAt} endAt={endAt} />
+            <CloseShopButton
+              shopId={shopId}
+              startAt={startAt}
+              endAt={endAt}
+              scheduleTimezone={scheduleTimezone}
+            />
           )}
         </div>
       </div>

@@ -103,6 +103,56 @@ export function plusHoursInTimeZone(h: number, timeZone: string): string {
   return isoToZonedInput(new Date(Date.now() + h * 3_600_000).toISOString(), timeZone);
 }
 
+/** Normalize ICU narrow/no-break spaces so SSR (Node) and browser strings match. */
+function normalizeLocaleSpaces(value: string): string {
+  return value.replace(/[\u00a0\u202f\u2009]/g, " ");
+}
+
+/**
+ * Format a UTC instant for display in an explicit IANA zone.
+ * SSR-safe when `timeZone` is provided (server and client produce the same string
+ * after space normalization). Never omit `timeZone` for user-facing shop schedule copy.
+ */
+export function formatInstantInTimeZone(
+  iso: string,
+  timeZone: string,
+  options: Intl.DateTimeFormatOptions = {},
+): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  try {
+    return normalizeLocaleSpaces(d.toLocaleString("en-US", { timeZone, ...options }));
+  } catch {
+    return normalizeLocaleSpaces(
+      d.toLocaleString("en-US", { timeZone: "UTC", ...options }),
+    );
+  }
+}
+
+/** Seller-facing “Opens / Opened” label for drop health and similar. */
+export function formatShopOpenAt(iso: string, timeZone: string): string {
+  return formatInstantInTimeZone(iso, timeZone, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
+/** Compact schedule moment (share captions, metadata). */
+export function formatShopScheduleWhen(iso: string, timeZone: string): string {
+  return formatInstantInTimeZone(iso, timeZone, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
 /** @deprecated Prefer isoToZonedInput with an explicit zone. Uses runtime local TZ. */
 export function isoToLocalInput(iso?: string | null): string {
   if (!iso) return "";
