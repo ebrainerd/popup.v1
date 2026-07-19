@@ -34,6 +34,12 @@ export type OrderStatus =
   | "received"
   | "refunded"
   | "canceled";
+export type OrderHelpReason =
+  | "shipping"
+  | "wrong_item"
+  | "damaged"
+  | "not_received"
+  | "other";
 
 export interface Database {
   public: {
@@ -548,6 +554,66 @@ export interface Database {
         Update: Partial<Database["public"]["Tables"]["product_reservations"]["Insert"]>;
         Relationships: [];
       };
+      order_messages: {
+        Row: {
+          id: string;
+          order_id: string;
+          sender_id: string;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          sender_id: string;
+          body: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["order_messages"]["Insert"]>;
+        Relationships: [];
+      };
+      order_help_requests: {
+        Row: {
+          id: string;
+          order_id: string;
+          opened_by: string;
+          reason: OrderHelpReason;
+          message: string;
+          status: "open" | "resolved";
+          escalated_at: string | null;
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          opened_by: string;
+          reason: OrderHelpReason;
+          message: string;
+          status?: "open" | "resolved";
+          escalated_at?: string | null;
+          created_at?: string;
+          resolved_at?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["order_help_requests"]["Insert"]>;
+        Relationships: [];
+      };
+      order_conversation_resolutions: {
+        Row: {
+          order_id: string;
+          user_id: string;
+          resolved_at: string;
+        };
+        Insert: {
+          order_id: string;
+          user_id: string;
+          resolved_at?: string;
+        };
+        Update: Partial<
+          Database["public"]["Tables"]["order_conversation_resolutions"]["Insert"]
+        >;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -557,6 +623,10 @@ export interface Database {
       };
       is_muted: {
         Args: { target_shop: string; target_user: string };
+        Returns: boolean;
+      };
+      is_order_party: {
+        Args: { target_order: string };
         Returns: boolean;
       };
       decrement_stock: {
@@ -638,6 +708,10 @@ export type Product = Database["public"]["Tables"]["products"]["Row"];
 export type Order = Database["public"]["Tables"]["orders"]["Row"];
 export type Rating = Database["public"]["Tables"]["ratings"]["Row"];
 export type ChatMessage = Database["public"]["Tables"]["chat_messages"]["Row"];
+export type OrderMessage = Database["public"]["Tables"]["order_messages"]["Row"];
+export type OrderHelpRequest = Database["public"]["Tables"]["order_help_requests"]["Row"];
+export type OrderConversationResolution =
+  Database["public"]["Tables"]["order_conversation_resolutions"]["Row"];
 export type DropReminder = Database["public"]["Tables"]["drop_reminders"]["Row"];
 export type LiveReminder = Database["public"]["Tables"]["live_reminders"]["Row"];
 export type ShopAnnouncement = Database["public"]["Tables"]["shop_announcements"]["Row"];

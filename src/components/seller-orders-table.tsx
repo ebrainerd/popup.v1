@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, ShoppingBag, Truck } from "lucide-react";
 import { markShipped } from "@/app/orders/actions";
+import { OrderMessagePanel } from "@/components/order-message-panel";
 import { OrderStatusBadge } from "@/components/order-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -159,6 +160,9 @@ function OrderRow({
         </div>
       )}
       {error && <p className="mt-1 text-xs text-live">{error}</p>}
+
+      {/* Order messages + "Need help with this order" */}
+      <OrderMessagePanel orderId={order.id} counterpartName={buyerName} />
     </div>
   );
 }
