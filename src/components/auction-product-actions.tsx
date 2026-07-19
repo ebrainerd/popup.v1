@@ -19,6 +19,11 @@ import {
 } from "@/lib/realtime";
 import { formatCurrency } from "@/lib/utils";
 import { shouldAcceptAuctionQueuedUpdate } from "@/lib/auction-bidding";
+import {
+  closeStripeCheckoutTab,
+  navigateStripeCheckout,
+  openCheckoutTab,
+} from "@/lib/open-stripe-checkout";
 
 type AuctionState = {
   run: AuctionRunWithProduct;
@@ -216,10 +221,16 @@ export function AuctionProductActions({
 
   function checkout() {
     if (!state) return;
+    setError(null);
+    const tab = openCheckoutTab();
     startTransition(async () => {
       const res = await createAuctionCheckoutSession(state.run.id);
-      if (res.ok) window.location.href = res.url;
-      else setError(res.error);
+      if (res.ok) {
+        navigateStripeCheckout(tab, res.url);
+      } else {
+        closeStripeCheckoutTab(tab);
+        setError(res.error);
+      }
     });
   }
 

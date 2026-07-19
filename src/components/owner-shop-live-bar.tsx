@@ -10,6 +10,7 @@ import { ShopQuickActions } from "@/components/shop-quick-actions";
 export function OwnerShopLiveBar({
   shopId,
   isLive,
+  nativeLiveStartedAt,
   isOpen,
   isEnded,
   streamProvider,
@@ -20,6 +21,7 @@ export function OwnerShopLiveBar({
 }: {
   shopId: string;
   isLive: boolean;
+  nativeLiveStartedAt?: string | null;
   isOpen: boolean;
   isEnded: boolean;
   streamProvider: StreamProvider;
@@ -61,6 +63,7 @@ export function OwnerShopLiveBar({
         <NativeLivePublisher
           shopId={shopId}
           initialIsLive={isLive}
+          nativeLiveStartedAt={nativeLiveStartedAt}
           needsTosAcceptance={needsTosAcceptance}
           canGoLive={isOpen}
           isEnded={isEnded}

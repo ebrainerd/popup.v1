@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createCheckoutSession } from "@/app/shop/checkout-actions";
+import {
+  closeStripeCheckoutTab,
+  navigateStripeCheckout,
+  openCheckoutTab,
+} from "@/lib/open-stripe-checkout";
 
 /**
  * Buy Now entry point.
@@ -49,11 +54,13 @@ export function BuyButton({
       router.push(`/login?redirectTo=${encodeURIComponent(`/shop/${shopId}`)}`);
       return;
     }
+    const tab = openCheckoutTab();
     startTransition(async () => {
       const res = await createCheckoutSession(productId);
       if (res.ok) {
-        window.location.href = res.url;
+        navigateStripeCheckout(tab, res.url);
       } else {
+        closeStripeCheckoutTab(tab);
         setError(res.error);
       }
     });
