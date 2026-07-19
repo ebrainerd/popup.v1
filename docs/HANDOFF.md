@@ -27,7 +27,7 @@ Vercel.
 | **Discovery mode** | `invite_only` (default). Shops use links only. Explore is a holding page. |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations (repo tip)** | Through **`0034_settle_auction_payment_after_expiry.sql`**. Apply files in order. Hosted production may lag the repo tip. |
+| **Migrations (repo tip)** | Through **`0035_order_messaging.sql`**. Apply files in order. Hosted production may lag the repo tip. |
 
 ## Where to look
 
@@ -97,6 +97,9 @@ shipped:
 - Products and orders realtime (`0026`, `0028`)
 - Support tickets at `/support` (`0027`)
 - Auction stock decrement fix (`0029`)
+- Order messaging + "Need help with this order" (`0035`) — buyer/seller thread
+  inline on `/orders` and the seller sales views; escalation to
+  `support@popupdrop.co` is a second step; archived when both parties resolve
 - Expanded legal pages (`/legal/terms`, `/legal/privacy`) — `legal@popupdrop.co`
 - k6 shop smoke runner: `npm run load:shop-smoke -- <shop-url>`
 - **Shop layout archetypes** (`docs/SHOP_LAYOUT_ARCHETYPES.md`) — phases 0–6 done
@@ -167,7 +170,7 @@ Cross-links exist in `shop-page-view.tsx` and `shop-theme-preview.tsx`.
 - [x] Drop reminders via **cron-job.org** every 15 min (Hobby-safe)
 - [x] Sentry + uptime monitor on `/api/health`
 - [x] Hosted migrations applied through at least `0022` (apply any later repo
-      migrations through `0033` in order)
+      migrations through `0035` in order)
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
 
 ## Marketing gate (GO / NO-GO)
@@ -222,6 +225,10 @@ non-goals table above.
       **`0034_settle_auction_payment_after_expiry`** lets the Stripe webhook
       mark a run `paid` even if the 30-minute window flipped it to
       `payment_expired` while the winner's checkout session was completing.
+      **`0035_order_messaging`** adds order-scoped buyer↔seller messaging,
+      help requests with support escalation, and conversation resolutions
+      (three new tables + `is_order_party()`; RLS scopes rows to the order's
+      buyer and seller).
 - [ ] Stripe webhook events: `checkout.session.completed`, `account.updated`,
       `checkout.session.expired`
 - [ ] `RELEASE_DELAY_HOURS=72` in production (`0` is for staging/local only)
@@ -241,6 +248,10 @@ All emails are best-effort. They no-op without `RESEND_API_KEY`:
 - **Auction won** → winner checkout nudge + seller sold notice (on finalize /
   shop-end / repair; Resend idempotency keys prevent duplicates)
 - **Support ticket** → `support@popupdrop.co`
+- **Order message** → the other party (buyer or seller) with a link to the thread
+- **Order help opened** → the other party only (support is NOT copied)
+- **Order help escalated** → `support@popupdrop.co` (reply-to the escalator) + a
+  heads-up to the other party
 
 Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.
 
