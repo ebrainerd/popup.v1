@@ -27,7 +27,7 @@ Vercel.
 | **Discovery mode** | `invite_only` (default). Shops use links only. Explore is a holding page. |
 | **Stripe** | Live mode |
 | **Email** | Resend on verified `popupdrop.co` domain |
-| **Migrations (repo tip)** | Through **`0032_auction_one_active_run.sql`**. Apply files in order. Hosted production may lag the repo tip. |
+| **Migrations (repo tip)** | Through **`0033_auction_shop_end_integrity.sql`**. Apply files in order. Hosted production may lag the repo tip. |
 
 ## Where to look
 
@@ -167,7 +167,7 @@ Cross-links exist in `shop-page-view.tsx` and `shop-theme-preview.tsx`.
 - [x] Drop reminders via **cron-job.org** every 15 min (Hobby-safe)
 - [x] Sentry + uptime monitor on `/api/health`
 - [x] Hosted migrations applied through at least `0022` (apply any later repo
-      migrations through `0032` in order)
+      migrations through `0033` in order)
 - [x] M365 aliases: `legal@popupdrop.co`, `support@popupdrop.co` → owner inbox
 
 ## Marketing gate (GO / NO-GO)
@@ -215,7 +215,10 @@ non-goals table above.
 ### Standing ops
 
 - [ ] Apply new DB migrations as they land (`supabase/migrations/`, in order,
-      through repo tip `0029` and later)
+      through repo tip `0033` and later). **`0033_auction_shop_end_integrity`**
+      clamps auctions to shop close, finalizes live lots when the shop ends,
+      and repairs mis-marked unsold lots that still have bids (resets a
+      30-minute checkout window + win emails on next shop page load).
 - [ ] Stripe webhook events: `checkout.session.completed`, `account.updated`,
       `checkout.session.expired`
 - [ ] `RELEASE_DELAY_HOURS=72` in production (`0` is for staging/local only)
@@ -232,6 +235,8 @@ All emails are best-effort. They no-op without `RESEND_API_KEY`:
 - **Shipped, unconfirmed ~3 days** → buyer receipt nudge (max 2, ~4 days apart)
 - **Drop reminders** (24h / 1h / opening) → buyer email (+ push if VAPID set); cron every 15 min
 - **Go live** → followers + live-reminder subscribers (instant, no cron)
+- **Auction won** → winner checkout nudge + seller sold notice (on finalize /
+  shop-end / repair; Resend idempotency keys prevent duplicates)
 - **Support ticket** → `support@popupdrop.co`
 
 Legal contact: `legal@popupdrop.co`. Support alias: `support@popupdrop.co`.

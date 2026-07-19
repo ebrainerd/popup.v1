@@ -123,6 +123,15 @@ export function AuctionProductActions({
     setEnded(null);
     setState((prev) => {
       if (!prev || prev.run.product_id !== product.id) return prev;
+      if (prev.run.bid_count > 0 && prev.run.id !== p.auctionId) return prev;
+      if (
+        prev.run.status === "live" &&
+        prev.run.bid_count > 0 &&
+        (p.bidCount ?? 0) === 0 &&
+        prev.run.id !== p.auctionId
+      ) {
+        return prev;
+      }
       // Pre-bids carry over into the live round: keep bid state and the
       // viewer's own max bid instead of resetting to zero.
       return {

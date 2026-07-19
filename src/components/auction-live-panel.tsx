@@ -39,12 +39,15 @@ type LiveAuctionState = {
 
 export function AuctionLivePanel({
   shopId,
+  shopEndAt,
   initial,
   isAuthed,
   isOwner,
   userId,
 }: {
   shopId: string;
+  /** Shop schedule end — auctions must finalize by this time. */
+  shopEndAt: string | null;
   initial: LiveAuctionState | null;
   isAuthed: boolean;
   isOwner: boolean;
@@ -146,6 +149,15 @@ export function AuctionLivePanel({
     setEnded(null);
     setState((prev) => {
       if (!prev || prev.run.product_id !== p.productId) return prev;
+      if (prev.run.bid_count > 0 && prev.run.id !== p.auctionId) return prev;
+      if (
+        prev.run.status === "live" &&
+        prev.run.bid_count > 0 &&
+        (p.bidCount ?? 0) === 0 &&
+        prev.run.id !== p.auctionId
+      ) {
+        return prev;
+      }
       // Pre-bids carry over into the live round: keep bid state and the
       // viewer's own max bid instead of resetting to zero.
       return {
@@ -198,12 +210,14 @@ export function AuctionLivePanel({
     });
   });
 
-  // Auto-finalize when timer elapses (any viewer can trigger).
+  // Auto-finalize when the auction timer OR the shop window ends (any viewer).
   useEffect(() => {
     const run = state?.run;
     if (!run || run.status !== "live" || !run.ends_at) return;
 
-    const endsMs = new Date(run.ends_at).getTime();
+    const auctionEndsMs = new Date(run.ends_at).getTime();
+    const shopEndsMs = shopEndAt ? new Date(shopEndAt).getTime() : Number.POSITIVE_INFINITY;
+    const endsMs = Math.min(auctionEndsMs, shopEndsMs);
     const delay = endsMs - Date.now();
     if (delay <= 0) {
       void finalizeNow(run.id, run.product_id);
@@ -234,7 +248,7 @@ export function AuctionLivePanel({
         emit(ROOM_EVENTS.auctionWon, payload);
       }
     }
-  }, [state?.run?.id, state?.run?.status, state?.run?.ends_at, shopId, emit]);
+  }, [state?.run?.id, state?.run?.status, state?.run?.ends_at, shopEndAt, shopId, emit]);
 
   // Any viewer flips an unpaid win to expired once the checkout deadline
   // passes (the webhook only covers winners who opened Stripe checkout).
@@ -358,7 +372,15 @@ export function AuctionLivePanel({
     });
   }
 
-  const remaining = run.ends_at ? Math.max(0, new Date(run.ends_at).getTime() - nowMs) : 0;
+  const auctionEndsMs = run.ends_at ? new Date(run.ends_at).getTime() : null;
+  const shopEndsMs = shopEndAt ? new Date(shopEndAt).getTime() : null;
+  const effectiveEndsMs =
+    auctionEndsMs == null
+      ? shopEndsMs
+      : shopEndsMs == null
+        ? auctionEndsMs
+        : Math.min(auctionEndsMs, shopEndsMs);
+  const remaining = effectiveEndsMs != null ? Math.max(0, effectiveEndsMs - nowMs) : 0;
   const secondsLeft = Math.ceil(remaining / 1000);
   const timeLeftLabel = formatAuctionCountdownMs(remaining);
 

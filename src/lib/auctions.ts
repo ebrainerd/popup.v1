@@ -86,6 +86,39 @@ export async function expireDueAuctionPayments(shopId: string): Promise<void> {
   }
 }
 
+/**
+ * Finalize live auction runs whose timer has elapsed or whose shop has closed.
+ * Safe to call on every shop page load; no-ops when nothing is due.
+ */
+export async function finalizeDueShopAuctions(shopId: string): Promise<number> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("finalize_due_shop_auctions", {
+    p_shop_id: shopId,
+  });
+  if (error) {
+    console.error("finalizeDueShopAuctions error", error.message);
+    return 0;
+  }
+  const count = Number(data ?? 0);
+  // Best-effort win emails for runs that just flipped to awaiting_payment
+  // (timer/shop-end finalize) or were repaired from a mis-marked unsold.
+  // notifyAuctionWon uses Resend idempotency keys so repeat page loads are safe.
+  const since = new Date(Date.now() - 15 * 60_000).toISOString();
+  const { data: wins } = await supabase
+    .from("auction_runs")
+    .select("id")
+    .eq("shop_id", shopId)
+    .eq("status", "awaiting_payment")
+    .gte("updated_at", since);
+  if (wins?.length) {
+    const { notifyAuctionWon } = await import("@/lib/notifications");
+    for (const win of wins) {
+      void notifyAuctionWon(win.id);
+    }
+  }
+  return count;
+}
+
 export async function getShopAuctionRuns(shopId: string): Promise<AuctionRunWithProduct[]> {
   const supabase = await createClient();
   const { data, error } = await supabase

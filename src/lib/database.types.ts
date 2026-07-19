@@ -590,6 +590,8 @@ export interface Database {
         Args: { p_auction_id: string };
         Returns: Record<string, unknown>;
       };
+      finalize_due_shop_auctions: { Args: { p_shop_id: string }; Returns: number };
+      reconcile_auction_run_leader: { Args: { p_auction_id: string }; Returns: undefined };
       cancel_auction_run: { Args: { p_auction_id: string }; Returns: undefined };
       expire_due_auction_payment: { Args: { p_auction_id: string }; Returns: boolean };
       compute_auction_visible_bid: {
