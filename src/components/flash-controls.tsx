@@ -100,7 +100,10 @@ export function FlashControls({ products }: { products: Product[] }) {
         auction_min_increment: isAuction
           ? parseFloat(item.auction.minIncrement) || undefined
           : undefined,
-        auction_duration_seconds: isAuction ? item.auction.durationSeconds : undefined,
+        auction_duration_seconds: isAuction && !item.auction.endsWithShop
+          ? item.auction.durationSeconds
+          : undefined,
+        auction_ends_with_shop: isAuction ? item.auction.endsWithShop : undefined,
         auction_allow_prebids: isAuction ? item.auction.allowPrebids : undefined,
         auction_sudden_death: isAuction ? item.auction.suddenDeath : undefined,
       });

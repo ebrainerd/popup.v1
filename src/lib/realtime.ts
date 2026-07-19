@@ -72,6 +72,7 @@ export type FlashItemBroadcast = {
   auction_starting_bid: number | null;
   auction_min_increment: number | null;
   auction_duration_seconds: number | null;
+  auction_ends_with_shop: boolean;
   auction_allow_prebids: boolean;
   auction_sudden_death: boolean;
   shipping_rate?: number;

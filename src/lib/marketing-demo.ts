@@ -8,6 +8,7 @@ const defaultAuctionFields = (): AuctionFieldState => ({
   startingBid: "",
   minIncrement: "1.00",
   durationSeconds: 60,
+  endsWithShop: false,
   allowPrebids: true,
   suddenDeath: false,
 });
